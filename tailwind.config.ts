@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -14,8 +15,18 @@ export default {
     },
     extend: {
       fontFamily: {
+        // Existing fonts
         serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        // sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        
+        // NEW BRAND FONTS ADDED HERE
+        coolvetica: ['Coolvetica', 'sans-serif'], // For Logo
+        montserrat: ['Montserrat', 'sans-serif'], // For Navigation/Body
+        // coolvetica: ['Coolvetica', 'sans-serif'],
+        
+        // BAAKI CONTENT (Body/Menu): Moderat
+        sans: ['Moderat', 'sans-serif'], 
+        
       },
       colors: {
         border: "hsl(var(--border))",
@@ -108,5 +119,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindAnimate],
 } satisfies Config;

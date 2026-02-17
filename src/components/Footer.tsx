@@ -11,7 +11,7 @@ const Footer = () => {
           
           {/* Column 1: Shop */}
           <div>
-            <h4 className="font-serif text-lg md:text-xl mb-6 tracking-wide">Shop</h4>
+            <h4 className="font-coolvetica text-lg md:text-xl mb-6 tracking-wide">Shop</h4>
             <div className="flex flex-col gap-3 text-sm opacity-70">
               <Link to="/shop" className="hover:opacity-100 hover:text-white transition-all w-fit">All Products</Link>
               <Link to="/bestsellers" className="hover:opacity-100 hover:text-white transition-all w-fit">Bestsellers</Link>
@@ -23,7 +23,7 @@ const Footer = () => {
 
           {/* Column 2: Policies */}
           <div>
-            <h4 className="font-serif text-lg md:text-xl mb-6 tracking-wide">Policies</h4>
+            <h4 className="font-coolvetica text-lg md:text-xl mb-6 tracking-wide">Policies</h4>
             <div className="flex flex-col gap-3 text-sm opacity-70">
               <Link to="/shipping-policy" className="hover:opacity-100 hover:text-white transition-all w-fit">Shipping Policy</Link>
               <Link to="/cancellation-refund" className="hover:opacity-100 hover:text-white transition-all w-fit">Cancellation & Refund</Link>
@@ -36,7 +36,7 @@ const Footer = () => {
 
           {/* Column 3: Support */}
           <div>
-            <h4 className="font-serif text-lg md:text-xl mb-6 tracking-wide">Support</h4>
+            <h4 className="font-coolvetica text-lg md:text-xl mb-6 tracking-wide">Support</h4>
             <div className="flex flex-col gap-4 text-sm opacity-70">
               <Link to="/contact" className="hover:opacity-100 hover:text-white transition-all w-fit">Contact Page</Link>
               
@@ -64,7 +64,7 @@ const Footer = () => {
 
           {/* Column 4: About & Socials */}
           <div>
-            <h4 className="font-serif text-lg md:text-xl mb-6 tracking-wide">About MURO</h4>
+            <h4 className="font-coolvetica text-lg md:text-xl mb-6 tracking-wide">About MURO</h4>
             <div className="flex flex-col gap-3 text-sm opacity-70 mb-8">
               <Link to="/about" className="hover:opacity-100 hover:text-white transition-all w-fit">About Us</Link>
               <p className="leading-relaxed text-xs max-w-xs opacity-80">
@@ -72,7 +72,7 @@ const Footer = () => {
               </p>
             </div>
 
-            <h5 className="font-serif text-md mb-4 tracking-wide opacity-80">Follow Us</h5>
+            <h5 className="font-coolvetica text-md mb-4 tracking-wide opacity-80">Follow Us</h5>
             <div className="flex gap-4">
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#2F4F4F] hover:bg-white bg-white/10 p-2 rounded-full transition-all duration-300">
                 <Instagram size={20} />
