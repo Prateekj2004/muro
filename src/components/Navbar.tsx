@@ -22,12 +22,12 @@ const Navbar = () => {
         {/* LEFT: LOGO */}
         <div className="flex-shrink-0 w-[220px]">
           <Link to="/" className="font-coolvetica text-xl md:text-2xl tracking-tight hover:text-[#2F4F4F] transition-colors whitespace-nowrap uppercase">
-            MURO POSTERS
+            MURO POSTER
           </Link>
         </div>
 
         {/* CENTRE: NAVIGATION */}
-        <nav className="hidden lg:flex items-center justify-center gap-9 text-[11px] font-semibold uppercase tracking-[0.22em] font-sans flex-1">
+        <nav className="hidden lg:flex items-center justify-center gap-4 text-[12px] md:text-[13px] text-[#000000] uppercase tracking-[0.22em] font-coolvetica flex-1">
           <Link to="/" className="hover:text-[#2F4F4F] transition-all duration-300">Home</Link>
           
           <div className="relative group h-20 flex items-center">
@@ -57,25 +57,25 @@ const Navbar = () => {
         </nav>
 
         {/* RIGHT: ICONS */}
-        <div className="flex items-center justify-end gap-6 w-[220px] font-sans">
+        <div className="flex items-center justify-end gap-6 w-[220px] font-coolvetica">
           <button 
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             className="flex items-center gap-2 hover:text-[#2F4F4F] transition-colors group"
           >
-            <Search className="w-4 h-4" strokeWidth={1.5} />
-            <span className="hidden xl:block text-[10px] font-bold uppercase tracking-[0.2em] group-hover:text-[#2F4F4F]">Search</span>
+            <Search className="w-5 h-5" strokeWidth={1.2} />
+            <span className="hidden xl:block text-[13px] md:text-13px text-[#000000] uppercase tracking-[0.2em] group-hover:text-[#2F4F4F]">Search</span>
           </button>
 
           <Link to="/wishlist" className="hidden lg:block hover:text-[#2F4F4F] transition-colors">
-            <Heart className="w-4 h-4" strokeWidth={1.5} />
+            <Heart className="w-5 h-5" strokeWidth={1.2} />
           </Link>
           
           <Link to="/account" className="hidden md:block hover:text-[#2F4F4F] transition-colors">
-            <User className="w-4 h-4" strokeWidth={1.5} />
+            <User className="w-5 h-5" strokeWidth={1.2} />
           </Link>
 
           <Link to="/cart" className="relative group hover:text-[#2F4F4F] transition-colors">
-            <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
+            <ShoppingBag className="w-5 h-5" strokeWidth={1.2} />
             {itemCount > 0 && (
               <span className="absolute -top-1.5 -right-2 bg-[#2F4F4F] text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center font-sans shadow-sm">
                 {itemCount}

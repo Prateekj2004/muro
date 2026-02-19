@@ -28,7 +28,8 @@ interface FeatureProps {
 }
 
 // --- Animation Constants ---
-const smoothEase = [0.25, 0.1, 0.25, 1]; 
+// FIXED: Strictly typed as a tuple of 4 numbers for Framer Motion's ease property
+const smoothEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1]; 
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -183,7 +184,7 @@ const Index: React.FC = () => {
             <div className="flex items-center gap-2 whitespace-nowrap"><Truck className="w-4 h-4" /> 2–4 Day Processing</div>
             <div className="flex items-center gap-2 whitespace-nowrap"><ShieldCheck className="w-4 h-4" /> Secure Packaging</div>
             <div className="flex items-center gap-2 whitespace-nowrap"><Leaf className="w-4 h-4" /> Premium Quality</div>
-            <div className="flex items-center gap-2 whitespace-nowrap text-[#2F4F4F]"><MessageCircle className="w-4 h-4" /> WhatsApp Support</div>
+            <div className="flex items-center gap-2 whitespace-nowrap"><MessageCircle className="w-4 h-4" /> WhatsApp Support</div>
           </div>
         </div>
       </motion.section>
