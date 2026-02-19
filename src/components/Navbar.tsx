@@ -27,7 +27,7 @@ const Navbar = () => {
         </div>
 
         {/* CENTRE: NAVIGATION */}
-        <nav className="hidden lg:flex items-center justify-center gap-4 text-[12px] md:text-[13px] text-[#000000] uppercase tracking-[0.22em] font-coolvetica flex-1">
+        <nav className="hidden lg:flex items-center justify-center gap-4 text-[12px] md:text-[13px] text-[#151515] uppercase tracking-[0.12em] font-coolvetica flex-1">
           <Link to="/" className="hover:text-[#2F4F4F] transition-all duration-300">Home</Link>
           
           <div className="relative group h-20 flex items-center">
@@ -63,7 +63,7 @@ const Navbar = () => {
             className="flex items-center gap-2 hover:text-[#2F4F4F] transition-colors group"
           >
             <Search className="w-5 h-5" strokeWidth={1.2} />
-            <span className="hidden xl:block text-[13px] md:text-13px text-[#000000] uppercase tracking-[0.2em] group-hover:text-[#2F4F4F]">Search</span>
+            <span className="hidden xl:block text-[13px] md:text-13px text-[#000000] uppercase tracking-[0.12em] group-hover:text-[#2F4F4F]">Search</span>
           </button>
 
           <Link to="/wishlist" className="hidden lg:block hover:text-[#2F4F4F] transition-colors">
