@@ -37,7 +37,7 @@ const Navbar = () => {
 
           <Link 
             to="/" 
-            className="text-[24px] xl:text-[35px] ml-2 font-serif font-bold tracking-[-0.02em] text-[#000000] lowercase whitespace-nowrap"
+            className="font-coolvetica text-xl md:text-2xl tracking-tight hover:text-[#2F4F4F] transition-colors whitespace-nowrap uppercase"
           >
             muro poster
           </Link>
