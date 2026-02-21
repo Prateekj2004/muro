@@ -46,7 +46,7 @@ const Auth: React.FC = () => {
         formData.append("email", email);
         formData.append("password", password);
 
-        const response = await fetch("http://69.30.252.110:8000/api/login", {
+        const response = await fetch("https://endpoint.titservices.online/api/login", {
           method: "POST",
           body: formData, // Sending as FormData
         });
@@ -80,7 +80,7 @@ const Auth: React.FC = () => {
           password_confirmation: confirmPassword
         };
 
-        const response = await fetch("http://69.30.252.110:8000/api/register", {
+        const response = await fetch("https://endpoint.titservices.online/api/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
