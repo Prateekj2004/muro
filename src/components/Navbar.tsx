@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingBag, Menu, X, Search, User, ChevronDown } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink } from "@/components/NavLink"; 
 
@@ -10,11 +10,15 @@ const Navbar = () => {
   const { itemCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
+  // Profile dropdown toggle state
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  // Check auth state (agar token exist karta hai)
+  // Check auth state
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
 
-  // Listen to storage changes incase login happens in another tab or to re-render
+  // Listen to storage changes incase login happens in another tab
   useEffect(() => {
     const handleStorageChange = () => {
       setIsLoggedIn(!!localStorage.getItem("token"));
@@ -23,10 +27,22 @@ const Navbar = () => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Click outside close logic for Profile Dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
+    setProfileOpen(false); // Close dropdown on logout
     navigate("/login");
   };
 
@@ -82,7 +98,6 @@ const Navbar = () => {
               Shop <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300 ease-in-out" strokeWidth={2}/>
             </NavLink>
             
-            {/* Dropdown Menu Box */}
             <div className="absolute top-[64px] left-1/2 -translate-x-1/2 w-[320px] bg-white border border-[#E5E5E5] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-out flex flex-col py-3 z-50">
               {shopCategories.map((cat) => (
                 <NavLink 
@@ -149,28 +164,43 @@ const Navbar = () => {
             <span className="text-[10px] xl:text-[11px] font-[400] text-[#333333] hidden xl:block whitespace-nowrap uppercase tracking-wider">Search</span>
           </button>
 
-          {/* AUTH DROPDOWN / LOGIN LINK */}
-          <div className="hidden md:flex relative group h-full items-center cursor-pointer z-50">
+          {/* 🔥 AUTH PROFILE / CLICK DROPDOWN */}
+          <div className="hidden md:flex relative h-full items-center z-50" ref={profileRef}>
             {isLoggedIn ? (
               <>
-                <div className="flex items-center gap-1 hover:opacity-60 transition-opacity">
+                <button 
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-1 hover:opacity-60 transition-opacity cursor-pointer"
+                >
                   <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
-                </div>
-                {/* Profile Dropdown */}
-                <div className="absolute top-[64px] right-0 w-[180px] bg-white border border-[#E5E5E5] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-out flex flex-col py-2">
-                  <Link 
-                    to="/profile" 
-                    className="px-5 py-3 text-[11px] font-[500] text-[#000000] uppercase tracking-[0.08em] hover:bg-[#f9f9f9] transition-colors text-left"
-                  >
-                    View Profile
-                  </Link>
-                  <button 
-                    onClick={handleLogout}
-                    className="px-5 py-3 text-[11px] font-[500] text-red-500 uppercase tracking-[0.08em] hover:bg-[#f9f9f9] transition-colors text-left w-full"
-                  >
-                    Logout
-                  </button>
-                </div>
+                </button>
+                
+                {/* Profile Dropdown Box */}
+                <AnimatePresence>
+                  {profileOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-[64px] right-0 w-[180px] bg-white border border-[#E5E5E5] shadow-lg flex flex-col py-2"
+                    >
+                      <Link 
+                        to="/profile" 
+                        onClick={() => setProfileOpen(false)}
+                        className="px-5 py-3 text-[11px] font-[500] text-[#000000] uppercase tracking-[0.08em] hover:bg-[#f9f9f9] transition-colors text-left"
+                      >
+                        View Account
+                      </Link>
+                      <button 
+                        onClick={handleLogout}
+                        className="px-5 py-3 text-[11px] font-[500] text-red-500 uppercase tracking-[0.08em] hover:bg-[#f9f9f9] transition-colors text-left w-full"
+                      >
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </>
             ) : (
               <NavLink 
@@ -258,11 +288,11 @@ const Navbar = () => {
               <Link to="/about" onClick={() => setMobileOpen(false)}>About MURO</Link>
               <Link to="/contact" onClick={() => setMobileOpen(false)}>Contact</Link>
               
-              {/* Added auth options for mobile menu */}
+              {/* AUTH IN MOBILE MENU */}
               <div className="border-t border-[#E5E5E5] pt-6 flex flex-col gap-8 mt-4">
                 {isLoggedIn ? (
                   <>
-                    <Link to="/profile" onClick={() => setMobileOpen(false)}>View Profile</Link>
+                    <Link to="/profile" onClick={() => setMobileOpen(false)}>View Account</Link>
                     <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="text-left text-red-500 uppercase">Logout</button>
                   </>
                 ) : (
