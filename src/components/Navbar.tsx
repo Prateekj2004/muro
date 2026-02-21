@@ -1,16 +1,35 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingBag, Menu, X, Search, User, ChevronDown } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink } from "@/components/NavLink"; 
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const { itemCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Original array structure wapas laya gaya hai naye content ke sath
+  // Check auth state (agar token exist karta hai)
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+
+  // Listen to storage changes incase login happens in another tab or to re-render
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsLoggedIn(!!localStorage.getItem("token"));
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    navigate("/login");
+  };
+
   const shopCategories = [
     "Motivational & Mindset",
     "Aesthetic & Vibe",
@@ -68,7 +87,6 @@ const Navbar = () => {
               {shopCategories.map((cat) => (
                 <NavLink 
                   key={cat} 
-                  // Yahan original logic wapas laga diya: ?cat=category_name
                   to={`/shop?cat=${cat}`}
                   className="px-6 py-3 text-[11px] xl:text-[12px] font-[500] text-[#000000] uppercase tracking-[0.08em] hover:bg-[#f9f9f9] hover:text-gray-500 transition-colors text-left"
                   activeClassName="bg-[#f9f9f9] text-gray-500"
@@ -121,7 +139,7 @@ const Navbar = () => {
         </nav>
 
         {/* 3. RIGHT: ICONS */}
-        <div className="flex-1 flex justify-end items-center gap-4 xl:gap-5">
+        <div className="flex-1 flex justify-end items-center gap-4 xl:gap-5 h-full">
           
           <button 
             onClick={() => setIsSearchOpen(true)}
@@ -131,13 +149,39 @@ const Navbar = () => {
             <span className="text-[10px] xl:text-[11px] font-[400] text-[#333333] hidden xl:block whitespace-nowrap uppercase tracking-wider">Search</span>
           </button>
 
-          <NavLink 
-            to="/account" 
-            className="hover:opacity-60 transition-opacity hidden md:block"
-            activeClassName="opacity-60"
-          >
-            <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
-          </NavLink>
+          {/* AUTH DROPDOWN / LOGIN LINK */}
+          <div className="hidden md:flex relative group h-full items-center cursor-pointer z-50">
+            {isLoggedIn ? (
+              <>
+                <div className="flex items-center gap-1 hover:opacity-60 transition-opacity">
+                  <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
+                </div>
+                {/* Profile Dropdown */}
+                <div className="absolute top-[64px] right-0 w-[180px] bg-white border border-[#E5E5E5] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-out flex flex-col py-2">
+                  <Link 
+                    to="/profile" 
+                    className="px-5 py-3 text-[11px] font-[500] text-[#000000] uppercase tracking-[0.08em] hover:bg-[#f9f9f9] transition-colors text-left"
+                  >
+                    View Profile
+                  </Link>
+                  <button 
+                    onClick={handleLogout}
+                    className="px-5 py-3 text-[11px] font-[500] text-red-500 uppercase tracking-[0.08em] hover:bg-[#f9f9f9] transition-colors text-left w-full"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : (
+              <NavLink 
+                to="/login" 
+                className="hover:opacity-60 transition-opacity"
+                activeClassName="opacity-60"
+              >
+                <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
+              </NavLink>
+            )}
+          </div>
 
           <NavLink 
             to="/cart" 
@@ -213,6 +257,18 @@ const Navbar = () => {
               <Link to="/customisation" onClick={() => setMobileOpen(false)}>Customisation</Link>
               <Link to="/about" onClick={() => setMobileOpen(false)}>About MURO</Link>
               <Link to="/contact" onClick={() => setMobileOpen(false)}>Contact</Link>
+              
+              {/* Added auth options for mobile menu */}
+              <div className="border-t border-[#E5E5E5] pt-6 flex flex-col gap-8 mt-4">
+                {isLoggedIn ? (
+                  <>
+                    <Link to="/profile" onClick={() => setMobileOpen(false)}>View Profile</Link>
+                    <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="text-left text-red-500 uppercase">Logout</button>
+                  </>
+                ) : (
+                  <Link to="/login" onClick={() => setMobileOpen(false)}>Login / Sign Up</Link>
+                )}
+              </div>
             </div>
           </motion.nav>
         )}

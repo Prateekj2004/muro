@@ -16,6 +16,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundPolicy from "./pages/RefundPolicy";
 import TermsAndConditions from "./pages/Terms";
 import FAQ from "./pages/FAQ";
+import Auth from "./pages/Auth"
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,8 @@ const App = () => (
           <Navbar />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Auth />} />
+          <Route path="/signup" element={<Auth />} />
             <Route path="/about" element={<About />} />
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
