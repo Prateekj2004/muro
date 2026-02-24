@@ -18,6 +18,44 @@ const Navbar = () => {
   // Check auth state
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
 
+  // Default Categories Data
+  const defaultCategories = [
+    "Motivational & Mindset",
+    "Aesthetic & Vibe",
+    "Love & Connection",
+    "Kids – Learning & Confidence",
+    "Calm & Inner Balance",
+    "Fandom & Passion",
+    "Kitchen & Dining",
+    "Customization"
+  ];
+
+  // State for Dynamic Categories
+  const [categories, setCategories] = useState<string[]>(defaultCategories);
+
+  // Fetch Categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        // TODO: Replace with your actual backend API URL when ready
+        const response = await fetch("YOUR_API_ENDPOINT_HERE"); 
+        if (response.ok) {
+          const data = await response.json();
+          // Assuming the API returns an array of category names.
+          // If the JSON structure is different (e.g., data.categories), update this accordingly:
+          if (data && data.length > 0) {
+            setCategories(data);
+          }
+        }
+      } catch (error) {
+        console.log("API not available yet, using default categories.");
+        // Error aane par purani default categories hi show hoti rahengi
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   // Listen to storage changes incase login happens in another tab
   useEffect(() => {
     const handleStorageChange = () => {
@@ -45,17 +83,6 @@ const Navbar = () => {
     setProfileOpen(false); // Close dropdown on logout
     navigate("/login");
   };
-
-  const shopCategories = [
-    "Motivational & Mindset",
-    "Aesthetic & Vibe",
-    "Love & Connection",
-    "Kids – Learning & Confidence",
-    "Calm & Inner Balance",
-    "Fandom & Passion",
-    "Kitchen & Dining",
-    "Customization"
-  ];
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E5E5] h-[64px] font-sans text-black">
@@ -88,21 +115,21 @@ const Navbar = () => {
             Home
           </NavLink>
 
-          {/* SHOP DROPDOWN */}
+          {/* PRODUCTS DROPDOWN (Changed from Shop) */}
           <div className="relative group h-full flex items-center cursor-pointer">
             <NavLink 
-              to="/shop" 
+              to="/products" 
               className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity flex items-center gap-1"
               activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
             >
-              Shop <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300 ease-in-out" strokeWidth={2}/>
+              Products <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300 ease-in-out" strokeWidth={2}/>
             </NavLink>
             
             <div className="absolute top-[64px] left-1/2 -translate-x-1/2 w-[320px] bg-white border border-[#E5E5E5] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-out flex flex-col py-3 z-50">
-              {shopCategories.map((cat) => (
+              {categories.map((cat) => (
                 <NavLink 
                   key={cat} 
-                  to={`/shop?cat=${cat}`}
+                  to={`/products?cat=${encodeURIComponent(cat)}`}
                   className="px-6 py-3 text-[11px] xl:text-[12px] font-[500] text-[#000000] uppercase tracking-[0.08em] hover:bg-[#f9f9f9] hover:text-gray-500 transition-colors text-left"
                   activeClassName="bg-[#f9f9f9] text-gray-500"
                 >
@@ -270,11 +297,11 @@ const Navbar = () => {
             <div className="flex flex-col py-10 px-8 text-[13px] font-[500] text-black uppercase tracking-[0.1em] gap-8 font-sans overflow-y-auto">
               <Link to="/" onClick={() => setMobileOpen(false)}>Home</Link>
               <div className="flex flex-col gap-4">
-                <span className="text-gray-400 text-[10px] tracking-widest border-b pb-2">SHOP CATEGORIES</span>
-                {shopCategories.map((cat) => (
+                <span className="text-gray-400 text-[10px] tracking-widest border-b pb-2">PRODUCTS CATEGORIES</span>
+                {categories.map((cat) => (
                    <Link 
                      key={cat} 
-                     to={`/shop?cat=${cat}`} 
+                     to={`/products?cat=${encodeURIComponent(cat)}`} 
                      onClick={() => setMobileOpen(false)} 
                      className="pl-2 font-[400]"
                    >

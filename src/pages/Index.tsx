@@ -9,7 +9,8 @@ import {
   Zap, 
   MessageCircle, 
   Leaf, 
-  LucideIcon 
+  LucideIcon,
+  ShoppingBag
 } from "lucide-react";
 import heroBanner from "@/assets/hero-banner.jpg"; 
 
@@ -21,6 +22,14 @@ interface MoodCategory {
   link: string;
 }
 
+interface Product {
+  id: number;
+  title: string;
+  price: string;
+  img: string;
+  category: string;
+}
+
 interface FeatureProps {
   icon: LucideIcon;
   title: string;
@@ -28,7 +37,6 @@ interface FeatureProps {
 }
 
 // --- Animation Constants ---
-// FIXED: Strictly typed as a tuple of 4 numbers for Framer Motion's ease property
 const smoothEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1]; 
 
 const fadeInUp: Variants = {
@@ -61,64 +69,24 @@ const cardItemVariants: Variants = {
 };
 
 const Index: React.FC = () => {
-  // 1. UPDATED IMAGES (Reliable Links)
+  // 1. DATA: Categories
   const moodCategories: MoodCategory[] = [
-    { 
-      title: "Motivational & Mindset", 
-      subtitle: "Focus & Ambition",
-      // Lion/Dark Moody Vibe
-      img: "https://images.unsplash.com/photo-1552168324-d612d77725e3?auto=format&fit=crop&q=80&w=800",
-      link: "motivational"
-    },
-    { 
-      title: "Aesthetic & Vibe", 
-      subtitle: "Curated Spaces",
-      // Abstract Beige/Green Art
-      img: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&q=80&w=800",
-      link: "aesthetic"
-    },
-    { 
-      title: "Love & Connection", 
-      subtitle: "Better Together",
-      // Hands/Warmth
-      img: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?auto=format&fit=crop&q=80&w=800",
-      link: "love"
-    },
-    { 
-      title: "Kids – Learning", 
-      subtitle: "Playful Growth",
-      // Cute Minimalist Room
-      img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=800",
-      link: "kids"
-    },
-    { 
-      title: "Calm & Inner Balance", 
-      subtitle: "Zen & Serenity",
-      // Nature/Plants
-      img: "https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&q=80&w=800",
-      link: "calm"
-    },
-    { 
-      title: "Fandom & Passion", 
-      subtitle: "What Moves You",
-      // Music/Vinyl Records vibe
-      img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=800",
-      link: "fandom"
-    },
-    { 
-      title: "Kitchen & Dining", 
-      subtitle: "Gather & Taste",
-      // Coffee/Clean Kitchen
-      img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=800",
-      link: "kitchen"
-    },
-    { 
-      title: "Customization", 
-      subtitle: "Your Unique Story",
-      // Frames on Wall
-      img: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=800",
-      link: "custom"
-    }
+    { title: "Motivational & Mindset", subtitle: "Focus & Ambition", img: "https://images.unsplash.com/photo-1552168324-d612d77725e3?auto=format&fit=crop&q=80&w=800", link: "motivational" },
+    { title: "Aesthetic & Vibe", subtitle: "Curated Spaces", img: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&q=80&w=800", link: "aesthetic" },
+    { title: "Love & Connection", subtitle: "Better Together", img: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?auto=format&fit=crop&q=80&w=800", link: "love" },
+    { title: "Kids – Learning", subtitle: "Playful Growth", img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=800", link: "kids" },
+    { title: "Calm & Inner Balance", subtitle: "Zen & Serenity", img: "https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&q=80&w=800", link: "calm" },
+    { title: "Fandom & Passion", subtitle: "What Moves You", img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=800", link: "fandom" },
+    { title: "Kitchen & Dining", subtitle: "Gather & Taste", img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=800", link: "kitchen" },
+    { title: "Customization", subtitle: "Your Unique Story", img: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=800", link: "custom" }
+  ];
+
+  // 2. DATA: Best Sellers (NEW)
+  const trendingProducts: Product[] = [
+    { id: 1, title: "The Hustle Mindset", price: "₹1,299", category: "Office", img: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=600" },
+    { id: 2, title: "Abstract Serenity", price: "₹999", category: "Living Room", img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&q=80&w=600" },
+    { id: 3, title: "Morning Coffee Brew", price: "₹899", category: "Kitchen", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=600" },
+    { id: 4, title: "Urban Dreams", price: "₹1,499", category: "Bedroom", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=600" },
   ];
 
   return (
@@ -189,7 +157,7 @@ const Index: React.FC = () => {
         </div>
       </motion.section>
 
-      {/* 3. SHOP BY MOOD (FIXED: Images & Animation) */}
+      {/* 3. SHOP BY MOOD */}
       <section className="py-24 font-sans">
         <div className="container mx-auto px-4 md:px-8">
           <motion.h2
@@ -215,32 +183,20 @@ const Index: React.FC = () => {
                   to={`/shop?cat=${mood.link}`}
                   className="group relative block w-full aspect-[2/3] overflow-hidden bg-[#E5E5E5] shadow-sm hover:shadow-2xl transition-all duration-700 rounded-sm"
                 >
-                  {/* Image (Should load now) */}
                   <img 
                     src={mood.img} 
                     alt={mood.title}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105"
                   />
-                  
-                  {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#2F4F4F]/90 via-[#2F4F4F]/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-                  
-                  {/* Content Container */}
                   <div className="absolute inset-0 flex flex-col justify-end p-6 text-center z-10">
                     <h3 className="font-serif text-xl text-white mb-1 drop-shadow-sm translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                       {mood.title}
                     </h3>
-                    
-                    {/* Subtitle (Initial State: Visible) */}
                     <p className="text-[10px] uppercase tracking-widest text-white/80 mb-4 opacity-100 group-hover:opacity-0 transition-opacity duration-300 absolute bottom-12 left-0 right-0">
                       {mood.subtitle}
                     </p>
-                    
-                    {/* Animated Separator */}
                     <div className="h-[1px] w-8 bg-white/60 group-hover:w-full transition-all duration-700 ease-in-out mx-auto mb-3" />
-                    
-                    {/* FIXED: View Collection Text (No clipping) */}
-                    {/* Using simple translate/opacity instead of overflow-hidden mask */}
                     <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out">
                       View Collection
                     </p>
@@ -252,8 +208,72 @@ const Index: React.FC = () => {
         </div>
       </section>
 
+      {/* --- NEW SECTION 1: TRENDING NOW --- */}
+      <section className="py-20 bg-white font-sans border-t border-[#222222]/5">
+        <div className="container mx-auto px-4 md:px-8">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+                <motion.span 
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="text-xs font-bold uppercase tracking-widest text-[#2F4F4F] mb-2 block"
+                >
+                    Customer Favorites
+                </motion.span>
+                <motion.h2 
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    viewport={{ once: true }}
+                    className="font-serif text-3xl md:text-4xl font-light text-[#222222]"
+                >
+                    Trending Now
+                </motion.h2>
+            </div>
+            <Link to="/shop" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:text-[#2F4F4F] transition-colors">
+                View All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <motion.div 
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10"
+          >
+            {trendingProducts.map((product) => (
+                <motion.div key={product.id} variants={cardItemVariants} className="group cursor-pointer">
+                    <div className="relative w-full aspect-[4/5] bg-gray-100 overflow-hidden mb-4">
+                        <img 
+                            src={product.img} 
+                            alt={product.title} 
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <button className="absolute bottom-4 right-4 bg-white text-[#222222] p-3 rounded-full shadow-lg translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hover:bg-[#2F4F4F] hover:text-white">
+                            <ShoppingBag className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase tracking-widest text-[#222222]/50 mb-1">{product.category}</span>
+                        <h3 className="font-serif text-lg text-[#222222] group-hover:text-[#2F4F4F] transition-colors">{product.title}</h3>
+                        <span className="text-sm font-medium mt-1">{product.price}</span>
+                    </div>
+                </motion.div>
+            ))}
+          </motion.div>
+          
+          <div className="mt-12 text-center md:hidden">
+            <Link to="/shop" className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest border-b border-[#222222] pb-1">
+                View All Products
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* 4. DESIGNED FOR EVERY WALL */}
-      <section className="py-20 bg-white border-t border-[#2F4F4F]/5 font-sans">
+      <section className="py-20 bg-[#F0EEE9] font-sans">
         <div className="container mx-auto px-4 md:px-8 text-center">
           <motion.h2 
             variants={fadeInUp}
@@ -288,7 +308,7 @@ const Index: React.FC = () => {
       </section>
 
       {/* 5. WHY MURO? */}
-      <section className="py-24 bg-[#F0EEE9] font-sans">
+      <section className="py-24 bg-white font-sans">
         <div className="container mx-auto px-4 md:px-8">
           <motion.div 
             variants={fadeInUp}
@@ -314,6 +334,40 @@ const Index: React.FC = () => {
             <Feature icon={Heart} title="Intention" sub="Art with Meaning" />
             <Feature icon={MessageCircle} title="Support" sub="Always Here to Help" />
           </motion.div>
+        </div>
+      </section>
+
+      {/* --- NEW SECTION 2: NEWSLETTER (The Club) --- */}
+      <section className="py-24 bg-[#222222] text-white font-sans relative overflow-hidden">
+        {/* Abstract Circle Decoration */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#2F4F4F] opacity-10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
+        
+        <div className="container mx-auto px-4 md:px-8 relative z-10 text-center">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="max-w-xl mx-auto"
+            >
+                <h2 className="font-serif text-3xl md:text-5xl font-light mb-4">Join the Collective</h2>
+                <p className="text-white/60 mb-8 font-light leading-relaxed">
+                    Get early access to new drops, interior design tips, and an exclusive 
+                    <span className="text-white font-medium"> 10% off</span> your first order.
+                </p>
+                
+                <form className="flex flex-col md:flex-row gap-4" onSubmit={(e) => e.preventDefault()}>
+                    <input 
+                        type="email" 
+                        placeholder="Your email address" 
+                        className="flex-1 bg-transparent border-b border-white/30 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-white transition-colors text-center md:text-left"
+                    />
+                    <button type="submit" className="bg-white text-[#222222] px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-[#2F4F4F] hover:text-white transition-all duration-300">
+                        Subscribe
+                    </button>
+                </form>
+                <p className="text-[10px] text-white/30 mt-4 uppercase tracking-wider">No spam. Unsubscribe anytime.</p>
+            </motion.div>
         </div>
       </section>
 

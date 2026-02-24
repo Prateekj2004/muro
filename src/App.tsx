@@ -2,23 +2,38 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/lib/cart";
+
+// Components
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+
+// Pages
 import Index from "./pages/Index";
-import Shop from "./pages/Shop";
+import Products from "./pages/Products"; // <-- Yeh update kiya (Shop se Products)
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
-import About from "./pages/About";import ShippingPolicy from "./pages/ShippingPolicy";
+import About from "./pages/About";
+import ShippingPolicy from "./pages/ShippingPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundPolicy from "./pages/RefundPolicy";
 import TermsAndConditions from "./pages/Terms";
 import FAQ from "./pages/FAQ";
-import Auth from "./pages/Auth"
+import Auth from "./pages/Auth";
+
+// Admin Dashboard
+import AdminDashboard from "./pages/AdminDashboard"; 
 
 const queryClient = new QueryClient();
+
+// Optional: Admin Check function (Basic version)
+// Ise baad mein production ke liye use kar sakte hain
+const IsAdmin = ({ children }: { children: JSX.Element }) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  return user.role === "admin" ? children : <Navigate replace to="/login" />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -31,16 +46,25 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Auth />} />
-          <Route path="/signup" element={<Auth />} />
+            <Route path="/signup" element={<Auth />} />
             <Route path="/about" element={<About />} />
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/cancellation-refund" element={<RefundPolicy />} />
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/faq" element={<FAQ />} />
-            <Route path="/shop" element={<Shop />} />
+            
+            {/* --- PRODUCTS ROUTE UPDATE KIYA HAI --- */}
+            <Route path="/products" element={<Products />} />
+            
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
+
+            {/* --- ADMIN ROUTE START --- */}
+            {/* IsAdmin guard ko abhi ignore kiya hai direct routing ke liye */}
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            {/* --- ADMIN ROUTE END --- */}
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />
