@@ -1,178 +1,346 @@
-import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
-import { products } from "@/lib/data";
-import { useCart, FRAME_PRICE } from "@/lib/cart";
-import { Star, ShoppingBag, ArrowLeft, Truck } from "lucide-react";
-import { motion } from "framer-motion";
-import ProductCard from "@/components/ProductCard";
-import { toast } from "sonner";
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronRight, Minus, Plus, ShoppingBag, Truck, ShieldCheck, RefreshCw, ChevronDown, Check } from "lucide-react";
+import { useCart } from "@/lib/cart"; // Assuming aapka cart context yahan hai
+import { toast } from "sonner"; // Assuming you are using Sonner for toasts as per App.tsx
 
-const sizeMultiplier: Record<string, number> = { A4: 1, A3: 1.4, A2: 1.8 };
+// --- Types ---
+interface ProductDetails {
+  id: string;
+  title: string;
+  basePrice: number;
+  category: string;
+  description: string;
+  images: string[];
+}
 
-const ProductDetail = () => {
-  const { id } = useParams();
-  const product = products.find((p) => p.id === id);
-  const { addItem } = useCart();
+// --- Pricing Logic Multipliers ---
+const SIZE_PRICING = {
+  "A4 (8x12 inches)": 0,       // Base price
+  "A3 (12x18 inches)": 400,    // +₹400
+  "A2 (18x24 inches)": 900,    // +₹900
+};
 
-  const [selectedSize, setSelectedSize] = useState("A3");
-  const [withFrame, setWithFrame] = useState(false);
-  const [zoomed, setZoomed] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+const FRAME_PRICING = {
+  "No Frame (Rolled)": 0,
+  "Black Frame": 500,
+  "White Frame": 500,
+  "Natural Wood": 600,
+};
 
-  if (!product) {
+const ProductDetail: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  // const { addItem } = useCart(); // Uncomment this when connecting to your actual cart context
+
+  // --- States ---
+  const [product, setProduct] = useState<ProductDetails | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  
+  const [activeImage, setActiveImage] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<keyof typeof SIZE_PRICING>("A3 (12x18 inches)");
+  const [selectedFrame, setSelectedFrame] = useState<keyof typeof FRAME_PRICING>("Black Frame");
+  const [quantity, setQuantity] = useState<number>(1);
+  
+  // Accordion State
+  const [openAccordion, setOpenAccordion] = useState<string | null>("description");
+
+  // --- Mock API Fetch ---
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        // TODO: Replace with actual API call using the 'id'
+        // const response = await fetch(`YOUR_API_URL/products/${id}`);
+        // const data = await response.json();
+        
+        await new Promise(resolve => setTimeout(resolve, 800)); // Fake delay
+        
+        const mockData: ProductDetails = {
+          id: id || "1",
+          title: "Abstract Serenity Canvas",
+          basePrice: 899,
+          category: "Aesthetic & Vibe",
+          description: "Transform your space with this stunning abstract art piece. Designed to bring a sense of calm and modern elegance to any room. Printed on museum-quality 250gsm matte paper using archival inks that won't fade over time.",
+          images: [
+            "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&q=80&w=1200",
+            "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=1200",
+            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=1200"
+          ]
+        };
+
+        setProduct(mockData);
+        setActiveImage(mockData.images[0]);
+
+      } catch (error) {
+        console.error("Error fetching product", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id]);
+
+  // --- Derived State ---
+  const finalPrice = product 
+    ? (product.basePrice + SIZE_PRICING[selectedSize] + FRAME_PRICING[selectedFrame]) * quantity 
+    : 0;
+
+  // --- Handlers ---
+  const handleQuantity = (type: "inc" | "dec") => {
+    if (type === "dec" && quantity > 1) setQuantity(prev => prev - 1);
+    if (type === "inc" && quantity < 10) setQuantity(prev => prev + 1);
+  };
+
+  const handleAddToCart = () => {
+    // addItem({ id: product?.id, title: product?.title, price: finalPrice / quantity, size: selectedSize, frame: selectedFrame, quantity, image: activeImage });
+    toast.success(`${product?.title} added to your cart.`);
+  };
+
+  const handleBuyNow = () => {
+    handleAddToCart();
+    navigate("/cart");
+  };
+
+  if (loading) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <p className="text-muted-foreground mb-4">Product not found.</p>
-        <Link to="/shop" className="text-primary underline">Back to shop</Link>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-10 h-10 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  const price = Math.round(product.price * sizeMultiplier[selectedSize]) + (withFrame ? FRAME_PRICE : 0);
-  const related = products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4);
-  const deliveryDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-  });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
-    });
-  };
+  if (!product) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-white text-center px-4">
+        <h2 className="font-serif text-3xl text-[#222222] mb-4">Product Not Found</h2>
+        <Link to="/products" className="text-sm font-bold uppercase tracking-widest border-b border-black pb-1">Return to Shop</Link>
+      </div>
+    );
+  }
 
   return (
-    <main className="py-8">
-      <div className="container mx-auto px-4 md:px-8">
-        <Link to="/shop" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back to shop
-        </Link>
+    <main className="bg-white min-h-screen font-sans text-[#222222]">
+      
+      {/* Premium Breadcrumbs */}
+      <div className="container mx-auto px-5 md:px-8 py-6">
+        <nav className="flex items-center text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-gray-400">
+          <Link to="/" className="hover:text-black transition-colors">Home</Link>
+          <ChevronRight className="w-3 h-3 mx-2" />
+          <Link to="/products" className="hover:text-black transition-colors">Products</Link>
+          <ChevronRight className="w-3 h-3 mx-2" />
+          <span className="text-black">{product.category}</span>
+        </nav>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-20">
-          {/* Image with zoom */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative overflow-hidden bg-secondary aspect-[3/4] cursor-zoom-in"
-            onMouseEnter={() => setZoomed(true)}
-            onMouseLeave={() => setZoomed(false)}
-            onMouseMove={handleMouseMove}
-          >
-            <img
-              src={product.images[0]}
-              alt={product.title}
-              className="w-full h-full object-cover transition-transform duration-300"
-              style={
-                zoomed
-                  ? { transform: "scale(2)", transformOrigin: `${mousePos.x}% ${mousePos.y}%` }
-                  : {}
-              }
-            />
-          </motion.div>
-
-          {/* Details */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex flex-col justify-center"
-          >
-            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">{product.category}</p>
-            <h1 className="font-serif text-3xl md:text-4xl font-light mb-4">{product.title}</h1>
-
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-3.5 h-3.5 ${i < Math.round(product.rating) ? "fill-primary text-primary" : "text-border"}`}
-                  />
-                ))}
-              </div>
-              <span className="text-sm text-muted-foreground">({product.reviews} reviews)</span>
+      <div className="container mx-auto px-5 md:px-8 pb-24">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
+          
+          {/* --- LEFT: IMAGE GALLERY --- */}
+          <div className="lg:w-3/5 flex flex-col md:flex-row-reverse gap-4 md:gap-6">
+            {/* Main Image */}
+            <div className="w-full md:w-5/6 bg-[#F4F4F4] aspect-[4/5] relative overflow-hidden">
+              <motion.img 
+                key={activeImage}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
+                src={activeImage} 
+                alt={product.title} 
+                className="w-full h-full object-cover"
+              />
             </div>
-
-            <p className="text-foreground/70 mb-8 leading-relaxed">{product.description}</p>
-
-            <p className="font-serif text-3xl mb-8">${price}</p>
-
-            {/* Size selector */}
-            <div className="mb-6">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Size</p>
-              <div className="flex gap-3">
-                {product.sizes.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSelectedSize(s)}
-                    className={`px-5 py-2.5 text-sm transition-colors duration-200 ${
-                      selectedSize === s
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Frame option */}
-            <div className="mb-8">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Frame</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setWithFrame(false)}
-                  className={`px-5 py-2.5 text-sm transition-colors duration-200 ${
-                    !withFrame ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground"
-                  }`}
+            {/* Thumbnails */}
+            <div className="w-full md:w-1/6 flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-y-auto no-scrollbar pb-2 md:pb-0">
+              {product.images.map((img, idx) => (
+                <button 
+                  key={idx} 
+                  onClick={() => setActiveImage(img)}
+                  className={`flex-shrink-0 w-20 md:w-full aspect-[4/5] bg-[#F4F4F4] border-2 transition-all ${activeImage === img ? 'border-black' : 'border-transparent hover:border-gray-300'}`}
                 >
-                  No Frame
+                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
                 </button>
-                <button
-                  onClick={() => setWithFrame(true)}
-                  className={`px-5 py-2.5 text-sm transition-colors duration-200 ${
-                    withFrame ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground"
-                  }`}
-                >
-                  Add Frame (+${FRAME_PRICE})
-                </button>
-              </div>
-            </div>
-
-            {/* Add to cart */}
-            <button
-              onClick={() => {
-                addItem(product, selectedSize, withFrame);
-                toast.success("Added to cart", { description: `${product.title} (${selectedSize})` });
-              }}
-              className="flex items-center justify-center gap-2 bg-foreground text-background py-4 text-sm uppercase tracking-widest font-medium hover:bg-primary transition-colors duration-300 mb-6"
-            >
-              <ShoppingBag className="w-4 h-4" /> Add to Cart
-            </button>
-
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Truck className="w-4 h-4" /> Estimated delivery by {deliveryDate}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Related */}
-        {related.length > 0 && (
-          <section className="border-t border-border pt-16">
-            <h2 className="font-serif text-2xl font-light mb-8">You May Also Like</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {related.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
               ))}
             </div>
-          </section>
-        )}
+          </div>
+
+          {/* --- RIGHT: PRODUCT DETAILS (Sticky) --- */}
+          <div className="lg:w-2/5 relative">
+            <div className="lg:sticky lg:top-[100px]">
+              
+              {/* Title & Price */}
+              <div className="mb-8 border-b border-[#E5E5E5] pb-8">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-3 block">{product.category}</span>
+                <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-light text-[#222222] leading-tight mb-4">
+                  {product.title}
+                </h1>
+                <p className="text-2xl font-medium tracking-wide text-[#222222]">
+                  ₹{finalPrice.toLocaleString()}
+                </p>
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-2">Inclusive of all taxes</p>
+              </div>
+
+              {/* Options: Size */}
+              <div className="mb-8">
+                <div className="flex justify-between items-end mb-4">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#222222]">Select Size</h3>
+                  <button className="text-[10px] text-gray-400 underline uppercase tracking-widest hover:text-black">Size Guide</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {(Object.keys(SIZE_PRICING) as Array<keyof typeof SIZE_PRICING>).map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`py-3 px-4 text-[11px] font-bold uppercase tracking-widest border transition-all ${
+                        selectedSize === size 
+                          ? 'border-black bg-black text-white shadow-md' 
+                          : 'border-[#E5E5E5] bg-white text-gray-600 hover:border-gray-400'
+                      }`}
+                    >
+                      {size.split(" ")[0]} <span className="block text-[8px] font-normal opacity-70 mt-1">{size.split(" ")[1]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Options: Frame */}
+              <div className="mb-10">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#222222] mb-4">Select Frame</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {(Object.keys(FRAME_PRICING) as Array<keyof typeof FRAME_PRICING>).map((frame) => (
+                    <button
+                      key={frame}
+                      onClick={() => setSelectedFrame(frame)}
+                      className={`py-3 px-4 flex items-center gap-3 border transition-all ${
+                        selectedFrame === frame 
+                          ? 'border-black bg-[#F9F9F9]' 
+                          : 'border-[#E5E5E5] bg-white hover:border-gray-400'
+                      }`}
+                    >
+                      <div className={`w-3.5 h-3.5 border flex items-center justify-center ${selectedFrame === frame ? 'border-black bg-black' : 'border-gray-300'}`}>
+                         {selectedFrame === frame && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                      </div>
+                      <span className={`text-[11px] font-bold uppercase tracking-widest ${selectedFrame === frame ? 'text-black' : 'text-gray-600'}`}>
+                        {frame}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add to Cart Area */}
+              <div className="flex flex-col gap-4 mb-10">
+                <div className="flex items-center gap-4">
+                  {/* Quantity */}
+                  <div className="flex items-center border border-[#E5E5E5] bg-white h-14 w-32">
+                    <button onClick={() => handleQuantity("dec")} className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors"><Minus className="w-4 h-4" /></button>
+                    <span className="flex-1 text-center text-[13px] font-bold">{quantity}</span>
+                    <button onClick={() => handleQuantity("inc")} className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors"><Plus className="w-4 h-4" /></button>
+                  </div>
+
+                  {/* Add to Cart Button */}
+                  <button 
+                    onClick={handleAddToCart}
+                    className="flex-1 h-14 bg-white border border-black text-black font-bold text-[11px] uppercase tracking-[0.2em] hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <ShoppingBag className="w-4 h-4" /> Add To Cart
+                  </button>
+                </div>
+
+                {/* Buy It Now Button */}
+                <button 
+                  onClick={handleBuyNow}
+                  className="w-full h-14 bg-[#222222] text-white font-bold text-[11px] uppercase tracking-[0.2em] hover:bg-[#2F4F4F] transition-all shadow-lg hover:shadow-xl"
+                >
+                  Buy It Now
+                </button>
+              </div>
+
+              {/* Trust Features */}
+              <div className="grid grid-cols-3 gap-2 py-6 border-y border-[#E5E5E5] mb-8">
+                <div className="flex flex-col items-center text-center gap-2">
+                  <Truck className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Free Shipping</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Secure Checkout</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">7-Day Returns</span>
+                </div>
+              </div>
+
+              {/* Accordions */}
+              <div className="border-b border-[#E5E5E5]">
+                <Accordion 
+                  title="Description" 
+                  isOpen={openAccordion === "description"} 
+                  onClick={() => setOpenAccordion(openAccordion === "description" ? null : "description")}
+                >
+                  <p className="text-[13px] leading-relaxed text-gray-600 font-light">{product.description}</p>
+                </Accordion>
+                <Accordion 
+                  title="Material & Quality" 
+                  isOpen={openAccordion === "material"} 
+                  onClick={() => setOpenAccordion(openAccordion === "material" ? null : "material")}
+                >
+                  <ul className="text-[13px] leading-relaxed text-gray-600 font-light list-disc pl-4 space-y-2">
+                    <li>250 GSM Premium Matte Paper.</li>
+                    <li>Archival inks to guarantee that they don't fade.</li>
+                    <li>Frames made from lightweight, high-quality synthetic wood.</li>
+                    <li>Acrylic glass shield to protect your artwork.</li>
+                  </ul>
+                </Accordion>
+                <Accordion 
+                  title="Shipping & Returns" 
+                  isOpen={openAccordion === "shipping"} 
+                  onClick={() => setOpenAccordion(openAccordion === "shipping" ? null : "shipping")}
+                >
+                  <p className="text-[13px] leading-relaxed text-gray-600 font-light mb-2">
+                    Orders are processed within 24-48 hours. Expected delivery within 5-7 business days across India.
+                  </p>
+                  <p className="text-[13px] leading-relaxed text-gray-600 font-light">
+                    Hassle-free 7 days replacement in case of transit damage.
+                  </p>
+                </Accordion>
+              </div>
+
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );
 };
+
+// Reusable Premium Accordion Component
+const Accordion = ({ title, children, isOpen, onClick }: { title: string, children: React.ReactNode, isOpen: boolean, onClick: () => void }) => (
+  <div className="border-t border-[#E5E5E5]">
+    <button 
+      onClick={onClick}
+      className="w-full flex items-center justify-between py-5 group"
+    >
+      <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#222222] group-hover:text-[#2F4F4F] transition-colors">{title}</span>
+      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+    </button>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+          initial={{ height: 0, opacity: 0 }} 
+          animate={{ height: "auto", opacity: 1 }} 
+          exit={{ height: 0, opacity: 0 }}
+          className="overflow-hidden"
+        >
+          <div className="pb-6 pr-4">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
 
 export default ProductDetail;
