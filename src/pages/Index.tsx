@@ -13,7 +13,10 @@ import {
   ShoppingBag
 } from "lucide-react";
 import heroBanner from "@/assets/hero-banner.jpg"; 
-
+import abc from './Unstoppable Mindset - Built for storms, not silence. A4Poster.com (1).jpg'
+import def from './Unstoppable Mindset - Born tired, trained relentless. 1 A4Poster.com.jpg'
+import ghi from './Unstoppable Mindset - Action over anxiety. Always.2 A4Poster.com.jpg'
+import jkl from './Unstoppable Mindset - Built for storms, not silence.1 A4Poster.com.jpg'
 // --- Types & Interfaces ---
 interface MoodCategory {
   title: string;
@@ -83,10 +86,10 @@ const Index: React.FC = () => {
 
   // 2. DATA: Best Sellers (NEW)
   const trendingProducts: Product[] = [
-    { id: 1, title: "The Hustle Mindset", price: "₹1,299", category: "Office", img: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=600" },
-    { id: 2, title: "Abstract Serenity", price: "₹999", category: "Living Room", img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&q=80&w=600" },
-    { id: 3, title: "Morning Coffee Brew", price: "₹899", category: "Kitchen", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=600" },
-    { id: 4, title: "Urban Dreams", price: "₹1,499", category: "Bedroom", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=600" },
+    { id: 1, title: "The Hustle Mindset", price: "₹1,299", category: "Office", img: abc},
+    { id: 2, title: "Abstract Serenity", price: "₹999", category: "Living Room", img: def },
+    { id: 3, title: "Morning Coffee Brew", price: "₹899", category: "Kitchen", img: ghi },
+    { id: 4, title: "Urban Dreams", price: "₹1,499", category: "Bedroom", img: jkl },
   ];
 
   return (
@@ -245,7 +248,7 @@ const Index: React.FC = () => {
           >
             {trendingProducts.map((product) => (
                 <motion.div key={product.id} variants={cardItemVariants} className="group cursor-pointer">
-                    <div className="relative w-full aspect-[4/5] bg-gray-100 overflow-hidden mb-4">
+                    <div className="relative w-full aspect-[5/7] bg-gray-100 overflow-hidden mb-4">
                         <img 
                             src={product.img} 
                             alt={product.title} 
