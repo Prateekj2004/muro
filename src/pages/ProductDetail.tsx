@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Minus, Plus, ShoppingBag, Truck, ShieldCheck, RefreshCw, ChevronDown, Check } from "lucide-react";
-import { useCart } from "@/lib/cart"; // Assuming aapka cart context yahan hai
-import { toast } from "sonner"; // Assuming you are using Sonner for toasts as per App.tsx
+import { useCart } from "@/lib/cart"; 
+import { toast } from "sonner"; 
 
 // --- Types ---
 interface ProductDetails {
@@ -17,9 +17,9 @@ interface ProductDetails {
 
 // --- Pricing Logic Multipliers ---
 const SIZE_PRICING = {
-  "A4 (8x12 inches)": 0,       // Base price
-  "A3 (12x18 inches)": 400,    // +₹400
-  "A2 (18x24 inches)": 900,    // +₹900
+  "A4 (8x12 inches)": 0,       
+  "A3 (12x18 inches)": 400,    
+  "A2 (18x24 inches)": 900,    
 };
 
 const FRAME_PRICING = {
@@ -32,7 +32,7 @@ const FRAME_PRICING = {
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // const { addItem } = useCart(); // Uncomment this when connecting to your actual cart context
+  // const { addItem } = useCart(); // Uncomment this later
 
   // --- States ---
   const [product, setProduct] = useState<ProductDetails | null>(null);
@@ -43,7 +43,6 @@ const ProductDetail: React.FC = () => {
   const [selectedFrame, setSelectedFrame] = useState<keyof typeof FRAME_PRICING>("Black Frame");
   const [quantity, setQuantity] = useState<number>(1);
   
-  // Accordion State
   const [openAccordion, setOpenAccordion] = useState<string | null>("description");
 
   // --- Mock API Fetch ---
@@ -51,11 +50,7 @@ const ProductDetail: React.FC = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        // TODO: Replace with actual API call using the 'id'
-        // const response = await fetch(`YOUR_API_URL/products/${id}`);
-        // const data = await response.json();
-        
-        await new Promise(resolve => setTimeout(resolve, 800)); // Fake delay
+        await new Promise(resolve => setTimeout(resolve, 800)); 
         
         const mockData: ProductDetails = {
           id: id || "1",
@@ -84,19 +79,16 @@ const ProductDetail: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [id]);
 
-  // --- Derived State ---
   const finalPrice = product 
     ? (product.basePrice + SIZE_PRICING[selectedSize] + FRAME_PRICING[selectedFrame]) * quantity 
     : 0;
 
-  // --- Handlers ---
   const handleQuantity = (type: "inc" | "dec") => {
     if (type === "dec" && quantity > 1) setQuantity(prev => prev - 1);
     if (type === "inc" && quantity < 10) setQuantity(prev => prev + 1);
   };
 
   const handleAddToCart = () => {
-    // addItem({ id: product?.id, title: product?.title, price: finalPrice / quantity, size: selectedSize, frame: selectedFrame, quantity, image: activeImage });
     toast.success(`${product?.title} added to your cart.`);
   };
 
@@ -137,12 +129,15 @@ const ProductDetail: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-5 md:px-8 pb-24">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
+        {/* Changed lg:gap-20 to lg:gap-16 and widths to lg:w-1/2 for perfect balance */}
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           
           {/* --- LEFT: IMAGE GALLERY --- */}
-          <div className="lg:w-3/5 flex flex-col md:flex-row-reverse gap-4 md:gap-6">
-            {/* Main Image */}
-            <div className="w-full md:w-5/6 bg-[#F4F4F4] aspect-[4/5] relative overflow-hidden">
+          {/* Constrained the max-width so it looks exactly like the trending cards */}
+          <div className="lg:w-1/2 flex flex-col md:flex-row-reverse gap-4 md:gap-6 lg:justify-end items-start">
+            
+            {/* Main Image - Now exactly aspect-[4/5] with a max-width limit */}
+            <div className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 bg-[#F4F4F4] aspect-[4/5] relative overflow-hidden shadow-sm">
               <motion.img 
                 key={activeImage}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
@@ -151,13 +146,14 @@ const ProductDetail: React.FC = () => {
                 className="w-full h-full object-cover"
               />
             </div>
+
             {/* Thumbnails */}
-            <div className="w-full md:w-1/6 flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-y-auto no-scrollbar pb-2 md:pb-0">
+            <div className="w-full md:w-20 flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-y-auto no-scrollbar pb-2 md:pb-0">
               {product.images.map((img, idx) => (
                 <button 
                   key={idx} 
                   onClick={() => setActiveImage(img)}
-                  className={`flex-shrink-0 w-20 md:w-full aspect-[4/5] bg-[#F4F4F4] border-2 transition-all ${activeImage === img ? 'border-black' : 'border-transparent hover:border-gray-300'}`}
+                  className={`flex-shrink-0 w-20 aspect-[4/5] bg-[#F4F4F4] border-2 transition-all ${activeImage === img ? 'border-black' : 'border-transparent hover:border-gray-300'}`}
                 >
                   <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
                 </button>
@@ -166,8 +162,8 @@ const ProductDetail: React.FC = () => {
           </div>
 
           {/* --- RIGHT: PRODUCT DETAILS (Sticky) --- */}
-          <div className="lg:w-2/5 relative">
-            <div className="lg:sticky lg:top-[100px]">
+          <div className="lg:w-1/2 relative">
+            <div className="lg:sticky lg:top-[100px] lg:pl-8">
               
               {/* Title & Price */}
               <div className="mb-8 border-b border-[#E5E5E5] pb-8">
