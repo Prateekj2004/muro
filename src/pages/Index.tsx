@@ -120,13 +120,13 @@ const Index: React.FC = () => {
           >
             <motion.h1 
               variants={fadeInUp} 
-              className="font-serif text-5xl md:text-7xl font-light leading-[1.1] text-white mb-6 drop-shadow-md"
+              className="font-serif text-5xl md:text-7xl font-normal leading-[1.3] text-white mb-6 drop-shadow-md"
             >
               Transform Your Walls Into Stories.
             </motion.h1>
             <motion.p 
               variants={fadeInUp} 
-              className="text-white/90 text-lg md:text-xl font-light mb-8 max-w-lg leading-relaxed drop-shadow-md"
+              className="text-white text-lg md:text-2xl font-normal mb-8 max-w-lg leading-relaxed drop-shadow-md"
             >
               Premium poster prints curated for those who appreciate the art of living beautifully.
             </motion.p>
