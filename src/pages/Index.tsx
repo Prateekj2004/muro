@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
 import { 
@@ -97,7 +97,7 @@ const Index: React.FC = () => {
 
   // --- NAYA DATA: Room Slider ke liye ---
   const roomSlides = [
-    { title: "Living Room", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=800", link: "living-room" },
+    { title: "Living Room", img: "https://tse1.mm.bing.net/th/id/OIP.Jzod_EnLBcbYmSGO7RMuugHaE8?rs=1&pid=ImgDetMain&o=7&rm=3", link: "living-room" },
     { title: "Bedroom", img: "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=800", link: "bedroom" },
     { title: "Office", img: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&q=80&w=800", link: "office" },
     { title: "Kids Room", img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=800", link: "kids" },
@@ -148,7 +148,6 @@ const Index: React.FC = () => {
             animate="show"
             className="max-w-2xl"
           >
-            {/* Font "daba-daba" fix apply kiya hua hai (font-normal & leading-[1.3]) */}
             <motion.h1 
               variants={fadeInUp} 
               className="font-serif text-5xl md:text-7xl font-normal leading-[1.3] text-white mb-6 drop-shadow-md"
@@ -279,7 +278,7 @@ const Index: React.FC = () => {
           >
             {trendingProducts.map((product) => (
                 <motion.div key={product.id} variants={cardItemVariants} className="group cursor-pointer">
-                    <div className="relative w-full aspect-[5/7] bg-gray-100 overflow-hidden mb-4 rounded-sm">
+                    <div className="relative w-full aspect-[5/7] bg-gray-100 overflow-hidden mb-4">
                         <img 
                             src={product.img} 
                             alt={product.title} 
@@ -306,7 +305,7 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. DESIGNED FOR EVERY WALL (PERFECT GAP & NO OVERLAP) */}
+      {/* 4. DESIGNED FOR EVERY WALL (3D CAROUSEL WITH 5 VISIBLE IMAGES) */}
       <section className="py-24 bg-[#F9F9F9] font-sans overflow-hidden border-t border-[#E5E5E5]">
         <div className="container mx-auto px-4 md:px-8 text-center mb-16">
           <motion.span 
@@ -356,8 +355,7 @@ const Index: React.FC = () => {
               if (diff < -Math.floor(total / 2)) diff += total;
               if (diff > Math.floor(total / 2)) diff -= total;
 
-              // Apply styles based on position
-              // FIXED TRANSLATE VALUES FOR EXACT GAP (Like Twisha Jewels SS)
+              // Apply styles based on position (0 is center, 1 is right1, 2 is right2, -1 is left1, -2 is left2)
               let positionClasses = "opacity-0 scale-50 z-0 pointer-events-none translate-x-0";
               
               if (diff === 0) {
@@ -365,16 +363,16 @@ const Index: React.FC = () => {
                 positionClasses = "opacity-100 scale-100 z-30 translate-x-0 shadow-2xl"; 
               } else if (diff === 1) {
                 // RIGHT SIDE 1
-                positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 translate-x-[95%] md:translate-x-[105%] cursor-pointer hover:opacity-100"; 
+                positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 translate-x-[55%] md:translate-x-[65%] cursor-pointer hover:opacity-100"; 
               } else if (diff === -1) {
                 // LEFT SIDE 1
-                positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 -translate-x-[95%] md:-translate-x-[105%] cursor-pointer hover:opacity-100"; 
+                positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 -translate-x-[55%] md:-translate-x-[65%] cursor-pointer hover:opacity-100"; 
               } else if (diff === 2) {
                 // RIGHT SIDE 2 (Extreme Right)
-                positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 translate-x-[170%] md:translate-x-[190%] cursor-pointer hover:opacity-70 hidden sm:block"; 
+                positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 translate-x-[105%] md:translate-x-[125%] cursor-pointer hover:opacity-70 hidden sm:block"; 
               } else if (diff === -2) {
                 // LEFT SIDE 2 (Extreme Left)
-                positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 -translate-x-[170%] md:-translate-x-[190%] cursor-pointer hover:opacity-70 hidden sm:block"; 
+                positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 -translate-x-[105%] md:-translate-x-[125%] cursor-pointer hover:opacity-70 hidden sm:block"; 
               }
 
               return (
@@ -382,11 +380,11 @@ const Index: React.FC = () => {
                   key={index}
                   className={`absolute w-[65vw] md:w-[380px] aspect-[4/5] transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${positionClasses}`}
                   onClick={() => {
-                    // Clicking an inactive image brings it to center
+                    // Agar user un-active image pe click kare to wo auto-center me aa jaye
                     if (diff !== 0) setCurrentSlide(index);
                   }}
                 >
-                  <div className="block w-full h-full relative group overflow-hidden bg-gray-100 rounded-2xl shadow-md border border-[#E5E5E5]/50">
+                  <div className="block w-full h-full relative group overflow-hidden bg-gray-100 rounded-sm">
                     {diff === 0 && (
                       <Link to={`/products?room=${room.title}`} className="absolute inset-0 z-40" />
                     )}
