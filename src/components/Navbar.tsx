@@ -85,7 +85,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E5E5] h-[64px] font-sans text-black">
+    <header className="sticky top-0 z-50 w-full bg-[#57663D] h-[64px] font-sans text-white">
       <div className="w-full h-full px-5 md:px-8 xl:px-12 flex items-center justify-between">
         
         {/* 1. LEFT: LOGO */}
@@ -109,8 +109,8 @@ const Navbar = () => {
         <nav className="flex-none hidden ml-[100px] lg:flex justify-center items-center gap-4 xl:gap-6 relative -left-4 xl:-left-8 h-full">
           <NavLink 
             to="/" 
-            className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
-            activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
+            className="text-[13px] font-[500] text-white uppercase tracking-[0.1em] transition-opacity"
+            activeClassName="underline-offset-[6px] decoration-[1.5px]"
           >
             Home
           </NavLink>
@@ -119,7 +119,7 @@ const Navbar = () => {
           <div className="relative group h-full flex items-center cursor-pointer">
             <NavLink 
               to="/products" 
-              className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity flex items-center gap-1"
+              className="text-[13px] font-[500] text- uppercase tracking-[0.1em] hover:opacity-60 transition-opacity flex items-center gap-1"
               activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
             >
               Products <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300 ease-in-out" strokeWidth={2}/>
@@ -141,7 +141,7 @@ const Navbar = () => {
 
           <NavLink 
             to="/bestsellers" 
-            className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
+            className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
             activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
           >
             Bestsellers
@@ -149,7 +149,7 @@ const Navbar = () => {
 
           <NavLink 
             to="/new-arrivals" 
-            className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
+            className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
             activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
           >
             New Arrivals
@@ -157,7 +157,7 @@ const Navbar = () => {
 
           <NavLink 
             to="/customisation" 
-            className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
+            className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
             activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
           >
             Customisation
@@ -165,7 +165,7 @@ const Navbar = () => {
 
           <NavLink 
             to="/about" 
-            className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
+            className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
             activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
           >
             About MURO
@@ -173,7 +173,7 @@ const Navbar = () => {
 
           <NavLink 
             to="/contact" 
-            className="text-[13px] font-[500] text-[#000000] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
+            className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
             activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
           >
             Contact
@@ -187,8 +187,8 @@ const Navbar = () => {
             onClick={() => setIsSearchOpen(true)}
             className="flex items-center gap-1.5 hover:opacity-60 transition-opacity cursor-pointer"
           >
-            <Search className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
-            <span className="text-[10px] xl:text-[11px] font-[400] text-[#333333] hidden xl:block whitespace-nowrap uppercase tracking-wider">Search</span>
+            <Search className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#fff]" strokeWidth={1.2} />
+            <span className="text-[10px] xl:text-[11px] font-[400] text-[#fff] hidden xl:block whitespace-nowrap uppercase tracking-wider">Search</span>
           </button>
 
           {/* 🔥 AUTH PROFILE / CLICK DROPDOWN */}
@@ -199,7 +199,7 @@ const Navbar = () => {
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-1 hover:opacity-60 transition-opacity cursor-pointer"
                 >
-                  <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
+                  <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#fff]" strokeWidth={1.2} />
                 </button>
                 
                 {/* Profile Dropdown Box */}
@@ -235,7 +235,7 @@ const Navbar = () => {
                 className="hover:opacity-60 transition-opacity"
                 activeClassName="opacity-60"
               >
-                <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
+                <User className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#fff]" strokeWidth={1.2} />
               </NavLink>
             )}
           </div>
@@ -245,7 +245,7 @@ const Navbar = () => {
             className="relative hover:opacity-60 transition-opacity"
             activeClassName="opacity-60"
           >
-            <ShoppingBag className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#000000]" strokeWidth={1.2} />
+            <ShoppingBag className="w-[16px] h-[16px] xl:w-[18px] xl:h-[18px] text-[#fff]" strokeWidth={1.2} />
             {itemCount > 0 && (
               <span className="absolute -top-1.5 -right-2 bg-[#222222] text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center font-sans shadow-sm">
                 {itemCount}
