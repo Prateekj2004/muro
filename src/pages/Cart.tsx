@@ -4,90 +4,60 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, X } from "lucide-react";
 import { toast } from "sonner";
 
-// --- Static Initial Data ---
-const STATIC_PRODUCT = {
-  product_id: 1,
-  title: "Premium Aesthetic Poster",
-  price: "899.00",
-  qty: 1,
-  line_total: "899.00",
-  image_url: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&q=80"
-};
-
 const Cart: React.FC = () => {
   const navigate = useNavigate();
   
-  // State initialization with static product
-  const [cartItems, setCartItems] = useState<any[]>([STATIC_PRODUCT]);
-  const [cartTotal, setCartTotal] = useState<number>(899);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [actionLoading, setActionLoading] = useState<boolean>(false);
-  
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [checkoutData, setCheckoutData] = useState({
-    shipping_name: "",
-    shipping_phone: "",
-    shipping_address1: "",
-    shipping_address2: "",
-    shipping_city: "",
-    shipping_state: "",
-    shipping_pincode: ""
+  // INITIALIZE FROM LOCAL STORAGE
+  const [cartItems, setCartItems] = useState<any[]>(() => {
+    return JSON.parse(localStorage.getItem("muro_cart") || "[]");
   });
 
-  // Calculate total whenever items change
+  const [cartTotal, setCartTotal] = useState<number>(0);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  
+  const [checkoutData, setCheckoutData] = useState({
+    shipping_name: "", shipping_phone: "", shipping_address1: "",
+    shipping_city: "", shipping_pincode: ""
+  });
+
+  // Calculate total whenever items change & sync with storage
   useEffect(() => {
     const total = cartItems.reduce((acc, item) => acc + (parseFloat(item.price) * item.qty), 0);
     setCartTotal(total);
+    localStorage.setItem("muro_cart", JSON.stringify(cartItems));
+    window.dispatchEvent(new Event("storage"));
   }, [cartItems]);
 
-  // ==========================================
-  // MOCK UPDATE QUANTITY (No API)
-  // ==========================================
-  const updateQuantity = (productId: number, newQty: number) => {
+  const updateQuantity = (index: number, newQty: number) => {
     if (newQty < 1) return;
-    setCartItems(prev => prev.map(item => 
-      item.product_id === productId 
-        ? { ...item, qty: newQty, line_total: (parseFloat(item.price) * newQty).toFixed(2) } 
-        : item
-    ));
+    const newItems = [...cartItems];
+    newItems[index].qty = newQty;
+    newItems[index].line_total = (parseFloat(newItems[index].price) * newQty).toFixed(2);
+    setCartItems(newItems);
   };
 
-  // ==========================================
-  // MOCK REMOVE ITEM (No API)
-  // ==========================================
-  const removeItem = (productId: number) => {
-    setCartItems(prev => prev.filter(item => item.product_id !== productId));
+  const removeItem = (index: number) => {
+    const newItems = cartItems.filter((_, i) => i !== index);
+    setCartItems(newItems);
     toast.success("Item removed from cart.");
   };
 
-  // ==========================================
-  // MOCK CHECKOUT (No API)
-  // ==========================================
   const handleCheckoutSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setActionLoading(true);
-    
-    // Simulating a delay
     setTimeout(() => {
-      toast.success("Order Placed Successfully! (Demo Mode) 🎉");
+      toast.success("Order Placed Successfully! 🎉");
       setIsCheckoutOpen(false);
       setCartItems([]);
+      localStorage.removeItem("muro_cart");
       setActionLoading(false);
-      navigate("/"); // Redirect to home
+      navigate("/");
     }, 1500);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
     <main className="bg-white min-h-screen font-sans text-[#222222] pb-24 relative">
-      
       <div className="bg-[#F0EEE9]/30 py-16 text-center border-b border-[#E5E5E5]">
         <h1 className="font-serif text-4xl font-light tracking-tight">Shopping Cart</h1>
       </div>
@@ -95,16 +65,12 @@ const Cart: React.FC = () => {
       <div className="container mx-auto px-5 md:px-8 mt-12 max-w-6xl">
         {cartItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ShoppingBag className="w-16 h-16 text-gray-200 mb-6" strokeWidth={1} />
+            <ShoppingBag className="w-16 h-16 text-gray-100 mb-6" strokeWidth={1} />
             <p className="text-xl font-serif mb-6">Your cart is currently empty.</p>
-            <Link to="/products" className="bg-[#222222] text-white px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[#2F4F4F] transition-colors">
-              Continue Shopping
-            </Link>
+            <Link to="/products" className="bg-[#222222] text-white px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[#2F4F4F] transition-colors">Continue Shopping</Link>
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
-            
-            {/* CART ITEMS LIST */}
             <div className="flex-1">
               <div className="hidden md:grid grid-cols-12 gap-4 pb-4 border-b border-[#E5E5E5] text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-6">
                 <div className="col-span-6">Product</div>
@@ -115,82 +81,48 @@ const Cart: React.FC = () => {
 
               <div className="space-y-6">
                 <AnimatePresence>
-                  {cartItems.map((item) => (
-                    <motion.div 
-                      key={item.product_id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="flex flex-col md:grid md:grid-cols-12 items-center gap-4 pb-6 border-b border-gray-100"
-                    >
+                  {cartItems.map((item, idx) => (
+                    <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col md:grid md:grid-cols-12 items-center gap-4 pb-6 border-b border-gray-100">
                       <div className="col-span-6 flex items-center gap-6 w-full">
                         <div className="w-20 md:w-24 aspect-[4/5] bg-[#F4F4F4] flex-shrink-0 border border-gray-100">
                           <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col">
                           <span className="font-serif text-lg line-clamp-1">{item.title}</span>
+                          <span className="text-[11px] text-gray-400 uppercase font-bold tracking-widest mt-1">{item.variant}</span>
                           <span className="text-[12px] text-gray-500 mt-1 font-medium">₹{item.price}</span>
                         </div>
                       </div>
-
-                      <div className="col-span-2 flex justify-center w-full md:w-auto mt-4 md:mt-0">
+                      <div className="col-span-2 flex justify-center mt-4 md:mt-0">
                         <div className="flex items-center border border-[#E5E5E5] h-10 w-28 bg-white">
-                          <button onClick={() => updateQuantity(item.product_id, item.qty - 1)} className="w-8 flex items-center justify-center hover:bg-gray-50"><Minus size={14}/></button>
+                          <button onClick={() => updateQuantity(idx, item.qty - 1)} className="w-8 flex items-center justify-center hover:bg-gray-50"><Minus size={14}/></button>
                           <span className="flex-1 text-center text-xs font-bold">{item.qty}</span>
-                          <button onClick={() => updateQuantity(item.product_id, item.qty + 1)} className="w-8 flex items-center justify-center hover:bg-gray-50"><Plus size={14}/></button>
+                          <button onClick={() => updateQuantity(idx, item.qty + 1)} className="w-8 flex items-center justify-center hover:bg-gray-50"><Plus size={14}/></button>
                         </div>
                       </div>
-
-                      <div className="col-span-3 text-right w-full md:w-auto mt-2 md:mt-0 text-sm font-bold">
-                        ₹{item.line_total}
-                      </div>
-
-                      <div className="col-span-1 flex justify-end w-full md:w-auto">
-                        <button onClick={() => removeItem(item.product_id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      <div className="col-span-3 text-right w-full md:w-auto text-sm font-bold">₹{item.line_total}</div>
+                      <div className="col-span-1 flex justify-end"><button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-red-500 p-2"><Trash2 size={16} /></button></div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </div>
             </div>
 
-            {/* ORDER SUMMARY */}
             <div className="lg:w-[380px] flex-shrink-0">
               <div className="bg-[#FAFAFA] p-8 border border-[#E5E5E5] sticky top-24">
                 <h3 className="font-serif text-xl mb-6">Order Summary</h3>
-                
                 <div className="space-y-4 border-b border-gray-200 pb-6 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Subtotal</span>
-                    <span className="font-medium">₹{cartTotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Shipping</span>
-                    <span className="text-green-600 font-medium">Free</span>
-                  </div>
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span className="font-medium">₹{cartTotal.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Shipping</span><span className="text-green-600 font-medium">Free</span></div>
                 </div>
-
-                <div className="flex justify-between items-center mb-8">
-                  <span className="font-bold text-base">Total</span>
-                  <span className="font-bold text-xl">₹{cartTotal.toFixed(2)}</span>
-                </div>
-
-                <button 
-                  onClick={() => setIsCheckoutOpen(true)}
-                  className="w-full bg-[#222222] text-white py-4 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[#2F4F4F] transition-colors flex items-center justify-center gap-2 shadow-lg"
-                >
-                  Proceed to Checkout <ArrowRight size={14} />
-                </button>
+                <div className="flex justify-between items-center mb-8"><span className="font-bold text-base">Total</span><span className="font-bold text-xl">₹{cartTotal.toFixed(2)}</span></div>
+                <button onClick={() => setIsCheckoutOpen(true)} className="w-full bg-[#222222] text-white py-4 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[#2F4F4F] transition-colors flex items-center justify-center gap-2 shadow-lg">Proceed to Checkout <ArrowRight size={14} /></button>
               </div>
             </div>
-
           </div>
         )}
       </div>
 
-      {/* CHECKOUT MODAL */}
       <AnimatePresence>
         {isCheckoutOpen && (
           <>
@@ -227,10 +159,7 @@ const Cart: React.FC = () => {
                 </form>
               </div>
               <div className="p-6 border-t border-[#E5E5E5] bg-[#FAFAFA]">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-bold text-gray-500">Amount to Pay</span>
-                  <span className="font-bold text-xl text-black">₹{cartTotal.toFixed(2)}</span>
-                </div>
+                <div className="flex justify-between items-center mb-4"><span className="font-bold text-gray-500">Amount to Pay</span><span className="font-bold text-xl text-black">₹{cartTotal.toFixed(2)}</span></div>
                 <button type="submit" form="checkoutForm" disabled={actionLoading} className={`w-full bg-[#57663D] text-white py-4 text-[11px] font-bold uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 ${actionLoading ? 'opacity-50' : 'hover:bg-[#465330]'}`}>
                   {actionLoading ? "Processing..." : "Place Order Now"}
                 </button>
@@ -239,7 +168,6 @@ const Cart: React.FC = () => {
           </>
         )}
       </AnimatePresence>
-
     </main>
   );
 };
