@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { ShoppingBag } from "lucide-react";
 import { API } from "@/services/api";
 
-// Exact categories matching your requirements
 export const CATEGORIES = [
   "ALL",
   "MOTIVATIONAL & MINDSET",
@@ -46,7 +45,6 @@ const Products: React.FC = () => {
     fetchCatalog();
   }, []);
 
-  // Filter Logic
   useEffect(() => {
     if (selectedCategory === "ALL") {
       setProducts(allProducts);
@@ -57,29 +55,27 @@ const Products: React.FC = () => {
   }, [selectedCategory, allProducts]);
 
   return (
-    <main className="bg-[#FCFCFA] min-h-screen font-sans text-[#222222]">
+    <main className="bg-white min-h-screen font-sans text-[#111111]">
       
       {/* HEADER SECTION */}
-      <div className="pt-16 pb-8 text-center px-4">
-        <h1 className="font-serif text-3xl md:text-5xl text-[#222] mb-10 capitalize">
-          {selectedCategory === "ALL" ? "Shop All" : selectedCategory.toLowerCase()}
+      <div className="pt-16 pb-10 text-center px-4">
+        <h1 className="font-serif text-3xl md:text-4xl text-[#111] mb-8 capitalize tracking-wide">
+          {selectedCategory === "ALL" ? "Posters & Art Prints" : selectedCategory.toLowerCase()}
         </h1>
 
-        {/* 🔥 FIX 1: CATEGORIES WRAP 
-          'flex-nowrap' aur 'overflow' hata kar 'flex-wrap' lagaya hai 
-        */}
+        {/* CATEGORY TABS */}
         <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pb-4 px-2 sm:px-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pb-2 px-2 sm:px-4">
             {CATEGORIES.map((cat) => {
               const isActive = selectedCategory === cat;
               return (
                 <button 
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-2 sm:px-5 sm:py-2.5 text-[8.5px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
+                  className={`px-4 py-2 sm:px-5 sm:py-2.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full ${
                     isActive 
-                      ? "bg-[#515D43] text-white" 
-                      : "bg-[#F0EEE9] text-[#555] hover:bg-[#E5E2DB]" 
+                      ? "bg-[#111] text-white" 
+                      : "bg-[#F5F5F5] text-[#555] hover:bg-[#EBEBEB]" 
                   }`}
                 >
                   {cat}
@@ -94,62 +90,66 @@ const Products: React.FC = () => {
       <div className="container mx-auto px-4 md:px-8 pb-24 max-w-7xl">
         {loading ? (
           <div className="h-[40vh] flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-[#515D43] border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-6 h-6 border-2 border-[#111] border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : products.length === 0 ? (
           <div className="h-[40vh] flex flex-col items-center justify-center text-gray-400">
-            <ShoppingBag size={48} className="mb-4 opacity-20" />
-            <p className="font-serif text-lg">No artworks found in this category.</p>
+            <ShoppingBag size={40} className="mb-4 opacity-20" strokeWidth={1.5} />
+            <p className="font-serif text-lg text-[#555]">No artworks found in this category.</p>
           </div>
         ) : (
-          /* 🔥 FIX 2: MOBILE GRID (2 items per row)
-            grid-cols-2 by default (for mobile), and gap adjusted
-          */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 sm:gap-x-6 sm:gap-y-12 mt-4 sm:mt-8">
+          /* GRID: 2 cols on mobile, 3 on tablet, 4 on desktop */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-12 mt-6">
             {products.map((product, idx) => {
               const imgPath = product.image_url || product.image || "https://images.unsplash.com/photo-1549490349-8643362247b5";
+              
+              // Mock bestseller logic
               const isBestseller = idx % 4 === 0 || product.stock < 10;
 
               return (
                 <motion.div 
-                  initial={{ opacity: 0, y: 10 }} 
+                  initial={{ opacity: 0, y: 15 }} 
                   animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: idx * 0.05 }}
+                  transition={{ delay: idx * 0.05, duration: 0.4 }}
                   key={product.id} 
-                  className="group cursor-pointer flex flex-col"
                 >
-                  {/* IMAGE CONTAINER */}
-                  <Link to={`/product/${product.id}`} className="block relative aspect-[4/5] bg-white mb-3 sm:mb-5 overflow-hidden">
-                    {/* BESTSELLER BADGE (Scaled for mobile) */}
-                    {isBestseller && (
-                      <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#515D43] text-white text-[7px] sm:text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 shadow-sm">
-                        Bestseller
-                      </span>
-                    )}
+                  <Link to={`/product/${product.id}`} className="group block w-full">
                     
-                    <img 
-                      src={imgPath} 
-                      alt={product.title} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    />
-                    
-                    {/* HOVER ADD TO CART OVERLAY (Scaled text for mobile) */}
-                    <div className="absolute inset-x-0 bottom-0 p-2 sm:p-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 ease-out">
-                      <button className="w-full bg-white/90 backdrop-blur-sm text-black py-2 sm:py-3 text-[8px] sm:text-[10px] font-bold uppercase tracking-widest shadow-xl flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-black hover:text-white transition-colors">
-                        <ShoppingBag size={12} className="sm:w-[14px] sm:h-[14px]" /> View Art
-                      </button>
+                    {/* POSTERY STYLE IMAGE CONTAINER (3:4 Ratio) */}
+                    <div className="relative w-full aspect-[3/4] bg-[#F7F7F7] overflow-hidden mb-3">
+                      
+                      {/* MINIMALIST BADGE */}
+                      {isBestseller && (
+                        <div className="absolute top-3 left-3 z-10 bg-white/95 px-2 py-1 text-[8px] sm:text-[9px] font-bold tracking-widest uppercase text-[#111] shadow-sm">
+                          Bestseller
+                        </div>
+                      )}
+                      
+                      <img 
+                        src={imgPath} 
+                        alt={product.title} 
+                        className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105" 
+                      />
+                      
+                      {/* SLEEK HOVER BUTTON (Circular cart icon) */}
+                      <div className="absolute bottom-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
+                        <div className="bg-white p-2.5 rounded-full shadow-lg text-[#111] hover:bg-[#111] hover:text-white transition-colors duration-300">
+                          <ShoppingBag size={16} strokeWidth={1.5} />
+                        </div>
+                      </div>
                     </div>
-                  </Link>
 
-                  {/* PRODUCT INFO (Font sizes adjusted for 2-column mobile layout) */}
-                  <div className="text-left px-1">
-                    <h4 className="font-serif text-[13px] sm:text-[17px] text-[#222] mb-1 sm:mb-1.5 group-hover:text-[#515D43] transition-colors line-clamp-1">
-                      {product.title}
-                    </h4>
-                    <p className="text-[11px] sm:text-[13px] text-[#666]">
-                      From ₹{product.price}
-                    </p>
-                  </div>
+                    {/* POSTERY STYLE TYPOGRAPHY */}
+                    <div className="flex flex-col text-left px-0.5">
+                      <h3 className="text-[12px] sm:text-[14px] text-[#111] font-medium tracking-wide line-clamp-1 mb-0.5">
+                        {product.title}
+                      </h3>
+                      <p className="text-[11px] sm:text-[13px] text-[#777] font-normal">
+                        From ₹{product.price}
+                      </p>
+                    </div>
+                    
+                  </Link>
                 </motion.div>
               );
             })}

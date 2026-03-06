@@ -52,7 +52,7 @@ const Auth: React.FC = () => {
     
     toast.success(`Welcome back, ${user.name}!`);
 
-    // 3. Force Redirect (Bypassing React Router for reliability)
+    // 3. Force Redirect
     if (role === "ADMIN") {
       window.location.href = "/admin/dashboard"; 
     } else {
@@ -156,25 +156,29 @@ const Auth: React.FC = () => {
           {!isLogin && (
             <div className="relative group">
               <User className="absolute left-0 top-3 w-[18px] h-[18px] text-gray-400 group-focus-within:text-black transition-colors" strokeWidth={1.5} />
-              <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="FULL NAME" className="w-full pl-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent uppercase" />
+              {/* 🔥 FIX: Removed 'uppercase' from className */}
+              <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="FULL NAME" className="w-full pl-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent" />
             </div>
           )}
 
           <div className="relative group">
             <Mail className="absolute left-0 top-3 w-[18px] h-[18px] text-gray-400 group-focus-within:text-black transition-colors" strokeWidth={1.5} />
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="EMAIL ADDRESS" className="w-full pl-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent uppercase" />
+            {/* 🔥 FIX: Removed 'uppercase' from className */}
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="EMAIL ADDRESS" className="w-full pl-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent" />
           </div>
 
           {!isLogin && (
             <div className="relative group">
               <Phone className="absolute left-0 top-3 w-[18px] h-[18px] text-gray-400 group-focus-within:text-black transition-colors" strokeWidth={1.5} />
-              <input type="tel" required value={contact} onChange={(e) => setContact(e.target.value.replace(/\D/g, ''))} placeholder="CONTACT NUMBER" maxLength={10} className="w-full pl-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent uppercase" />
+              {/* 🔥 FIX: Removed 'uppercase' from className */}
+              <input type="tel" required value={contact} onChange={(e) => setContact(e.target.value.replace(/\D/g, ''))} placeholder="CONTACT NUMBER" maxLength={10} className="w-full pl-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent" />
             </div>
           )}
 
           <div className="relative group">
             <Lock className="absolute left-0 top-3 w-[18px] h-[18px] text-gray-400 group-focus-within:text-black transition-colors" strokeWidth={1.5} />
-            <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="PASSWORD" className="w-full pl-8 pr-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent uppercase" />
+            {/* 🔥 FIX: Removed 'uppercase' from className */}
+            <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="PASSWORD" className="w-full pl-8 pr-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent" />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-0 top-3 text-gray-400 hover:text-black transition-colors">
               {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
             </button>
@@ -183,7 +187,8 @@ const Auth: React.FC = () => {
           {!isLogin && (
             <div className="relative group">
               <Lock className="absolute left-0 top-3 w-[18px] h-[18px] text-gray-400 group-focus-within:text-black transition-colors" strokeWidth={1.5} />
-              <input type={showConfirmPassword ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="CONFIRM PASSWORD" className="w-full pl-8 pr-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent uppercase" />
+              {/* 🔥 FIX: Removed 'uppercase' from className */}
+              <input type={showConfirmPassword ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="CONFIRM PASSWORD" className="w-full pl-8 pr-8 pb-3 text-[13px] tracking-wider outline-none border-b border-[#E5E5E5] focus:border-black placeholder:text-gray-400 transition-colors bg-transparent" />
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-0 top-3 text-gray-400 hover:text-black transition-colors">
                 {showConfirmPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
               </button>
