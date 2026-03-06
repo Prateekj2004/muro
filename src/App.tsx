@@ -28,11 +28,18 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
-// Admin Route Guard
+// ==========================================
+// 🔥 FIXED ADMIN ROUTE GUARD
+// ==========================================
 const IsAdmin = ({ children }: { children: JSX.Element }) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  // Checks if the logged-in user has the role 'admin'
-  return user.role === "admin" ? children : <Navigate replace to="/login" />;
+  
+  // ✅ Backend se "ADMIN" aa raha hai, isliye .toUpperCase() karke check karenge
+  const isAdmin = user.role?.toUpperCase() === "ADMIN";
+  
+  console.log("Guard Check - User Role:", user.role, "Is Admin?", isAdmin);
+  
+  return isAdmin ? children : <Navigate replace to="/login" />;
 };
 
 const App = () => (
@@ -59,7 +66,14 @@ const App = () => (
             <Route path="/cart" element={<Cart />} />
 
             {/* --- ADMIN ROUTE SECURED --- */}
-            <Route path="/admin/dashboard" element={<IsAdmin><AdminDashboard /></IsAdmin>} />
+            <Route 
+              path="/admin/dashboard" 
+              element={
+                <IsAdmin>
+                  <AdminDashboard />
+                </IsAdmin>
+              } 
+            />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
