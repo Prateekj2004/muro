@@ -11,7 +11,7 @@ import Footer from "@/components/Footer";
 
 // Pages
 import Index from "./pages/Index";
-import Products from "./pages/Products"; // <-- Yeh update kiya (Shop se Products)
+import Products from "./pages/Products"; 
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
@@ -28,10 +28,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
-// Optional: Admin Check function (Basic version)
-// Ise baad mein production ke liye use kar sakte hain
+// Admin Route Guard
 const IsAdmin = ({ children }: { children: JSX.Element }) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  // Checks if the logged-in user has the role 'admin'
   return user.role === "admin" ? children : <Navigate replace to="/login" />;
 };
 
@@ -54,16 +54,12 @@ const App = () => (
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/faq" element={<FAQ />} />
             
-            {/* --- PRODUCTS ROUTE UPDATE KIYA HAI --- */}
             <Route path="/products" element={<Products />} />
-            
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
 
-            {/* --- ADMIN ROUTE START --- */}
-            {/* IsAdmin guard ko abhi ignore kiya hai direct routing ke liye */}
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            {/* --- ADMIN ROUTE END --- */}
+            {/* --- ADMIN ROUTE SECURED --- */}
+            <Route path="/admin/dashboard" element={<IsAdmin><AdminDashboard /></IsAdmin>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

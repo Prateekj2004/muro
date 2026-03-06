@@ -14,11 +14,13 @@ import {
   ChevronLeft, 
   ChevronRight
 } from "lucide-react";
+
+// --- Local Asset Imports ---
 import heroBanner from "@/assets/hero-banner.jpg"; 
-import abc from './Unstoppable Mindset - Built for storms, not silence. A4Poster.com (1).jpg'
-import def from './Unstoppable Mindset - Born tired, trained relentless. 1 A4Poster.com.jpg'
-import ghi from './Unstoppable Mindset - Action over anxiety. Always.2 A4Poster.com.jpg'
-import jkl from './Unstoppable Mindset - Built for storms, not silence.1 A4Poster.com.jpg'
+import abc from './Unstoppable Mindset - Built for storms, not silence. A4Poster.com (1).jpg';
+import def from './Unstoppable Mindset - Born tired, trained relentless. 1 A4Poster.com.jpg';
+import ghi from './Unstoppable Mindset - Action over anxiety. Always.2 A4Poster.com.jpg';
+import jkl from './Unstoppable Mindset - Built for storms, not silence.1 A4Poster.com.jpg';
 
 // --- Types & Interfaces ---
 interface MoodCategory {
@@ -47,31 +49,17 @@ const smoothEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
-  show: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { duration: 0.8, ease: smoothEase } 
-  }
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: smoothEase } }
 };
 
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1
-    }
-  }
+  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } }
 };
 
 const cardItemVariants: Variants = {
   hidden: { opacity: 0, y: 30 },
-  show: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { duration: 0.6, ease: smoothEase } 
-  }
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: smoothEase } }
 };
 
 const Index: React.FC = () => {
@@ -87,7 +75,7 @@ const Index: React.FC = () => {
     { title: "Customization", subtitle: "Your Unique Story", img: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=800", link: "custom" }
   ];
 
-  // 2. DATA: Best Sellers (NEW)
+  // 2. DATA: Best Sellers
   const trendingProducts: Product[] = [
     { id: 1, title: "The Hustle Mindset", price: "₹1,299", category: "Office", img: abc},
     { id: 2, title: "Abstract Serenity", price: "₹999", category: "Living Room", img: def },
@@ -95,9 +83,9 @@ const Index: React.FC = () => {
     { id: 4, title: "Urban Dreams", price: "₹1,499", category: "Bedroom", img: jkl },
   ];
 
-  // --- NAYA DATA: Room Slider ke liye ---
+  // 3. YOUR ORIGINAL ROOM DATA
   const roomSlides = [
-    { title: "Living Room", img: "https://tse1.mm.bing.net/th/id/OIP.Jzod_EnLBcbYmSGO7RMuugHaE8?rs=1&pid=ImgDetMain&o=7&rm=3", link: "living-room" },
+    { title: "Living Room", img: "https://www.bing.com/th/id/OIP.c-KkU1zCEHXm0t9ZrXjtmwHaEO?w=399&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2", link: "living-room" },
     { title: "Bedroom", img: "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=800", link: "bedroom" },
     { title: "Office", img: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&q=80&w=800", link: "office" },
     { title: "Kids Room", img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=800", link: "kids" },
@@ -118,12 +106,12 @@ const Index: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       nextSlide();
-    }, 3000); // 3 seconds autoplay
+    }, 4000); 
     return () => clearInterval(timer);
   }, []);
 
   return (
-    <main className="bg-[#F0EEE9] text-[#222222] font-sans selection:bg-[#2F4F4F] selection:text-white">
+    <main className="bg-[#F0EEE9] text-[#222222] font-sans selection:bg-[#2F4F4F] selection:text-white overflow-x-hidden">
       
       {/* 1. HERO SECTION */}
       <section className="relative h-[85vh] min-h-[600px] flex items-center overflow-hidden font-sans">
@@ -133,38 +121,20 @@ const Index: React.FC = () => {
           transition={{ duration: 10, ease: "easeOut" }}
           className="absolute inset-0"
         >
-          <img
-            src={heroBanner}
-            alt="MURO Environment"
-            className="w-full h-full object-cover"
-          />
+          <img src={heroBanner} alt="MURO Environment" className="w-full h-full object-cover" />
         </motion.div>
         <div className="absolute inset-0 bg-[#222222]/30" />
         
         <div className="relative container mx-auto px-4 md:px-8">
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="max-w-2xl"
-          >
-            <motion.h1 
-              variants={fadeInUp} 
-              className="font-serif text-5xl md:text-7xl font-normal leading-[1.3] text-white mb-6 drop-shadow-md"
-            >
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-2xl">
+            <motion.h1 variants={fadeInUp} className="font-serif text-5xl md:text-7xl font-normal leading-[1.3] text-white mb-6 drop-shadow-md">
               Transform Your Walls Into Stories.
             </motion.h1>
-            <motion.p 
-              variants={fadeInUp} 
-              className="text-white text-lg md:text-2xl font-normal mb-8 max-w-lg leading-relaxed drop-shadow-md"
-            >
+            <motion.p variants={fadeInUp} className="text-white text-lg md:text-2xl font-normal mb-8 max-w-lg leading-relaxed drop-shadow-md">
               Premium poster prints curated for those who appreciate the art of living beautifully.
             </motion.p>
             <motion.div variants={fadeInUp}>
-              <Link
-                to="/products"
-                className="inline-flex items-center gap-3 bg-white text-[#222222] px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-[#2F4F4F] hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-sm"
-              >
+              <Link to="/products" className="inline-flex items-center gap-3 bg-white text-[#222222] px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-[#2F4F4F] hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-sm">
                 Start Curating <ArrowRight className="w-4 h-4" />
               </Link>
             </motion.div>
@@ -174,10 +144,7 @@ const Index: React.FC = () => {
 
       {/* 2. TRUST BAR */}
       <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.2, duration: 0.6, ease: smoothEase }}
+        initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.6, ease: smoothEase }}
         className="border-b border-[#222222]/5 bg-white py-6"
       >
         <div className="container mx-auto px-4 overflow-x-auto no-scrollbar">
@@ -193,46 +160,20 @@ const Index: React.FC = () => {
       {/* 3. SHOP BY MOOD */}
       <section className="py-24 font-sans">
         <div className="container mx-auto px-4 md:px-8">
-          <motion.h2
-            variants={fadeInUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="font-serif text-3xl md:text-5xl font-light text-center mb-16 text-[#222222]"
-          >
+          <motion.h2 variants={fadeInUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="font-serif text-3xl md:text-5xl font-light text-center mb-16 text-[#222222]">
             Shop by Mood
           </motion.h2>
-          
-          <motion.div 
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
-          >
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }} className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {moodCategories.map((mood, index) => (
               <motion.div key={index} variants={cardItemVariants}>
-                <Link
-                  to={`/products?cat=${encodeURIComponent(mood.title)}`}
-                  className="group relative block w-full aspect-[2/3] overflow-hidden bg-[#E5E5E5] shadow-sm hover:shadow-2xl transition-all duration-700 rounded-sm"
-                >
-                  <img 
-                    src={mood.img} 
-                    alt={mood.title}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105"
-                  />
+                <Link to={`/products?cat=${encodeURIComponent(mood.title)}`} className="group relative block w-full aspect-[2/3] overflow-hidden bg-[#E5E5E5] shadow-sm hover:shadow-2xl transition-all duration-700 rounded-sm">
+                  <img src={mood.img} alt={mood.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#2F4F4F]/90 via-[#2F4F4F]/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
                   <div className="absolute inset-0 flex flex-col justify-end p-6 text-center z-10">
-                    <h3 className="font-serif text-xl text-white mb-1 drop-shadow-sm translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                      {mood.title}
-                    </h3>
-                    <p className="text-[10px] uppercase tracking-widest text-white/80 mb-4 opacity-100 group-hover:opacity-0 transition-opacity duration-300 absolute bottom-12 left-0 right-0">
-                      {mood.subtitle}
-                    </p>
+                    <h3 className="font-serif text-xl text-white mb-1 drop-shadow-sm translate-y-2 group-hover:translate-y-0 transition-transform duration-500">{mood.title}</h3>
+                    <p className="text-[10px] uppercase tracking-widest text-white/80 mb-4 opacity-100 group-hover:opacity-0 transition-opacity duration-300 absolute bottom-12 left-0 right-0">{mood.subtitle}</p>
                     <div className="h-[1px] w-8 bg-white/60 group-hover:w-full transition-all duration-700 ease-in-out mx-auto mb-3" />
-                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out">
-                      View Collection
-                    </p>
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out">View Collection</p>
                   </div>
                 </Link>
               </motion.div>
@@ -241,52 +182,23 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* --- NEW SECTION 1: TRENDING NOW --- */}
+      {/* 4. TRENDING NOW */}
       <section className="py-20 bg-white font-sans border-t border-[#222222]/5">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex justify-between items-end mb-12">
             <div>
-                <motion.span 
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="text-xs font-bold uppercase tracking-widest text-[#2F4F4F] mb-2 block"
-                >
-                    Customer Favorites
-                </motion.span>
-                <motion.h2 
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    viewport={{ once: true }}
-                    className="font-serif text-3xl md:text-4xl font-light text-[#222222]"
-                >
-                    Trending Now
-                </motion.h2>
+                <motion.span initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-xs font-bold uppercase tracking-widest text-[#2F4F4F] mb-2 block">Customer Favorites</motion.span>
+                <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} viewport={{ once: true }} className="font-serif text-3xl md:text-4xl font-light text-[#222222]">Trending Now</motion.h2>
             </div>
-            <Link to="/products" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:text-[#2F4F4F] transition-colors">
-                View All <ArrowRight className="w-4 h-4" />
-            </Link>
+            <Link to="/products" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:text-[#2F4F4F] transition-colors">View All <ArrowRight className="w-4 h-4" /></Link>
           </div>
 
-          <motion.div 
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10"
-          >
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
             {trendingProducts.map((product) => (
                 <motion.div key={product.id} variants={cardItemVariants} className="group cursor-pointer">
                     <div className="relative w-full aspect-[5/7] bg-gray-100 overflow-hidden mb-4">
-                        <img 
-                            src={product.img} 
-                            alt={product.title} 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                        <button className="absolute bottom-4 right-4 bg-white text-[#222222] p-3 rounded-full shadow-lg translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hover:bg-[#2F4F4F] hover:text-white">
-                            <ShoppingBag className="w-5 h-5" />
-                        </button>
+                        <img src={product.img} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <button className="absolute bottom-4 right-4 bg-white text-[#222222] p-3 rounded-full shadow-lg translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hover:bg-[#2F4F4F] hover:text-white"><ShoppingBag className="w-5 h-5" /></button>
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[10px] uppercase tracking-widest text-[#222222]/50 mb-1">{product.category}</span>
@@ -296,82 +208,38 @@ const Index: React.FC = () => {
                 </motion.div>
             ))}
           </motion.div>
-          
-          <div className="mt-12 text-center md:hidden">
-            <Link to="/products" className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest border-b border-[#222222] pb-1">
-                View All Products
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* 4. DESIGNED FOR EVERY WALL (3D CAROUSEL WITH 5 VISIBLE IMAGES) */}
+      {/* 5. DESIGNED FOR EVERY WALL (3D CAROUSEL + PREMIUM FRAME CENTER TEXT) */}
       <section className="py-24 bg-[#F9F9F9] font-sans overflow-hidden border-t border-[#E5E5E5]">
         <div className="container mx-auto px-4 md:px-8 text-center mb-16">
-          <motion.span 
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-xs font-bold uppercase tracking-widest text-[#2F4F4F] mb-2 block"
-          >
-              Spaces
-          </motion.span>
-          <motion.h2 
-            variants={fadeInUp}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="font-serif text-3xl md:text-5xl font-light text-[#222222]"
-          >
-            Designed for Every Wall
-          </motion.h2>
+          <motion.span initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-xs font-bold uppercase tracking-widest text-[#2F4F4F] mb-2 block">Spaces</motion.span>
+          <motion.h2 variants={fadeInUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="font-serif text-3xl md:text-5xl font-light text-[#222222]">Designed for Every Wall</motion.h2>
         </div>
 
-        {/* 3D Slider Container */}
         <div className="relative w-full max-w-[1400px] mx-auto h-[450px] md:h-[550px] flex items-center justify-center overflow-hidden">
-          
-          {/* Left Arrow */}
-          <button 
-            onClick={prevSlide}
-            className="absolute left-2 md:left-8 z-50 w-12 h-12 bg-white/80 backdrop-blur-md border border-[#E5E5E5] flex items-center justify-center rounded-full hover:bg-[#222222] hover:text-white transition-all shadow-lg"
-          >
-            <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
-          </button>
+          <button onClick={prevSlide} className="absolute left-2 md:left-8 z-50 w-12 h-12 bg-white/80 backdrop-blur-md border border-[#E5E5E5] flex items-center justify-center rounded-full hover:bg-[#222222] hover:text-white transition-all shadow-lg"><ChevronLeft className="w-6 h-6" strokeWidth={1.5} /></button>
+          <button onClick={nextSlide} className="absolute right-2 md:right-8 z-50 w-12 h-12 bg-white/80 backdrop-blur-md border border-[#E5E5E5] flex items-center justify-center rounded-full hover:bg-[#222222] hover:text-white transition-all shadow-lg"><ChevronRight className="w-6 h-6" strokeWidth={1.5} /></button>
 
-          {/* Right Arrow */}
-          <button 
-            onClick={nextSlide}
-            className="absolute right-2 md:right-8 z-50 w-12 h-12 bg-white/80 backdrop-blur-md border border-[#E5E5E5] flex items-center justify-center rounded-full hover:bg-[#222222] hover:text-white transition-all shadow-lg"
-          >
-            <ChevronRight className="w-6 h-6" strokeWidth={1.5} />
-          </button>
-
-          {/* Carousel Cards */}
           <div className="relative w-full h-full flex items-center justify-center">
             {roomSlides.map((room, index) => {
               const total = roomSlides.length;
-              // Find circular relative position to the active center
               let diff = (index - currentSlide) % total;
               if (diff < -Math.floor(total / 2)) diff += total;
               if (diff > Math.floor(total / 2)) diff -= total;
 
-              // Apply styles based on position (0 is center, 1 is right1, 2 is right2, -1 is left1, -2 is left2)
               let positionClasses = "opacity-0 scale-50 z-0 pointer-events-none translate-x-0";
               
               if (diff === 0) {
-                // ACTIVE / CENTER
                 positionClasses = "opacity-100 scale-100 z-30 translate-x-0 shadow-2xl"; 
               } else if (diff === 1) {
-                // RIGHT SIDE 1
                 positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 translate-x-[55%] md:translate-x-[65%] cursor-pointer hover:opacity-100"; 
               } else if (diff === -1) {
-                // LEFT SIDE 1
                 positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 -translate-x-[55%] md:-translate-x-[65%] cursor-pointer hover:opacity-100"; 
               } else if (diff === 2) {
-                // RIGHT SIDE 2 (Extreme Right)
                 positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 translate-x-[105%] md:translate-x-[125%] cursor-pointer hover:opacity-70 hidden sm:block"; 
               } else if (diff === -2) {
-                // LEFT SIDE 2 (Extreme Left)
                 positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 -translate-x-[105%] md:-translate-x-[125%] cursor-pointer hover:opacity-70 hidden sm:block"; 
               }
 
@@ -379,21 +247,33 @@ const Index: React.FC = () => {
                 <motion.div
                   key={index}
                   className={`absolute w-[65vw] md:w-[380px] aspect-[4/5] transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${positionClasses}`}
-                  onClick={() => {
-                    // Agar user un-active image pe click kare to wo auto-center me aa jaye
-                    if (diff !== 0) setCurrentSlide(index);
-                  }}
+                  onClick={() => { if (diff !== 0) setCurrentSlide(index); }}
                 >
-                  <div className="block w-full h-full relative group overflow-hidden bg-gray-100 rounded-sm">
+                  <div className="block w-full h-full relative group overflow-hidden bg-black rounded-sm">
                     {diff === 0 && (
-                      <Link to={`/products?room=${room.title}`} className="absolute inset-0 z-40" />
+                      <Link to={`/products?room=${room.link}`} className="absolute inset-0 z-40" />
                     )}
-                    <img src={room.img} alt={room.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col items-center justify-center text-center">
-                      <h3 className="text-white font-serif text-2xl md:text-3xl font-light mb-2">{room.title}</h3>
-                      <div className="h-[1px] w-0 bg-white group-hover:w-12 transition-all duration-500 ease-out" />
+                    
+                    <img src={room.img} alt={room.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-80 group-hover:opacity-40" />
+                    
+                    {/* --- DESIGN OPTION 1: PREMIUM FRAME CENTERED TEXT --- */}
+                    <div className="absolute inset-6 border border-white/0 group-hover:border-white/30 transition-all duration-700 flex flex-col items-center justify-center text-center scale-[1.05] group-hover:scale-100 p-4">
+                      
+                      <span className="text-white/70 text-[10px] uppercase tracking-[0.3em] font-bold mb-3 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-y-2 group-hover:translate-y-0">
+                        Curated Space
+                      </span>
+                      
+                      <h3 className="text-white font-serif text-3xl md:text-5xl font-light mb-4 tracking-widest drop-shadow-lg opacity-100 transition-transform duration-500">
+                        {room.title}
+                      </h3>
+                      
+                      <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0 bg-white text-[#222222] px-6 py-3 text-[10px] uppercase tracking-widest font-bold hover:bg-[#2F4F4F] hover:text-white pointer-events-none">
+                        Shop Collection
+                      </div>
+
                     </div>
+                    {/* -------------------------------------------------- */}
+
                   </div>
                 </motion.div>
               );
@@ -402,7 +282,7 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. WHY MURO? */}
+      {/* 6. WHY MURO? */}
       <section className="py-24 bg-white font-sans">
         <div className="container mx-auto px-4 md:px-8">
           <motion.div variants={fadeInUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="text-center mb-16">
@@ -418,7 +298,7 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* --- NEW SECTION 2: NEWSLETTER (The Club) --- */}
+      {/* 7. NEWSLETTER */}
       <section className="py-24 bg-[#222222] text-white font-sans relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#2F4F4F] opacity-10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
         <div className="container mx-auto px-4 md:px-8 relative z-10 text-center">
@@ -436,7 +316,7 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. EMOTIONAL BRAND STORY */}
+      {/* 8. BRAND STORY */}
       <section className="py-32 bg-white px-6 font-sans">
         <div className="container mx-auto max-w-3xl text-center">
           <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>

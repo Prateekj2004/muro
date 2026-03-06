@@ -1,150 +1,245 @@
-import { Link } from "react-router-dom";
-import { useCart, FREE_SHIPPING_THRESHOLD, FRAME_PRICE } from "@/lib/cart";
-import { Minus, Plus, X, ShoppingBag } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, X } from "lucide-react";
+import { toast } from "sonner";
 
-const Cart = () => {
-  const { items, updateQuantity, removeItem, total } = useCart();
-  const [coupon, setCoupon] = useState("");
-  const shippingProgress = Math.min((total / FREE_SHIPPING_THRESHOLD) * 100, 100);
-  const freeShipping = total >= FREE_SHIPPING_THRESHOLD;
+// --- Static Initial Data ---
+const STATIC_PRODUCT = {
+  product_id: 1,
+  title: "Premium Aesthetic Poster",
+  price: "899.00",
+  qty: 1,
+  line_total: "899.00",
+  image_url: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&q=80"
+};
 
-  if (items.length === 0) {
+const Cart: React.FC = () => {
+  const navigate = useNavigate();
+  
+  // State initialization with static product
+  const [cartItems, setCartItems] = useState<any[]>([STATIC_PRODUCT]);
+  const [cartTotal, setCartTotal] = useState<number>(899);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+  
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutData, setCheckoutData] = useState({
+    shipping_name: "",
+    shipping_phone: "",
+    shipping_address1: "",
+    shipping_address2: "",
+    shipping_city: "",
+    shipping_state: "",
+    shipping_pincode: ""
+  });
+
+  // Calculate total whenever items change
+  useEffect(() => {
+    const total = cartItems.reduce((acc, item) => acc + (parseFloat(item.price) * item.qty), 0);
+    setCartTotal(total);
+  }, [cartItems]);
+
+  // ==========================================
+  // MOCK UPDATE QUANTITY (No API)
+  // ==========================================
+  const updateQuantity = (productId: number, newQty: number) => {
+    if (newQty < 1) return;
+    setCartItems(prev => prev.map(item => 
+      item.product_id === productId 
+        ? { ...item, qty: newQty, line_total: (parseFloat(item.price) * newQty).toFixed(2) } 
+        : item
+    ));
+  };
+
+  // ==========================================
+  // MOCK REMOVE ITEM (No API)
+  // ==========================================
+  const removeItem = (productId: number) => {
+    setCartItems(prev => prev.filter(item => item.product_id !== productId));
+    toast.success("Item removed from cart.");
+  };
+
+  // ==========================================
+  // MOCK CHECKOUT (No API)
+  // ==========================================
+  const handleCheckoutSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading(true);
+    
+    // Simulating a delay
+    setTimeout(() => {
+      toast.success("Order Placed Successfully! (Demo Mode) 🎉");
+      setIsCheckoutOpen(false);
+      setCartItems([]);
+      setActionLoading(false);
+      navigate("/"); // Redirect to home
+    }, 1500);
+  };
+
+  if (loading) {
     return (
-      <main className="py-20 text-center">
-        <div className="container mx-auto px-4">
-          <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-6" />
-          <h1 className="font-serif text-3xl font-light mb-4">Your Cart is Empty</h1>
-          <p className="text-muted-foreground mb-8">Discover our collection and find something you love.</p>
-          <Link
-            to="/shop"
-            className="inline-block bg-primary text-primary-foreground px-8 py-4 text-sm uppercase tracking-widest hover:bg-foreground transition-colors"
-          >
-            Continue Shopping
-          </Link>
-        </div>
-      </main>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+      </div>
     );
   }
 
   return (
-    <main className="py-12">
-      <div className="container mx-auto px-4 md:px-8">
-        <h1 className="font-serif text-3xl md:text-4xl font-light mb-10">Shopping Cart</h1>
+    <main className="bg-white min-h-screen font-sans text-[#222222] pb-24 relative">
+      
+      <div className="bg-[#F0EEE9]/30 py-16 text-center border-b border-[#E5E5E5]">
+        <h1 className="font-serif text-4xl font-light tracking-tight">Shopping Cart</h1>
+      </div>
 
-        {/* Free shipping bar */}
-        <div className="mb-10">
-          <div className="flex justify-between text-sm text-muted-foreground mb-2">
-            <span>{freeShipping ? "🎉 You've unlocked free shipping!" : `$${(FREE_SHIPPING_THRESHOLD - total).toFixed(0)} away from free shipping`}</span>
-            <span>${FREE_SHIPPING_THRESHOLD}</span>
+      <div className="container mx-auto px-5 md:px-8 mt-12 max-w-6xl">
+        {cartItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <ShoppingBag className="w-16 h-16 text-gray-200 mb-6" strokeWidth={1} />
+            <p className="text-xl font-serif mb-6">Your cart is currently empty.</p>
+            <Link to="/products" className="bg-[#222222] text-white px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[#2F4F4F] transition-colors">
+              Continue Shopping
+            </Link>
           </div>
-          <div className="w-full h-1.5 bg-secondary overflow-hidden">
-            <motion.div
-              className="h-full bg-primary"
-              initial={{ width: 0 }}
-              animate={{ width: `${shippingProgress}%` }}
-              transition={{ duration: 0.6 }}
-            />
-          </div>
-        </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
+            
+            {/* CART ITEMS LIST */}
+            <div className="flex-1">
+              <div className="hidden md:grid grid-cols-12 gap-4 pb-4 border-b border-[#E5E5E5] text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-6">
+                <div className="col-span-6">Product</div>
+                <div className="col-span-2 text-center">Quantity</div>
+                <div className="col-span-3 text-right">Total</div>
+                <div className="col-span-1"></div>
+              </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Items */}
-          <div className="lg:col-span-2 space-y-6">
-            {items.map((item) => (
-              <motion.div
-                key={`${item.product.id}-${item.size}`}
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex gap-6 pb-6 border-b border-border"
-              >
-                <Link to={`/product/${item.product.id}`} className="w-24 h-32 bg-secondary flex-shrink-0 overflow-hidden">
-                  <img src={item.product.images[0]} alt={item.product.title} className="w-full h-full object-cover" />
-                </Link>
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-serif text-lg">{item.product.title}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Size: {item.size} {item.withFrame && `· Framed (+$${FRAME_PRICE})`}
-                        </p>
+              <div className="space-y-6">
+                <AnimatePresence>
+                  {cartItems.map((item) => (
+                    <motion.div 
+                      key={item.product_id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="flex flex-col md:grid md:grid-cols-12 items-center gap-4 pb-6 border-b border-gray-100"
+                    >
+                      <div className="col-span-6 flex items-center gap-6 w-full">
+                        <div className="w-20 md:w-24 aspect-[4/5] bg-[#F4F4F4] flex-shrink-0 border border-gray-100">
+                          <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-serif text-lg line-clamp-1">{item.title}</span>
+                          <span className="text-[12px] text-gray-500 mt-1 font-medium">₹{item.price}</span>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => removeItem(item.product.id, item.size)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+
+                      <div className="col-span-2 flex justify-center w-full md:w-auto mt-4 md:mt-0">
+                        <div className="flex items-center border border-[#E5E5E5] h-10 w-28 bg-white">
+                          <button onClick={() => updateQuantity(item.product_id, item.qty - 1)} className="w-8 flex items-center justify-center hover:bg-gray-50"><Minus size={14}/></button>
+                          <span className="flex-1 text-center text-xs font-bold">{item.qty}</span>
+                          <button onClick={() => updateQuantity(item.product_id, item.qty + 1)} className="w-8 flex items-center justify-center hover:bg-gray-50"><Plus size={14}/></button>
+                        </div>
+                      </div>
+
+                      <div className="col-span-3 text-right w-full md:w-auto mt-2 md:mt-0 text-sm font-bold">
+                        ₹{item.line_total}
+                      </div>
+
+                      <div className="col-span-1 flex justify-end w-full md:w-auto">
+                        <button onClick={() => removeItem(item.product_id)} className="text-gray-400 hover:text-red-500 p-2 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* ORDER SUMMARY */}
+            <div className="lg:w-[380px] flex-shrink-0">
+              <div className="bg-[#FAFAFA] p-8 border border-[#E5E5E5] sticky top-24">
+                <h3 className="font-serif text-xl mb-6">Order Summary</h3>
+                
+                <div className="space-y-4 border-b border-gray-200 pb-6 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Subtotal</span>
+                    <span className="font-medium">₹{cartTotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center border border-border">
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.size, item.quantity - 1)}
-                        className="p-2 hover:bg-secondary transition-colors"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="px-4 text-sm">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.size, item.quantity + 1)}
-                        className="p-2 hover:bg-secondary transition-colors"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <p className="font-serif text-lg">
-                      ${((item.product.price + (item.withFrame ? FRAME_PRICE : 0)) * item.quantity).toFixed(0)}
-                    </p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Shipping</span>
+                    <span className="text-green-600 font-medium">Free</span>
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
 
-          {/* Summary */}
-          <div className="bg-secondary p-8">
-            <h2 className="font-serif text-xl mb-6">Order Summary</h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span>{freeShipping ? "Free" : "$5.99"}</span>
+                <div className="flex justify-between items-center mb-8">
+                  <span className="font-bold text-base">Total</span>
+                  <span className="font-bold text-xl">₹{cartTotal.toFixed(2)}</span>
+                </div>
+
+                <button 
+                  onClick={() => setIsCheckoutOpen(true)}
+                  className="w-full bg-[#222222] text-white py-4 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[#2F4F4F] transition-colors flex items-center justify-center gap-2 shadow-lg"
+                >
+                  Proceed to Checkout <ArrowRight size={14} />
+                </button>
               </div>
             </div>
 
-            {/* Coupon */}
-            <div className="mt-6 flex gap-2">
-              <input
-                type="text"
-                placeholder="Coupon code"
-                value={coupon}
-                onChange={(e) => setCoupon(e.target.value)}
-                className="flex-1 bg-background border border-border px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <button className="bg-foreground text-background px-4 py-2 text-xs uppercase tracking-widest hover:bg-primary transition-colors">
-                Apply
-              </button>
-            </div>
-
-            <div className="border-t border-border mt-6 pt-6 flex justify-between font-serif text-xl">
-              <span>Total</span>
-              <span>${(total + (freeShipping ? 0 : 5.99)).toFixed(2)}</span>
-            </div>
-
-            <button className="w-full mt-6 bg-foreground text-background py-4 text-sm uppercase tracking-widest font-medium hover:bg-primary transition-colors duration-300">
-              Proceed to Checkout
-            </button>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* CHECKOUT MODAL */}
+      <AnimatePresence>
+        {isCheckoutOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCheckoutOpen(false)} className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" />
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.3 }} className="fixed inset-y-0 right-0 w-full max-w-md bg-white z-50 shadow-2xl flex flex-col" >
+              <div className="flex items-center justify-between p-6 border-b border-[#E5E5E5] bg-[#FAFAFA]">
+                <span className="font-serif text-xl">Shipping Details</span>
+                <button onClick={() => setIsCheckoutOpen(false)} className="text-gray-400 hover:text-black"><X size={24} /></button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                <form id="checkoutForm" onSubmit={handleCheckoutSubmit} className="space-y-5">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-widest font-semibold text-gray-400">Full Name *</label>
+                    <input required type="text" value={checkoutData.shipping_name} onChange={(e) => setCheckoutData({...checkoutData, shipping_name: e.target.value})} className="w-full border-b border-gray-200 py-2 outline-none focus:border-black text-sm" placeholder="Suraj Poswal" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-widest font-semibold text-gray-400">Phone Number *</label>
+                    <input required type="tel" maxLength={10} value={checkoutData.shipping_phone} onChange={(e) => setCheckoutData({...checkoutData, shipping_phone: e.target.value})} className="w-full border-b border-gray-200 py-2 outline-none focus:border-black text-sm" placeholder="9999999999" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-widest font-semibold text-gray-400">Address *</label>
+                    <input required type="text" value={checkoutData.shipping_address1} onChange={(e) => setCheckoutData({...checkoutData, shipping_address1: e.target.value})} className="w-full border-b border-gray-200 py-2 outline-none focus:border-black text-sm" placeholder="House 10, Street 2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase tracking-widest font-semibold text-gray-400">City *</label>
+                      <input required type="text" value={checkoutData.shipping_city} onChange={(e) => setCheckoutData({...checkoutData, shipping_city: e.target.value})} className="w-full border-b border-gray-200 py-2 outline-none focus:border-black text-sm" placeholder="Delhi" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase tracking-widest font-semibold text-gray-400">Pincode *</label>
+                      <input required type="text" maxLength={6} value={checkoutData.shipping_pincode} onChange={(e) => setCheckoutData({...checkoutData, shipping_pincode: e.target.value})} className="w-full border-b border-gray-200 py-2 outline-none focus:border-black text-sm" placeholder="110001" />
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div className="p-6 border-t border-[#E5E5E5] bg-[#FAFAFA]">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold text-gray-500">Amount to Pay</span>
+                  <span className="font-bold text-xl text-black">₹{cartTotal.toFixed(2)}</span>
+                </div>
+                <button type="submit" form="checkoutForm" disabled={actionLoading} className={`w-full bg-[#57663D] text-white py-4 text-[11px] font-bold uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 ${actionLoading ? 'opacity-50' : 'hover:bg-[#465330]'}`}>
+                  {actionLoading ? "Processing..." : "Place Order Now"}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
     </main>
   );
 };

@@ -15,8 +15,9 @@ const Navbar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Check auth state
+  // Check auth state & User Data
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [userData, setUserData] = useState<any>(() => JSON.parse(localStorage.getItem("user") || "null"));
 
   // Default Categories Data
   const defaultCategories = [
@@ -60,6 +61,7 @@ const Navbar = () => {
   useEffect(() => {
     const handleStorageChange = () => {
       setIsLoggedIn(!!localStorage.getItem("token"));
+      setUserData(JSON.parse(localStorage.getItem("user") || "null"));
     };
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
@@ -80,7 +82,9 @@ const Navbar = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
+    setUserData(null); // Clear user data on logout
     setProfileOpen(false); // Close dropdown on logout
+    window.dispatchEvent(new Event("storage")); // Dispatch event so other tabs sync
     navigate("/login");
   };
 
@@ -115,7 +119,7 @@ const Navbar = () => {
             Home
           </NavLink>
 
-          {/* PRODUCTS DROPDOWN (Changed from Shop) */}
+          {/* PRODUCTS DROPDOWN */}
           <div className="relative group h-full flex items-center cursor-pointer">
             <NavLink 
               to="/products" 
@@ -210,8 +214,27 @@ const Navbar = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-[64px] right-0 w-[180px] bg-white border border-[#E5E5E5] shadow-lg flex flex-col py-2"
+                      className="absolute top-[64px] right-0 w-[200px] bg-white border border-[#E5E5E5] shadow-lg flex flex-col py-2 text-black"
                     >
+                      {/* USER NAME RENDER */}
+                      {userData?.name && (
+                        <div className="px-5 py-3 border-b border-gray-100 mb-1">
+                          <p className="text-[10px] text-gray-400 uppercase tracking-widest">Logged in as</p>
+                          <p className="text-[13px] font-bold truncate text-black">{userData.name}</p>
+                        </div>
+                      )}
+
+                      {/* ADMIN DASHBOARD LINK */}
+                      {userData?.role === 'admin' && (
+                        <Link 
+                          to="/admin/dashboard" 
+                          onClick={() => setProfileOpen(false)} 
+                          className="px-5 py-3 text-[11px] font-bold uppercase tracking-[0.08em] bg-[#F4F4F4] text-[#57663D] hover:bg-[#EAEAEA] transition-colors text-left border-b border-white"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
+
                       <Link 
                         to="/profile" 
                         onClick={() => setProfileOpen(false)}
@@ -263,7 +286,7 @@ const Navbar = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-[#E5E5E5] bg-white overflow-hidden absolute w-full top-[64px] left-0 shadow-xl z-40"
+            className="border-t border-[#E5E5E5] bg-white overflow-hidden absolute w-full top-[64px] left-0 shadow-xl z-40 text-black"
           >
              <div className="container mx-auto px-6 py-10 flex items-center gap-6 max-w-4xl">
                <Search className="w-5 h-5 text-[#222222]/50" />
@@ -287,7 +310,7 @@ const Navbar = () => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween", duration: 0.3 }}
-            className="lg:hidden fixed inset-0 bg-white z-[60] h-screen w-full flex flex-col"
+            className="lg:hidden fixed inset-0 bg-white z-[60] h-screen w-full flex flex-col text-black"
           >
             <div className="flex justify-between items-center px-6 border-b border-[#E5E5E5] h-[64px]">
                <span className="font-serif font-bold tracking-[-0.02em] text-[24px] lowercase">muro poster</span>
@@ -319,6 +342,20 @@ const Navbar = () => {
               <div className="border-t border-[#E5E5E5] pt-6 flex flex-col gap-8 mt-4">
                 {isLoggedIn ? (
                   <>
+                    {/* USER NAME RENDER MOBILE */}
+                    {userData?.name && (
+                      <p className="text-gray-400 text-[10px] tracking-widest border-b pb-2">
+                        Logged in as: <span className="font-bold text-black">{userData.name}</span>
+                      </p>
+                    )}
+                    
+                    {/* ADMIN DASHBOARD LINK MOBILE */}
+                    {userData?.role === 'admin' && (
+                      <Link to="/admin/dashboard" onClick={() => setMobileOpen(false)} className="text-[#57663D] font-bold">
+                        Admin Dashboard
+                      </Link>
+                    )}
+
                     <Link to="/profile" onClick={() => setMobileOpen(false)}>View Account</Link>
                     <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="text-left text-red-500 uppercase">Logout</button>
                   </>
