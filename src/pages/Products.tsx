@@ -12,7 +12,7 @@ export const CATEGORIES = [
   "KIDS - LEARNING & CONFIDENCE",
   "CALM & INNER BALANCE",
   "FANDOM & PASSION",
-  "KITCHEN & DINING",
+  "KITCHEN & Dining",
   "CUSTOMIZATION"
 ];
 
@@ -98,12 +98,18 @@ const Products: React.FC = () => {
             <p className="font-serif text-lg text-[#555]">No artworks found in this category.</p>
           </div>
         ) : (
-          /* GRID: 2 cols on mobile, 3 on tablet, 4 on desktop */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-12 mt-6">
             {products.map((product, idx) => {
-              const imgPath = product.image_url || product.image || "https://images.unsplash.com/photo-1549490349-8643362247b5";
               
-              // Mock bestseller logic
+              // ==========================================
+              // 🔥 STATIC IMAGES FOR HOVER EFFECT (Testing only)
+              // We stack them. On hover, Main fades out, Hover fades in.
+              //
+              // In real app, use: product.image_url (main), product.gallery[0] (hover)
+              // ==========================================
+              const mainStaticImage = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop";
+              const hoverStaticImage = "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?q=80&w=600&auto=format&fit=crop";
+              
               const isBestseller = idx % 4 === 0 || product.stock < 10;
 
               return (
@@ -113,9 +119,10 @@ const Products: React.FC = () => {
                   transition={{ delay: idx * 0.05, duration: 0.4 }}
                   key={product.id} 
                 >
-                  <Link to={`/product/${product.id}`} className="group block w-full">
+                  <Link to={`/product/${product.id}`} className="group block w-full relative">
                     
                     {/* POSTERY STYLE IMAGE CONTAINER (3:4 Ratio) */}
+                    {/* We use 'relative' to stack images on top of each other */}
                     <div className="relative w-full aspect-[3/4] bg-[#F7F7F7] overflow-hidden mb-3">
                       
                       {/* MINIMALIST BADGE */}
@@ -125,10 +132,20 @@ const Products: React.FC = () => {
                         </div>
                       )}
                       
+                      {/* 🔥 STATIC IMAGE 1 (Main view) */}
                       <img 
-                        src={imgPath} 
+                        src={mainStaticImage} 
                         alt={product.title} 
-                        className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105" 
+                        // It fades out on group hover (group-hover:opacity-0)
+                        className="w-full h-full object-cover object-center transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-0" 
+                      />
+
+                      {/* 🔥 STATIC IMAGE 2 (Hover view) */}
+                      <img 
+                        src={hoverStaticImage} 
+                        alt={`${product.title} hover view`} 
+                        // Position absolute to stack. Fades in on group hover.
+                        className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 opacity-0 group-hover:opacity-100" 
                       />
                       
                       {/* SLEEK HOVER BUTTON (Circular cart icon) */}
@@ -140,8 +157,8 @@ const Products: React.FC = () => {
                     </div>
 
                     {/* POSTERY STYLE TYPOGRAPHY */}
-                    <div className="flex flex-col text-left px-0.5">
-                      <h3 className="text-[12px] sm:text-[14px] text-[#111] font-medium tracking-wide line-clamp-1 mb-0.5">
+                    <div className="flex flex-col text-left px-0.5 relative z-10">
+                      <h3 className="text-[12px] sm:text-[14px] text-[#111] font-medium tracking-wide line-clamp-1 mb-0.5 group-hover:underline underline-offset-2 transition-all">
                         {product.title}
                       </h3>
                       <p className="text-[11px] sm:text-[13px] text-[#777] font-normal">
