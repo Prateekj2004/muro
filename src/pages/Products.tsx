@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingBag } from "lucide-react";
 import { API } from "@/services/api";
 
 export const CATEGORIES = [
@@ -12,7 +11,7 @@ export const CATEGORIES = [
   "KIDS - LEARNING & CONFIDENCE",
   "CALM & INNER BALANCE",
   "FANDOM & PASSION",
-  "KITCHEN & Dining",
+  "KITCHEN & DINING",
   "CUSTOMIZATION"
 ];
 
@@ -87,28 +86,22 @@ const Products: React.FC = () => {
       </div>
 
       {/* PRODUCT GRID SECTION */}
-      <div className="container mx-auto px-4 md:px-8 pb-24 max-w-7xl">
+      <div className="container mx-auto px-4 md:px-8 pb-24 max-w-[1400px]">
         {loading ? (
           <div className="h-[40vh] flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-[#111] border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : products.length === 0 ? (
           <div className="h-[40vh] flex flex-col items-center justify-center text-gray-400">
-            <ShoppingBag size={40} className="mb-4 opacity-20" strokeWidth={1.5} />
-            <p className="font-serif text-lg text-[#555]">No artworks found in this category.</p>
+            <p className="font-serif text-lg text-[#555]">No artworks found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-12 mt-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-2 gap-y-10 sm:gap-x-4 sm:gap-y-12 mt-6">
             {products.map((product, idx) => {
               
-              // ==========================================
-              // 🔥 STATIC IMAGES FOR HOVER EFFECT (Testing only)
-              // We stack them. On hover, Main fades out, Hover fades in.
-              //
-              // In real app, use: product.image_url (main), product.gallery[0] (hover)
-              // ==========================================
-              const mainStaticImage = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop";
-              const hoverStaticImage = "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?q=80&w=600&auto=format&fit=crop";
+              // 🔥 NEW BULLETPROOF STATIC IMAGES
+              const imgFront = "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop"; 
+              const imgBack = "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop";
               
               const isBestseller = idx % 4 === 0 || product.stock < 10;
 
@@ -119,49 +112,43 @@ const Products: React.FC = () => {
                   transition={{ delay: idx * 0.05, duration: 0.4 }}
                   key={product.id} 
                 >
-                  <Link to={`/product/${product.id}`} className="group block w-full relative">
+                  <Link to={`/product/${product.id}`} className="group block w-full">
                     
-                    {/* POSTERY STYLE IMAGE CONTAINER (3:4 Ratio) */}
-                    {/* We use 'relative' to stack images on top of each other */}
-                    <div className="relative w-full aspect-[3/4] bg-[#F7F7F7] overflow-hidden mb-3">
+                    {/* CONCRETE STRUCTURE */}
+                    <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden">
                       
-                      {/* MINIMALIST BADGE */}
                       {isBestseller && (
-                        <div className="absolute top-3 left-3 z-10 bg-white/95 px-2 py-1 text-[8px] sm:text-[9px] font-bold tracking-widest uppercase text-[#111] shadow-sm">
+                        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 bg-white px-2.5 py-1 text-[8px] sm:text-[9px] font-medium tracking-widest uppercase text-[#111] shadow-sm">
                           Bestseller
                         </div>
                       )}
-                      
-                      {/* 🔥 STATIC IMAGE 1 (Main view) */}
+
+                      {/* 1. BACK IMAGE (Room View) */}
                       <img 
-                        src={mainStaticImage} 
-                        alt={product.title} 
-                        // It fades out on group hover (group-hover:opacity-0)
-                        className="w-full h-full object-cover object-center transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-0" 
+                        src={imgBack} 
+                        alt="Room View" 
+                        loading="eager"
+                        className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 z-0" 
+                        onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533/EAEAEA/999999?text=Image+Blocked" }}
+                      />
+                      
+                      {/* 2. FRONT IMAGE (Plain Poster) */}
+                      <img 
+                        src={imgFront} 
+                        alt="Plain Poster" 
+                        loading="eager"
+                        className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out group-hover:opacity-0 z-10" 
+                        onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533/EAEAEA/999999?text=Image+Blocked" }}
                       />
 
-                      {/* 🔥 STATIC IMAGE 2 (Hover view) */}
-                      <img 
-                        src={hoverStaticImage} 
-                        alt={`${product.title} hover view`} 
-                        // Position absolute to stack. Fades in on group hover.
-                        className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 opacity-0 group-hover:opacity-100" 
-                      />
-                      
-                      {/* SLEEK HOVER BUTTON (Circular cart icon) */}
-                      <div className="absolute bottom-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-                        <div className="bg-white p-2.5 rounded-full shadow-lg text-[#111] hover:bg-[#111] hover:text-white transition-colors duration-300">
-                          <ShoppingBag size={16} strokeWidth={1.5} />
-                        </div>
-                      </div>
                     </div>
 
-                    {/* POSTERY STYLE TYPOGRAPHY */}
-                    <div className="flex flex-col text-left px-0.5 relative z-10">
-                      <h3 className="text-[12px] sm:text-[14px] text-[#111] font-medium tracking-wide line-clamp-1 mb-0.5 group-hover:underline underline-offset-2 transition-all">
+                    {/* PRODUCT TEXT */}
+                    <div className="mt-3 flex flex-col items-start px-0.5">
+                      <h3 className="text-[12px] sm:text-[14px] text-[#111] font-normal tracking-wide line-clamp-1 group-hover:text-gray-500 transition-colors duration-300">
                         {product.title}
                       </h3>
-                      <p className="text-[11px] sm:text-[13px] text-[#777] font-normal">
+                      <p className="text-[11px] sm:text-[13px] text-[#767676] font-normal mt-0.5">
                         From ₹{product.price}
                       </p>
                     </div>
