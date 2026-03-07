@@ -34,7 +34,16 @@ const Products: React.FC = () => {
       try {
         const res = await API.getProducts();
         const data = Array.isArray(res) ? res : (res?.data?.items || res?.data || []);
-        setAllProducts(data);
+        
+        // 🔥 CONTENT KO 3 TIMES MULTIPLY KIYA HAI YAHAN
+        // React duplicate keys par error deta hai isliye IDs mein suffix lagaya hai
+        const tripledData = [
+          ...data.map((p: any) => ({ ...p, id: `${p.id}_1` })),
+          ...data.map((p: any) => ({ ...p, id: `${p.id}_2` })),
+          ...data.map((p: any) => ({ ...p, id: `${p.id}_3` }))
+        ];
+
+        setAllProducts(tripledData);
       } catch (error) { 
         console.error("Failed to fetch products", error); 
       } finally { 
@@ -99,7 +108,7 @@ const Products: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-2 gap-y-10 sm:gap-x-4 sm:gap-y-12 mt-6">
             {products.map((product, idx) => {
               
-              // 🔥 NEW BULLETPROOF STATIC IMAGES
+              // BULLETPROOF STATIC IMAGES (Fast Loading)
               const imgFront = "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop"; 
               const imgBack = "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop";
               
@@ -109,12 +118,11 @@ const Products: React.FC = () => {
                 <motion.div 
                   initial={{ opacity: 0, y: 15 }} 
                   animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: idx * 0.05, duration: 0.4 }}
+                  transition={{ delay: (idx % 12) * 0.05, duration: 0.4 }} // Modulo used so animations don't take forever on 3x content
                   key={product.id} 
                 >
-                  <Link to={`/product/${product.id}`} className="group block w-full">
+                  <Link to={`/product/${product.id.split('_')[0]}`} className="group block w-full">
                     
-                    {/* CONCRETE STRUCTURE */}
                     <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden">
                       
                       {isBestseller && (
@@ -127,7 +135,7 @@ const Products: React.FC = () => {
                       <img 
                         src={imgBack} 
                         alt="Room View" 
-                        loading="eager"
+                        loading="lazy"
                         className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 z-0" 
                         onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533/EAEAEA/999999?text=Image+Blocked" }}
                       />
@@ -136,7 +144,7 @@ const Products: React.FC = () => {
                       <img 
                         src={imgFront} 
                         alt="Plain Poster" 
-                        loading="eager"
+                        loading="lazy"
                         className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out group-hover:opacity-0 z-10" 
                         onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533/EAEAEA/999999?text=Image+Blocked" }}
                       />
