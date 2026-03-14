@@ -15,51 +15,77 @@ export const CATEGORIES = [
   "CUSTOMIZATION"
 ];
 
-// 🔥 FIXED STATIC PRODUCTS: Ab gallery mein sirf 2 images dikhengi
-export const STATIC_PRODUCTS = Array.from({ length: 8 }).map((_, i) => {
-  const num = i + 1;
+// 🔥 GENERATING 20 STATIC PRODUCTS
+export const STATIC_PRODUCTS = Array.from({ length: 20 }).map((_, i) => {
+  const idNum = i + 1;
+  // Hum 1-8 images ko repeat kar rahe hain kyunki aapke paas 8 static files hain
+  const imgNum = (i % 8) + 1; 
+  
+  // Demo ke liye random categories assign kar rahe hain
+  const randomCat = CATEGORIES[Math.floor(Math.random() * (CATEGORIES.length - 1)) + 1];
+
   return {
-    id: num.toString(),
-    title: `Muro Poster Artwork ${num}`,
-    price: 1499,
-    category: "AESTHETIC & VIBE",
-    stock: 15,
-    defaultImg: `/images/${num}.jpeg`,
-    hoverImg: `/images/${num}${num}.jpg`,
-    // Sirf 2 images rakhi hain ab
+    id: idNum.toString(),
+    title: `Muro Poster Artwork ${idNum}`,
+    price: 1499 + (i * 50), // Thoda price variation
+    category: i < 5 ? "AESTHETIC & VIBE" : randomCat, // Pehle 5 confirm Aesthetic hain
+    stock: Math.floor(Math.random() * 20) + 1,
+    defaultImg: `/images/${imgNum}.jpeg`,
+    hoverImg: `/images/${imgNum}${imgNum}.jpg`,
     gallery: [
-      `/images/${num}.jpeg`, 
-      `/images/${num}${num}.jpg`
+      `/images/${imgNum}.jpeg`, 
+      `/images/${imgNum}${imgNum}.jpg`
     ]
   };
 });
 
 const Products: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlCategory = searchParams.get("cat")?.toUpperCase() || "ALL";
 
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>(urlCategory);
 
+  // Sync state with URL
   useEffect(() => {
-    if (urlCategory !== selectedCategory) setSelectedCategory(urlCategory);
+    if (urlCategory !== selectedCategory) {
+      setSelectedCategory(urlCategory);
+    }
   }, [urlCategory]);
 
+  // Initial Data Load
   useEffect(() => {
     setLoading(true);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setProducts(STATIC_PRODUCTS);
       setLoading(false);
-    }, 300); 
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
+
+  // Filter Logic: Category ke basis par products filter karna
+  const filteredProducts = products.filter((p) => 
+    selectedCategory === "ALL" ? true : p.category === selectedCategory
+  );
+
+  const handleCategoryClick = (cat: string) => {
+    setSelectedCategory(cat);
+    setSearchParams({ cat: cat.toLowerCase() });
+  };
 
   return (
     <main className="bg-white min-h-screen font-sans text-[#111111]">
+      {/* Header & Categories */}
       <div className="pt-16 pb-8 text-center px-4">
-        <h1 className="font-serif text-3xl md:text-4xl text-[#111] mb-8 capitalize tracking-wide">
+        <motion.h1 
+          key={selectedCategory}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-serif text-3xl md:text-4xl text-[#111] mb-8 capitalize tracking-wide"
+        >
           {selectedCategory === "ALL" ? "Posters & Art Prints" : selectedCategory.toLowerCase()}
-        </h1>
+        </motion.h1>
 
         <div className="container mx-auto max-w-[1600px]">
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pb-2 px-2 sm:px-4">
@@ -68,10 +94,10 @@ const Products: React.FC = () => {
               return (
                 <button 
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => handleCategoryClick(cat)}
                   className={`px-4 py-2 sm:px-5 sm:py-2.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 rounded-full ${
                     isActive 
-                      ? "bg-[#111] text-white" 
+                      ? "bg-[#111] text-white shadow-md" 
                       : "bg-[#F5F5F5] text-[#555] hover:bg-[#EBEBEB]" 
                   }`}
                 >
@@ -83,6 +109,7 @@ const Products: React.FC = () => {
         </div>
       </div>
 
+      {/* Sticky Filters Bar */}
       <div className="border-t border-b border-[#F0F0F0] py-4 mb-6 sticky top-0 bg-white z-40">
         <div className="container mx-auto px-4 md:px-8 max-w-[1600px] flex items-center justify-between">
           <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar">
@@ -98,7 +125,6 @@ const Products: React.FC = () => {
               <button className="text-[#111] border-b-[1.5px] border-[#111] pb-1">Product</button>
               <button className="text-[#888] hover:text-[#111] pb-1 border-b-[1.5px] border-transparent transition-colors">Inspiration</button>
             </div>
-            
             <div className="flex items-center gap-3 pl-2">
               <button className="text-[#888] hover:text-[#111] transition-colors"><Square size={20} strokeWidth={1.5} /></button>
               <button className="text-[#E58888] hover:opacity-80 transition-opacity"><LayoutGrid size={20} strokeWidth={1.5} /></button>
@@ -107,52 +133,55 @@ const Products: React.FC = () => {
         </div>
       </div>
 
+      {/* Products Grid */}
       <div className="container mx-auto px-4 md:px-8 pb-24 max-w-[1600px]">
         {loading ? (
           <div className="h-[40vh] flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-[#111] border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : (
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-12 sm:gap-x-6 sm:gap-y-16 mt-2">
-            {products.map((product, idx) => {
-              const isBestseller = idx % 4 === 0 || product.stock < 10;
+            {filteredProducts.map((product, idx) => {
+              const isBestseller = idx % 5 === 0; // Logic for label
 
               return (
                 <motion.div 
                   initial={{ opacity: 0, y: 15 }} 
                   animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: (idx % 12) * 0.05, duration: 0.4 }}
+                  transition={{ delay: (idx % 8) * 0.05, duration: 0.4 }}
                   key={product.id} 
                 >
                   <Link to={`/product/${product.id}`} className="group block w-full">
                     <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden">
                       {isBestseller && (
-                        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-30 bg-white px-2.5 py-1 text-[8px] sm:text-[9px] font-medium tracking-widest uppercase text-[#111] shadow-sm">
+                        <div className="absolute top-3 left-3 z-30 bg-white px-2.5 py-1 text-[8px] sm:text-[9px] font-medium tracking-widest uppercase text-[#111] shadow-sm">
                           Bestseller
                         </div>
                       )}
                       
+                      {/* Hover Image (Room View) */}
                       <img 
                         src={product.hoverImg} 
                         alt="Room View" 
                         loading="lazy"
                         className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 z-0" 
-                        onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533/EAEAEA/999999?text=Hover+Image+Missing" }}
+                        onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533?text=Preview" }}
                       />
                       
+                      {/* Default Image (Plain Poster) - Fades out on hover */}
                       <div className="absolute inset-0 z-10 bg-white transition-opacity duration-500 ease-in-out group-hover:opacity-0">
                         <img 
                           src={product.defaultImg} 
-                          alt="Plain Poster" 
+                          alt="Poster Print" 
                           loading="lazy"
                           className="w-full h-full object-cover" 
-                          onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533/EAEAEA/999999?text=Default+Image+Missing" }}
+                          onError={(e) => { e.currentTarget.src = "https://placehold.co/400x533?text=Poster" }}
                         />
                       </div>
                     </div>
 
                     <div className="mt-4 flex flex-col items-start px-1">
-                      <h3 className="text-[13px] sm:text-[15px] text-[#111] font-normal tracking-wide line-clamp-1 group-hover:text-gray-500 transition-colors duration-300">
+                      <h3 className="text-[13px] sm:text-[14px] text-[#111] font-normal tracking-wide line-clamp-1 group-hover:text-gray-500 transition-colors duration-300">
                         {product.title}
                       </h3>
                       <p className="text-[12px] sm:text-[13px] text-[#767676] font-normal mt-1">
@@ -163,6 +192,16 @@ const Products: React.FC = () => {
                 </motion.div>
               );
             })}
+          </div>
+        ) : (
+          <div className="h-[40vh] flex flex-col items-center justify-center text-gray-400">
+            <p className="text-sm tracking-widest uppercase">No products found in this category</p>
+            <button 
+              onClick={() => setSelectedCategory("ALL")}
+              className="mt-4 text-[10px] font-bold border-b border-gray-400 pb-1"
+            >
+              SHOW ALL
+            </button>
           </div>
         )}
       </div>
