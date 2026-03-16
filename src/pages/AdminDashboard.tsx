@@ -32,9 +32,9 @@ const AdminDashboard: React.FC = () => {
   const [formData, setFormData] = useState(initialFormState);
   
   const [fileData, setFileData] = useState({
-    main_poster_url: null as File | null,
-    zoom_in_url: null as File | null,
-    wall_poster_url: null as File | null
+    main_poster: null as File | null,
+    zoom_in_file: null as File | null,
+    wall_poster_file: null as File | null
   });
 
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
@@ -77,14 +77,16 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
+
     if (e.target.files && e.target.files.length > 0) {
+      console.log("Selected file for", key, e.target.files[0]);
       setFileData({ ...fileData, [key]: e.target.files[0] });
     }
   };
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fileData.main_poster_url) return toast.error("Main Poster Image is required!");
+    // if (!fileData.main_poster_url) return toast.error("Main Poster Image is required!");
     
     setIsSubmitting(true);
     try {
@@ -95,9 +97,9 @@ const AdminDashboard: React.FC = () => {
       formDataToSend.append("visibility", "PUBLISH"); 
       formDataToSend.append("is_active", "1");
 
-      if (fileData.main_poster_url) formDataToSend.append("main_poster", fileData.main_poster_url);
-      if (fileData.zoom_in_url) formDataToSend.append("zoom_in_file", fileData.zoom_in_url);
-      if (fileData.wall_poster_url) formDataToSend.append("wall_poster_file", fileData.wall_poster_url);
+      if (fileData.main_poster) formDataToSend.append("main_poster", fileData.main_poster);
+      if (fileData.zoom_in_file) formDataToSend.append("zoom_in_file", fileData.zoom_in_file);
+      if (fileData.wall_poster_file) formDataToSend.append("wall_poster_file", fileData.wall_poster_file);
 
       const formattedSizes: any[] = [];
       formData.size_prices.forEach(sp => {
@@ -109,7 +111,7 @@ const AdminDashboard: React.FC = () => {
       if (res.success !== false) { 
         toast.success("Product Published Successfully!"); 
         setFormData(initialFormState); 
-        setFileData({ main_poster_url: null, zoom_in_url: null, wall_poster_url: null });
+        setFileData({ main_poster: null, zoom_in_file: null, wall_poster_file : null });
         setActiveTab("inventory"); 
       } else toast.error(res.message || "Failed.");
     } catch (e) { toast.error("Error creating product. Check network tab."); } 
@@ -276,7 +278,7 @@ const AdminDashboard: React.FC = () => {
                        <h3 className="text-xs font-bold tracking-[0.2em] uppercase border-b pb-2 mb-4">Media Uploads</h3>
                        <div className="space-y-2">
                          <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Main Poster Image <span className="text-red-500">*</span></label>
-                         <input type="file" accept="image/*" required onChange={(e) => handleFileChange(e, "main_poster")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
+                         <input type="file" accept="image/*"  onChange={(e) => handleFileChange(e, "main_poster")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
                        </div>
                        <div className="space-y-2">
                          <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Zoom-In Image</label>
