@@ -4,6 +4,14 @@ import { ChevronRight, Minus, Plus, ShoppingBag, Info, User, Tag } from "lucide-
 import { toast } from "sonner"; 
 import { API } from "@/services/api";
 
+const getFullImageUrl = (path: string) => {
+  if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
+  if (path.startsWith("http")) return path;
+  let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  if (!cleanPath.includes("uploads/product")) cleanPath = `uploads/product/${cleanPath}`;
+  return `https://muroposter.com/${cleanPath}`;
+};
+
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -24,12 +32,13 @@ const ProductDetail: React.FC = () => {
       setLoading(true);
       try {
         const res = await API.adminGetProducts(); 
+        console.log("result",res)
         const allProducts = Array.isArray(res) ? res : (res?.data?.items || res?.data || []);
         
         const found = allProducts.find((p: any) => String(p.id) === String(id));
         if (found) {
           setCurrentProduct(found);
-          setActiveImage(found.main_poster_url || found.defaultImg || found.image_url);
+          setActiveImage(getFullImageUrl(found.main_poster_url || found.defaultImg || found.image_url));
           if(found.size_prices && found.size_prices.length > 0) {
             setSelectedVariant(found.size_prices[0]);
           }
@@ -80,8 +89,7 @@ const ProductDetail: React.FC = () => {
     currentProduct.main_poster_url || currentProduct.defaultImg || currentProduct.image_url,
     currentProduct.zoom_in_url || currentProduct.hoverImg,
     currentProduct.wall_poster_url
-  ].filter(Boolean);
-
+  ].filter(Boolean).map((path: string) => getFullImageUrl(path));
   const displayPrice = selectedVariant ? Number(selectedVariant.price) : Number(currentProduct.price);
 
   return (
@@ -222,10 +230,7 @@ const ProductDetail: React.FC = () => {
             {relatedProducts.map((product) => (
               <Link to={`/product/${product.id}`} key={product.id} className="group block">
                 <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden mb-3">
-                  <img 
-                    src={product.main_poster_url || product.defaultImg || product.image_url} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                  />
+                  <img src={getFullImageUrl(product.main_poster_url || product.defaultImg || product.image_url)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 </div>
                 <h3 className="text-[12px] text-[#111] font-normal tracking-wide line-clamp-1 group-hover:text-gray-500">{product.title}</h3>
                 <p className="text-[12px] text-[#767676] mt-0.5">From ₹{product.price}</p>

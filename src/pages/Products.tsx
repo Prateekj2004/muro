@@ -4,6 +4,14 @@ import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { API } from "@/services/api";
 
+const getFullImageUrl = (path: string) => {
+  if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
+  if (path.startsWith("http")) return path;
+  let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  if (!cleanPath.includes("uploads/product")) cleanPath = `uploads/product/${cleanPath}`;
+  return `https://muroposter.com/${cleanPath}`;
+};
+
 const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlCategory = searchParams.get("cat")?.toUpperCase() || "ALL";
@@ -134,17 +142,9 @@ const Products: React.FC = () => {
               <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (idx % 8) * 0.05, duration: 0.4 }} key={product.id}>
                 <Link to={`/product/${product.id}`} className="group block w-full">
                   <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden">
-                    <img 
-                      src={product.wall_poster_url || product.hoverImg || product.main_poster_url || product.image_url} 
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0" 
-                      alt="Room View"
-                    />
+                    <img src={getFullImageUrl(product.wall_poster_url || product.hoverImg || product.main_poster_url || product.image_url)} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0" alt="Room View" />
                     <div className="absolute inset-0 z-10 bg-white transition-opacity duration-500 ease-in-out group-hover:opacity-0">
-                      <img 
-                        src={product.main_poster_url || product.defaultImg || product.image_url} 
-                        className="w-full h-full object-cover" 
-                        alt="Poster Print"
-                      />
+                      <img src={getFullImageUrl(product.main_poster_url || product.defaultImg || product.image_url)} className="w-full h-full object-cover" alt="Poster Print" />
                     </div>
                   </div>
                   <div className="mt-4 flex flex-col items-start px-1">
