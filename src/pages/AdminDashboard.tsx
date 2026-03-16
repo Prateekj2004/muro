@@ -95,9 +95,9 @@ const AdminDashboard: React.FC = () => {
       formDataToSend.append("visibility", "PUBLISH"); 
       formDataToSend.append("is_active", "1");
 
-      if (fileData.main_poster_url) formDataToSend.append("main_poster_url", fileData.main_poster_url);
-      if (fileData.zoom_in_url) formDataToSend.append("zoom_in_url", fileData.zoom_in_url);
-      if (fileData.wall_poster_url) formDataToSend.append("wall_poster_url", fileData.wall_poster_url);
+      if (fileData.main_poster_url) formDataToSend.append("main_poster", fileData.main_poster_url);
+      if (fileData.zoom_in_url) formDataToSend.append("zoom_in_file", fileData.zoom_in_url);
+      if (fileData.wall_poster_url) formDataToSend.append("wall_poster_file", fileData.wall_poster_url);
 
       const formattedSizes: any[] = [];
       formData.size_prices.forEach(sp => {
@@ -276,15 +276,15 @@ const AdminDashboard: React.FC = () => {
                        <h3 className="text-xs font-bold tracking-[0.2em] uppercase border-b pb-2 mb-4">Media Uploads</h3>
                        <div className="space-y-2">
                          <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Main Poster Image <span className="text-red-500">*</span></label>
-                         <input type="file" accept="image/*" required onChange={(e) => handleFileChange(e, "main_poster_url")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
+                         <input type="file" accept="image/*" required onChange={(e) => handleFileChange(e, "main_poster")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
                        </div>
                        <div className="space-y-2">
                          <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Zoom-In Image</label>
-                         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "zoom_in_url")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
+                         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "zoom_in_file")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
                        </div>
                        <div className="space-y-2">
                          <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Wall Poster (Room View)</label>
-                         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "wall_poster_url")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
+                         <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "wall_poster_file")} className="w-full bg-gray-50 p-3 rounded-xl text-xs font-medium cursor-pointer" />
                        </div>
                        <div className="grid grid-cols-2 gap-6 pt-2">
                           <FormGroup label="Resolution" value={formData.resolution} onChange={(e:any)=>setFormData({...formData, resolution: e.target.value})} placeholder="300 DPI" />
