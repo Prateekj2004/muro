@@ -4,6 +4,7 @@ import { useCart } from "@/lib/cart";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink } from "@/components/NavLink"; 
+import { API } from "@/services/api";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -38,19 +39,17 @@ const Navbar = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // TODO: Replace with your actual backend API URL when ready
-        const response = await fetch("YOUR_API_ENDPOINT_HERE"); 
-        if (response.ok) {
-          const data = await response.json();
-          // Assuming the API returns an array of category names.
-          // If the JSON structure is different (e.g., data.categories), update this accordingly:
-          if (data && data.length > 0) {
-            setCategories(data);
-          }
+        const res = await API.adminGetCategories();
+        // API response se array nikalo
+        const catData = Array.isArray(res) ? res : (res?.data || []);
+        
+        if (catData && catData.length > 0) {
+          // Object me se sirf 'name' nikal kar array bana rahe hain
+          const categoryNames = catData.map((c: any) => c.name);
+          setCategories(categoryNames);
         }
       } catch (error) {
-        console.log("API not available yet, using default categories.");
-        // Error aane par purani default categories hi show hoti rahengi
+        console.log("API error, using default categories.", error);
       }
     };
 
@@ -114,7 +113,7 @@ const Navbar = () => {
           <NavLink 
             to="/" 
             className="text-[13px] font-[500] text-white uppercase tracking-[0.1em] transition-opacity"
-            activeClassName="underline-offset-[6px] decoration-[1.5px]"
+            activeClassName="  decoration-[1.5px]"
           >
             Home
           </NavLink>
@@ -124,7 +123,7 @@ const Navbar = () => {
             <NavLink 
               to="/products" 
               className="text-[13px] font-[500] text- uppercase tracking-[0.1em] hover:opacity-60 transition-opacity flex items-center gap-1"
-              activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
+              activeClassName="opacity-60      decoration-[1.5px]"
             >
               Products <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300 ease-in-out" strokeWidth={2}/>
             </NavLink>
@@ -146,7 +145,7 @@ const Navbar = () => {
           <NavLink 
             to="/bestsellers" 
             className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
-            activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
+            activeClassName="opacity-60      decoration-[1.5px]"
           >
             Bestsellers
           </NavLink>
@@ -154,7 +153,7 @@ const Navbar = () => {
           <NavLink 
             to="/new-arrivals" 
             className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
-            activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
+            activeClassName="opacity-60      decoration-[1.5px]"
           >
             New Arrivals
           </NavLink>
@@ -162,7 +161,7 @@ const Navbar = () => {
           <NavLink 
             to="/customisation" 
             className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
-            activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
+            activeClassName="opacity-60      decoration-[1.5px]"
           >
             Customisation
           </NavLink>
@@ -170,7 +169,7 @@ const Navbar = () => {
           <NavLink 
             to="/about" 
             className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
-            activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
+            activeClassName="opacity-60      decoration-[1.5px]"
           >
             About MURO
           </NavLink>
@@ -178,7 +177,7 @@ const Navbar = () => {
           <NavLink 
             to="/contact" 
             className="text-[13px] font-[500] text-[#fff] uppercase tracking-[0.1em] hover:opacity-60 transition-opacity"
-            activeClassName="opacity-60 underline underline-offset-[6px] decoration-[1.5px]"
+            activeClassName="opacity-60      decoration-[1.5px]"
           >
             Contact
           </NavLink>
