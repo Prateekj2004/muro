@@ -29,7 +29,6 @@ const AdminDashboard: React.FC = () => {
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [sizes, setSizes] = useState<any[]>([]);
 
-  // 🔥 EXTENDED FILTERS STATE FOR MANAGER'S REQUIREMENT 🔥
   const [filters, setFilters] = useState({ 
     page: 1, 
     limit: 10, 
@@ -45,10 +44,10 @@ const AdminDashboard: React.FC = () => {
   });
 
   const initialFormState = {
-    title: "", short_description: "", full_description: "", price: "", stock: "", 
-    category: "", subcategory: "", tags: "", resolution: "300 DPI", color_mode: "RGB",
+    title: "", short_description: "", full_description: "", 
+    category: "", subcategory: "", tags: "",
     seo_title: "", seo_description: "", author_name: "", author_bio: "",
-    size_prices: [{ size_id: "", price: "", stock: "", sku: "" }] 
+    size_prices: [{ size_id: "", price: "", sku: "" }] // Removed stock from UI state
   };
   const [formData, setFormData] = useState(initialFormState);
   
@@ -90,7 +89,6 @@ const AdminDashboard: React.FC = () => {
     finally { setLoading(false); }
   };
 
-  // Only auto-fetch on tab change or pagination. Other filters apply via "Apply Filters" button.
   useEffect(() => { fetchAllData(); }, [activeTab, filters.page]);
 
   const handleSizePriceChange = (index: number, field: string, value: string) => {
@@ -109,10 +107,22 @@ const AdminDashboard: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      // 1. Find the lowest price among variants
+      const validPrices = formData.size_prices
+        .map(sp => Number(sp.price))
+        .filter(p => !isNaN(p) && p > 0);
+      const lowestPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
+
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => { 
         if (key !== 'size_prices') formDataToSend.append(key, value as string); 
       });
+      
+      // 2. Append default values for removed fields and calculated base price
+      formDataToSend.append("price", lowestPrice.toString());
+      formDataToSend.append("stock", "100"); // Default base stock
+      formDataToSend.append("resolution", "300 DPI"); // Default resolution
+      formDataToSend.append("color_mode", "RGB"); // Default color mode
       formDataToSend.append("visibility", "PUBLISH"); 
       formDataToSend.append("is_active", "1");
 
@@ -122,7 +132,14 @@ const AdminDashboard: React.FC = () => {
 
       const formattedSizes: any[] = [];
       formData.size_prices.forEach(sp => {
-        if (sp.size_id) formattedSizes.push({ size_id: Number(sp.size_id), price: Number(sp.price), stock: Number(sp.stock), sku: sp.sku });
+        if (sp.size_id) {
+          formattedSizes.push({ 
+            size_id: Number(sp.size_id), 
+            price: Number(sp.price), 
+            stock: 100, // Default variant stock
+            sku: sp.sku 
+          });
+        }
       });
       formDataToSend.append("size_prices", JSON.stringify(formattedSizes));
 
@@ -228,7 +245,6 @@ const AdminDashboard: React.FC = () => {
                  <h1 className="text-3xl font-serif font-bold text-gray-900">Catalogue</h1>
                </div>
 
-               {/* FILTERS SECTION */}
                <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm mb-8">
                  <div className="flex items-center gap-2 mb-4">
                     <Filter size={16} className="text-gray-800"/>
@@ -264,7 +280,6 @@ const AdminDashboard: React.FC = () => {
                  </div>
                </div>
 
-               {/* TABLE SECTION (IMAGES REMOVED) */}
                <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
                  <table className="w-full text-left">
                      <thead className="bg-gray-100 border-b border-gray-200">
@@ -272,13 +287,12 @@ const AdminDashboard: React.FC = () => {
                          <th className="px-8 py-5 text-xs uppercase font-extrabold text-gray-800">Title & Category</th>
                          <th className="px-8 py-5 text-xs uppercase font-extrabold text-gray-800">Author</th>
                          <th className="px-8 py-5 text-xs uppercase font-extrabold text-gray-800">Base Price</th>
-                         <th className="px-8 py-5 text-xs uppercase font-extrabold text-gray-800">Stock</th>
                          <th className="px-8 py-5 text-right"></th>
                        </tr>
                      </thead>
                      <tbody className="divide-y divide-gray-100">
-                       {loading ? <tr><td colSpan={5} className="p-20 text-center animate-pulse text-sm font-bold text-gray-500">Fetching Data...</td></tr>
-                       : products.length === 0 ? <tr><td colSpan={5} className="p-20 text-center text-sm font-bold text-gray-500">No products found matching filters.</td></tr>
+                       {loading ? <tr><td colSpan={4} className="p-20 text-center animate-pulse text-sm font-bold text-gray-500">Fetching Data...</td></tr>
+                       : products.length === 0 ? <tr><td colSpan={4} className="p-20 text-center text-sm font-bold text-gray-500">No products found matching filters.</td></tr>
                        : products.map((p: any) => (
                          <tr key={p.id} className="group hover:bg-gray-50 transition-all">
                            <td className="px-8 py-6">
@@ -287,14 +301,12 @@ const AdminDashboard: React.FC = () => {
                            </td>
                            <td className="px-8 py-6 text-xs font-bold text-gray-600 uppercase">{p.author_name || "N/A"}</td>
                            <td className="px-8 py-6 text-sm font-extrabold text-gray-900">₹{p.price}</td>
-                           <td className="px-8 py-6"><span className="px-3 py-1.5 rounded-md text-[10px] font-extrabold uppercase bg-gray-200 text-gray-800">{p.stock} Units</span></td>
                            <td className="px-8 py-6 text-right"><button onClick={() => handleDeleteProduct(p.id)} className="p-2.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all"><Trash2 size={16} /></button></td>
                          </tr>
                        ))}
                      </tbody>
                  </table>
                  
-                 {/* PAGINATION */}
                  <div className="bg-gray-50 border-t border-gray-200 p-6 flex items-center justify-between">
                    <span className="text-xs font-extrabold text-gray-600 uppercase tracking-widest">Page {filters.page}</span>
                    <div className="flex gap-3">
@@ -306,7 +318,9 @@ const AdminDashboard: React.FC = () => {
              </section>
           )}
 
+          {/* ======================= */}
           {/* ADD PRODUCT */}
+          {/* ======================= */}
           {activeTab === "add" && (
              <section className="max-w-5xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
                <h1 className="text-3xl font-serif font-bold mb-8 text-gray-900 uppercase tracking-widest">Publish Listing</h1>
@@ -333,10 +347,6 @@ const AdminDashboard: React.FC = () => {
                           </select>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <FormGroup label="Base Price" required type="number" value={formData.price} onChange={(e:any)=>setFormData({...formData, price: e.target.value})} />
-                        <FormGroup label="Base Stock" required type="number" value={formData.stock} onChange={(e:any)=>setFormData({...formData, stock: e.target.value})} />
-                      </div>
                       <FormGroup label="Tags" value={formData.tags} onChange={(e:any)=>setFormData({...formData, tags: e.target.value})} placeholder="motivation, success" />
                     </div>
 
@@ -353,10 +363,6 @@ const AdminDashboard: React.FC = () => {
                        <div className="space-y-2">
                          <label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">Wall Poster (Room View)</label>
                          <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, "wall_poster_file")} className="w-full bg-white border border-gray-300 p-3.5 rounded-2xl text-xs font-semibold text-gray-900 cursor-pointer" />
-                       </div>
-                       <div className="grid grid-cols-2 gap-6 pt-2">
-                          <FormGroup label="Resolution" value={formData.resolution} onChange={(e:any)=>setFormData({...formData, resolution: e.target.value})} placeholder="300 DPI" />
-                          <FormGroup label="Color Mode" value={formData.color_mode} onChange={(e:any)=>setFormData({...formData, color_mode: e.target.value})} placeholder="RGB" />
                        </div>
                     </div>
                   </div>
@@ -387,7 +393,7 @@ const AdminDashboard: React.FC = () => {
                   <div className="border-t border-gray-200 pt-8">
                      <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xs font-extrabold tracking-[0.2em] uppercase border-b border-gray-200 pb-3 flex-1 text-gray-900">Size Variants & Pricing</h3>
-                        <button type="button" onClick={() => setFormData({...formData, size_prices: [...formData.size_prices, { size_id: "", price: "", stock: "", sku: "" }]})} className="flex items-center gap-2 text-xs uppercase font-extrabold text-blue-700 bg-blue-50 px-5 py-3 rounded-full hover:bg-blue-100"><PlusCircle size={16} /> Add Variant</button>
+                        <button type="button" onClick={() => setFormData({...formData, size_prices: [...formData.size_prices, { size_id: "", price: "", sku: "" }]})} className="flex items-center gap-2 text-xs uppercase font-extrabold text-blue-700 bg-blue-50 px-5 py-3 rounded-full hover:bg-blue-100"><PlusCircle size={16} /> Add Variant</button>
                      </div>
                      <div className="space-y-4">
                         {formData.size_prices.map((variant, index) => (
@@ -400,8 +406,7 @@ const AdminDashboard: React.FC = () => {
                                 </select>
                               </div>
                               <div className="flex-1 min-w-[150px]"><FormGroup label="SKU" required value={variant.sku} onChange={(e:any)=>handleSizePriceChange(index, "sku", e.target.value)} /></div>
-                              <div className="flex-1 min-w-[100px]"><FormGroup label="Price" type="number" required value={variant.price} onChange={(e:any)=>handleSizePriceChange(index, "price", e.target.value)} /></div>
-                              <div className="flex-1 min-w-[100px]"><FormGroup label="Stock" type="number" required value={variant.stock} onChange={(e:any)=>handleSizePriceChange(index, "stock", e.target.value)} /></div>
+                              <div className="flex-1 min-w-[150px]"><FormGroup label="Price" type="number" required value={variant.price} onChange={(e:any)=>handleSizePriceChange(index, "price", e.target.value)} /></div>
                               <div className="pb-1"><button type="button" onClick={() => setFormData({...formData, size_prices: formData.size_prices.filter((_, i) => i !== index)})} disabled={formData.size_prices.length === 1} className="p-4 text-red-500 bg-white border border-gray-300 hover:bg-red-50 hover:border-red-200 rounded-2xl disabled:opacity-50"><MinusCircle size={20} /></button></div>
                            </div>
                         ))}

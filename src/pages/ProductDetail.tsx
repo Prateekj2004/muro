@@ -195,19 +195,14 @@ const ProductDetail: React.FC = () => {
                  </div>
                )}
                <div className="grid grid-cols-2 gap-4">
-                  {(currentProduct.resolution || currentProduct.color_mode) && (
-                    <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-1">
-                      <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest">Quality</span>
-                      <span className="text-sm font-semibold">{currentProduct.resolution} • {currentProduct.color_mode}</span>
-                    </div>
-                  )}
-                  {currentProduct.author_name && (
-                    <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-1">
-                      <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest flex items-center gap-1"><User size={10}/> Artist</span>
-                      <span className="text-sm font-semibold">{currentProduct.author_name}</span>
-                      {currentProduct.author_bio && <span className="text-xs text-gray-500">{currentProduct.author_bio}</span>}
-                    </div>
-                  )}
+                 {/* RESOLUTION AND COLOR MODE REMOVED FROM HERE */}
+                 {currentProduct.author_name && (
+                   <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-1 col-span-2 md:col-span-1">
+                     <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest flex items-center gap-1"><User size={10}/> Artist</span>
+                     <span className="text-sm font-semibold">{currentProduct.author_name}</span>
+                     {currentProduct.author_bio && <span className="text-xs text-gray-500">{currentProduct.author_bio}</span>}
+                   </div>
+                 )}
                </div>
                {currentProduct.tags && (
                  <div className="flex flex-wrap items-center gap-2 mt-4">
@@ -229,33 +224,27 @@ const ProductDetail: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {relatedProducts.map((product) => (
               <Link to={`/product/${product.id}`} key={product.id} className="group block w-full">
-  <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden mb-3">
-    
-    {/* Ye piche wali image hai (Hover / Room View) */}
-    <img 
-      src={getFullImageUrl(product.wall_poster_url || product.hoverImg || product.main_poster_url || product.image_url)} 
-      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0" 
-      alt="Room View" 
-    />
-    
-    {/* Ye aage wali image hai jo hover pe fade out hogi (Main Poster) */}
-    <div className="absolute inset-0 z-10 bg-white transition-opacity duration-500 ease-in-out group-hover:opacity-0">
-      <img 
-        src={getFullImageUrl(product.main_poster_url || product.defaultImg || product.image_url)} 
-        className="w-full h-full object-cover" 
-        alt="Poster Print" 
-      />
-    </div>
-
-  </div>
-  
-  <div className="flex flex-col items-start px-1">
-    <h3 className="text-[12px] text-[#111] font-normal tracking-wide line-clamp-1 group-hover:text-gray-500 transition-colors">
-      {product.title}
-    </h3>
-    <p className="text-[12px] text-[#767676] mt-0.5">From ₹{product.price}</p>
-  </div>
-</Link>
+                <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden mb-3">
+                  <img 
+                    src={getFullImageUrl(product.wall_poster_url || product.hoverImg || product.main_poster_url || product.image_url)} 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0" 
+                    alt="Room View" 
+                  />
+                  <div className="absolute inset-0 z-10 bg-white transition-opacity duration-500 ease-in-out group-hover:opacity-0">
+                    <img 
+                      src={getFullImageUrl(product.main_poster_url || product.defaultImg || product.image_url)} 
+                      className="w-full h-full object-cover" 
+                      alt="Poster Print" 
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col items-start px-1">
+                  <h3 className="text-[12px] text-[#111] font-normal tracking-wide line-clamp-1 group-hover:text-gray-500 transition-colors">
+                    {product.title}
+                  </h3>
+                  <p className="text-[12px] text-[#767676] mt-0.5">From ₹{product.price}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
