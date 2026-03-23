@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
 import { 
@@ -6,13 +6,11 @@ import {
   Truck, 
   ShieldCheck, 
   Heart, 
-  Zap, 
   MessageCircle, 
-  Leaf, 
-  LucideIcon,
-  ShoppingBag,
+  ChevronRight, 
   ChevronLeft, 
-  ChevronRight
+  Star, 
+  Check 
 } from "lucide-react";
 
 // --- Local Asset Imports ---
@@ -22,119 +20,51 @@ import def from './Unstoppable Mindset - Born tired, trained relentless. 1 A4Pos
 import ghi from './Unstoppable Mindset - Action over anxiety. Always.2 A4Poster.com.jpg';
 import jkl from './Unstoppable Mindset - Built for storms, not silence.1 A4Poster.com.jpg';
 
-// --- Types & Interfaces ---
-interface MoodCategory {
-  title: string;
-  subtitle: string;
-  img: string;
-  link: string;
-}
-
-interface Product {
-  id: number;
-  title: string;
-  price: string;
-  img: string;
-  category: string;
-}
-
-interface FeatureProps {
-  icon: LucideIcon;
-  title: string;
-  sub: string;
-}
-
-// --- Animation Constants ---
+// --- Hero Animations (Keeping yours untouched) ---
 const smoothEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1]; 
-
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: smoothEase } }
 };
-
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } }
 };
 
-const cardItemVariants: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: smoothEase } }
-};
-
 const Index: React.FC = () => {
-  // 1. DATA: Categories
-  const moodCategories: MoodCategory[] = [
-    { title: "Motivational & Mindset", subtitle: "Focus & Ambition", img: "https://images.unsplash.com/photo-1552168324-d612d77725e3?auto=format&fit=crop&q=80&w=800", link: "motivational" },
-    { title: "Aesthetic & Vibe", subtitle: "Curated Spaces", img: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&q=80&w=800", link: "aesthetic" },
-    { title: "Love & Connection", subtitle: "Better Together", img: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?auto=format&fit=crop&q=80&w=800", link: "love" },
-    { title: "Kids – Learning", subtitle: "Playful Growth", img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=800", link: "kids" },
-    { title: "Calm & Inner Balance", subtitle: "Zen & Serenity", img: "https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&q=80&w=800", link: "calm" },
-    { title: "Fandom & Passion", subtitle: "What Moves You", img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=800", link: "fandom" },
-    { title: "Kitchen & Dining", subtitle: "Gather & Taste", img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=800", link: "kitchen" },
-    { title: "Customization", subtitle: "Your Unique Story", img: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=800", link: "custom" }
-  ];
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 2. DATA: Best Sellers
-  const trendingProducts: Product[] = [
-    { id: 1, title: "The Hustle Mindset", price: "₹1,299", category: "Office", img: abc},
-    { id: 2, title: "Abstract Serenity", price: "₹999", category: "Living Room", img: def },
-    { id: 3, title: "Morning Coffee Brew", price: "₹899", category: "Kitchen", img: ghi },
-    { id: 4, title: "Urban Dreams", price: "₹1,499", category: "Bedroom", img: jkl },
-  ];
-
-  // 3. YOUR ORIGINAL ROOM DATA
-  const roomSlides = [
-    { title: "Living Room", img: "https://www.bing.com/th/id/OIP.c-KkU1zCEHXm0t9ZrXjtmwHaEO?w=399&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2", link: "living-room" },
-    { title: "Bedroom", img: "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=800", link: "bedroom" },
-    { title: "Office", img: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&q=80&w=800", link: "office" },
-    { title: "Kids Room", img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=800", link: "kids" },
-    { title: "Kitchen", img: "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&q=80&w=800", link: "kitchen" },
-  ];
-
-  // --- PREMIUM 3D SLIDER LOGIC ---
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % roomSlides.length);
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
   };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + roomSlides.length) % roomSlides.length);
-  };
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      nextSlide();
-    }, 4000); 
-    return () => clearInterval(timer);
-  }, []);
+  const bestsellers = [
+    { id: 1, title: "Coco Poster", salePrice: "₹1,299", originalPrice: "₹2,165", discount: "-40%*", img: abc },
+    { id: 2, title: "Leopard Poster", salePrice: "₹1,999", originalPrice: "₹3,330", discount: "-40%*", img: def },
+    { id: 3, title: "Soft Brown Pack", salePrice: "₹2,810", originalPrice: "₹4,685", discount: "-40%*", img: ghi },
+    { id: 4, title: "Marble Balcony", salePrice: "₹1,299", originalPrice: "₹2,165", discount: "-40%*", img: jkl },
+    { id: 5, title: "Amalfi Coast", salePrice: "₹1,299", originalPrice: "₹2,165", discount: "-40%*", img: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=400" },
+  ];
 
   return (
-    <main className="bg-[#F0EEE9] text-[#222222] font-sans selection:bg-[#2F4F4F] selection:text-white overflow-x-hidden">
+    <main className="bg-white text-[#222] font-sans selection:bg-[#a0b695] selection:text-white overflow-x-hidden">
       
-      {/* 1. HERO SECTION */}
-      <section className="relative h-[85vh] min-h-[600px] flex items-center overflow-hidden font-sans">
-        <motion.div 
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 10, ease: "easeOut" }}
-          className="absolute inset-0"
-        >
-          <img src={heroBanner} alt="MURO Environment" className="w-full h-full object-cover" />
+      {/* 1. HERO SECTION (YOUR ORIGINAL) */}
+      <section className="relative h-[85vh] min-h-[600px] flex items-center overflow-hidden">
+        <motion.div initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 10, ease: "easeOut" }} className="absolute inset-0">
+          <img src={heroBanner} alt="Hero" className="w-full h-full object-cover" />
         </motion.div>
-        <div className="absolute inset-0 bg-[#222222]/30" />
-        
+        <div className="absolute inset-0 bg-black/30" />
         <div className="relative container mx-auto px-4 md:px-8">
-          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-2xl">
-            <motion.h1 variants={fadeInUp} className="font-serif text-5xl md:text-7xl font-normal leading-[1.3] text-white mb-6 drop-shadow-md">
-              Transform Your Walls Into Stories.
-            </motion.h1>
-            <motion.p variants={fadeInUp} className="text-white text-lg md:text-2xl font-normal mb-8 max-w-lg leading-relaxed drop-shadow-md">
-              Premium poster prints curated for those who appreciate the art of living beautifully.
-            </motion.p>
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-2xl text-center md:text-left">
+            <motion.h1 variants={fadeInUp} className="font-serif text-5xl md:text-8xl text-white mb-6 drop-shadow-md leading-[1.1]">Transform Your Walls.</motion.h1>
+            <motion.p variants={fadeInUp} className="text-white text-lg md:text-2xl mb-8 font-light">Premium poster prints curated for beautiful living.</motion.p>
             <motion.div variants={fadeInUp}>
-              <Link to="/products" className="inline-flex items-center gap-3 bg-white text-[#222222] px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-[#2F4F4F] hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-sm">
+              <Link to="/products" className="inline-flex items-center gap-3 bg-white text-black px-10 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[#a0b695] hover:text-white transition-all rounded-none">
                 Start Curating <ArrowRight className="w-4 h-4" />
               </Link>
             </motion.div>
@@ -142,208 +72,149 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. TRUST BAR */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.6, ease: smoothEase }}
-        className="border-b border-[#222222]/5 bg-white py-6"
-      >
-        <div className="container mx-auto px-4 overflow-x-auto no-scrollbar">
-          <div className="flex flex-nowrap md:flex-wrap justify-between md:justify-center gap-8 md:gap-16 min-w-[600px] md:min-w-full text-[10px] md:text-xs font-bold uppercase tracking-widest text-[#222222]/60">
-            <div className="flex items-center gap-2 whitespace-nowrap"><Truck className="w-4 h-4" /> 2–4 Day Processing</div>
-            <div className="flex items-center gap-2 whitespace-nowrap"><ShieldCheck className="w-4 h-4" /> Secure Packaging</div>
-            <div className="flex items-center gap-2 whitespace-nowrap"><Leaf className="w-4 h-4" /> Premium Quality</div>
-            <div className="flex items-center gap-2 whitespace-nowrap"><MessageCircle className="w-4 h-4" /> WhatsApp Support</div>
+      {/* 2. TRUST BAR (EXACT HTML COLORS) */}
+      <div className="bg-[#a0b695] text-white py-2.5">
+        <div className="max-w-[1400px] mx-auto px-4 text-center">
+          <p className="text-[14px] md:text-[16px] font-bold tracking-wide uppercase">40% OFF POSTERS & 20% OFF FRAMES*</p>
+        </div>
+      </div>
+      <div className="bg-[#f4f4f4] border-b border-gray-200 py-3">
+        <div className="max-w-[1400px] mx-auto px-4">
+          <div className="flex justify-center md:justify-between items-center text-[12px] md:text-[13px] font-medium tracking-wide">
+            <div className="hidden md:flex items-center gap-2"><Truck className="w-4 h-4" /> Free shipping over ₹2999</div>
+            <div className="flex items-center gap-2 font-bold"><MessageCircle className="w-4 h-4" /> Happiness Guarantee</div>
+            <div className="hidden md:flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Delivery in 2-4 business days</div>
           </div>
         </div>
-      </motion.section>
+      </div>
 
-      {/* 3. SHOP BY MOOD */}
-      <section className="py-24 font-sans">
-        <div className="container mx-auto px-4 md:px-8">
-          <motion.h2 variants={fadeInUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="font-serif text-3xl md:text-5xl font-light text-center mb-16 text-[#222222]">
-            Shop by Mood
-          </motion.h2>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }} className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            {moodCategories.map((mood, index) => (
-              <motion.div key={index} variants={cardItemVariants}>
-                <Link to={`/products?cat=${encodeURIComponent(mood.title)}`} className="group relative block w-full aspect-[2/3] overflow-hidden bg-[#E5E5E5] shadow-sm hover:shadow-2xl transition-all duration-700 rounded-sm">
-                  <img src={mood.img} alt={mood.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#2F4F4F]/90 via-[#2F4F4F]/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-6 text-center z-10">
-                    <h3 className="font-serif text-xl text-white mb-1 drop-shadow-sm translate-y-2 group-hover:translate-y-0 transition-transform duration-500">{mood.title}</h3>
-                    <p className="text-[10px] uppercase tracking-widest text-white/80 mb-4 opacity-100 group-hover:opacity-0 transition-opacity duration-300 absolute bottom-12 left-0 right-0">{mood.subtitle}</p>
-                    <div className="h-[1px] w-8 bg-white/60 group-hover:w-full transition-all duration-700 ease-in-out mx-auto mb-3" />
-                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out">View Collection</p>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* 4. TRENDING NOW */}
-      <section className="py-20 bg-white font-sans border-t border-[#222222]/5">
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-                <motion.span initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-xs font-bold uppercase tracking-widest text-[#2F4F4F] mb-2 block">Customer Favorites</motion.span>
-                <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} viewport={{ once: true }} className="font-serif text-3xl md:text-4xl font-light text-[#222222]">Trending Now</motion.h2>
+      {/* 3. DUAL BANNER SECTION (USING YOUR ARSENAL STYLE) */}
+      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link to="/collection" className="relative group overflow-hidden aspect-[4/3] md:aspect-[16/10]">
+            <img src={abc} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-all" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+              <span className="text-white text-[10px] font-bold tracking-[0.3em] mb-3">ART THAT NEVER GOES OUT OF STYLE</span>
+              <p className="m-0 opacity-100 px-3 sm:px-[52px] text-[32px] md:text-[52px] text-white text-center whitespace-nowrap leading-tight" style={{ fontFamily: "Arsenal" }}>
+                Famous Favorites
+              </p>
+              <span className="mt-8 bg-[#a0b695] text-white px-10 py-3 text-xs font-bold tracking-widest uppercase rounded-none">Shop Now</span>
             </div>
-            <Link to="/products" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:text-[#2F4F4F] transition-colors">View All <ArrowRight className="w-4 h-4" /></Link>
-          </div>
+          </Link>
+          <Link to="/collection" className="relative group overflow-hidden aspect-[4/3] md:aspect-[16/10]">
+            <img src={def} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-all" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+              <span className="text-white text-[10px] font-bold tracking-[0.3em] mb-3">NEW ARRIVALS</span>
+              <p className="m-0 opacity-100 px-3 sm:px-[52px] text-[32px] md:text-[52px] text-white text-center whitespace-nowrap leading-tight" style={{ fontFamily: "Arsenal" }}>
+                Spring Collection
+              </p>
+              <span className="mt-8 bg-[#a0b695] text-white px-10 py-3 text-xs font-bold tracking-widest uppercase rounded-none">Explore</span>
+            </div>
+          </Link>
+        </div>
+      </section>
 
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
-            {trendingProducts.map((product) => (
-                <motion.div key={product.id} variants={cardItemVariants} className="group cursor-pointer">
-                    <div className="relative w-full aspect-[5/7] bg-gray-100 overflow-hidden mb-4">
-                        <img src={product.img} alt={product.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                        <button className="absolute bottom-4 right-4 bg-white text-[#222222] p-3 rounded-full shadow-lg translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hover:bg-[#2F4F4F] hover:text-white"><ShoppingBag className="w-5 h-5" /></button>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-widest text-[#222222]/50 mb-1">{product.category}</span>
-                        <h3 className="font-serif text-lg text-[#222222] group-hover:text-[#2F4F4F] transition-colors">{product.title}</h3>
-                        <span className="text-sm font-medium mt-1">{product.price}</span>
-                    </div>
-                </motion.div>
+      {/* 4. BESTSELLERS (POSTER STORE LAYOUT) */}
+      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-10">
+        <div className="flex justify-between items-end mb-8 border-b border-gray-100 pb-4">
+          <p className="m-0 opacity-80 text-[28px] md:text-[36px]" style={{ fontFamily: "Arsenal" }}>Bestsellers</p>
+          <Link to="/all" className="text-sm font-bold uppercase tracking-widest hover:underline decoration-[#a0b695] underline-offset-8">Show more</Link>
+        </div>
+
+        <div className="relative group/slider">
+          <button onClick={() => scroll('left')} className="absolute -left-4 top-[40%] z-20 bg-white border p-2 rounded-full hidden group-hover/slider:block shadow-sm"><ChevronLeft /></button>
+          <div ref={scrollRef} className="flex overflow-x-auto gap-4 md:gap-6 pb-10 no-scrollbar snap-x scroll-smooth">
+            {bestsellers.map((item) => (
+              <div key={item.id} className="min-w-[200px] md:min-w-[300px] snap-start group cursor-pointer">
+                <div className="relative aspect-[3/4] bg-[#f8f8f8] mb-4 overflow-hidden rounded-xl">
+                  <div className="absolute top-3 left-3 bg-[#a0b695] text-white text-[11px] font-bold px-3 py-1 rounded-full z-10">{item.discount}</div>
+                  <button className="absolute bottom-4 right-4 bg-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-md"><Heart className="w-5 h-5" /></button>
+                  <img src={item.img} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                </div>
+                <h3 className="text-[16px] font-bold mb-1" style={{ fontFamily: "Arsenal" }}>{item.title}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] text-gray-500 italic">From</span>
+                  <span className="text-[16px] font-bold text-[#b21010]">{item.salePrice}</span>
+                  <span className="text-[14px] text-gray-400 line-through">{item.originalPrice}</span>
+                </div>
+              </div>
             ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* 5. DESIGNED FOR EVERY WALL (3D CAROUSEL + PREMIUM FRAME CENTER TEXT) */}
-      <section className="py-24 bg-[#F9F9F9] font-sans overflow-hidden border-t border-[#E5E5E5]">
-        <div className="container mx-auto px-4 md:px-8 text-center mb-16">
-          <motion.span initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-xs font-bold uppercase tracking-widest text-[#2F4F4F] mb-2 block">Spaces</motion.span>
-          <motion.h2 variants={fadeInUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="font-serif text-3xl md:text-5xl font-light text-[#222222]">Designed for Every Wall</motion.h2>
-        </div>
-
-        <div className="relative w-full max-w-[1400px] mx-auto h-[450px] md:h-[550px] flex items-center justify-center overflow-hidden">
-          <button onClick={prevSlide} className="absolute left-2 md:left-8 z-50 w-12 h-12 bg-white/80 backdrop-blur-md border border-[#E5E5E5] flex items-center justify-center rounded-full hover:bg-[#222222] hover:text-white transition-all shadow-lg"><ChevronLeft className="w-6 h-6" strokeWidth={1.5} /></button>
-          <button onClick={nextSlide} className="absolute right-2 md:right-8 z-50 w-12 h-12 bg-white/80 backdrop-blur-md border border-[#E5E5E5] flex items-center justify-center rounded-full hover:bg-[#222222] hover:text-white transition-all shadow-lg"><ChevronRight className="w-6 h-6" strokeWidth={1.5} /></button>
-
-          <div className="relative w-full h-full flex items-center justify-center">
-            {roomSlides.map((room, index) => {
-              const total = roomSlides.length;
-              let diff = (index - currentSlide) % total;
-              if (diff < -Math.floor(total / 2)) diff += total;
-              if (diff > Math.floor(total / 2)) diff -= total;
-
-              let positionClasses = "opacity-0 scale-50 z-0 pointer-events-none translate-x-0";
-              
-              if (diff === 0) {
-                positionClasses = "opacity-100 scale-100 z-30 translate-x-0 shadow-2xl"; 
-              } else if (diff === 1) {
-                positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 translate-x-[55%] md:translate-x-[65%] cursor-pointer hover:opacity-100"; 
-              } else if (diff === -1) {
-                positionClasses = "opacity-80 scale-[0.80] md:scale-[0.85] z-20 -translate-x-[55%] md:-translate-x-[65%] cursor-pointer hover:opacity-100"; 
-              } else if (diff === 2) {
-                positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 translate-x-[105%] md:translate-x-[125%] cursor-pointer hover:opacity-70 hidden sm:block"; 
-              } else if (diff === -2) {
-                positionClasses = "opacity-40 scale-[0.60] md:scale-[0.70] z-10 -translate-x-[105%] md:-translate-x-[125%] cursor-pointer hover:opacity-70 hidden sm:block"; 
-              }
-
-              return (
-                <motion.div
-                  key={index}
-                  className={`absolute w-[65vw] md:w-[380px] aspect-[4/5] transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${positionClasses}`}
-                  onClick={() => { if (diff !== 0) setCurrentSlide(index); }}
-                >
-                  <div className="block w-full h-full relative group overflow-hidden bg-black rounded-sm">
-                    {diff === 0 && (
-                      <Link to={`/products?room=${room.link}`} className="absolute inset-0 z-40" />
-                    )}
-                    
-                    <img src={room.img} alt={room.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-80 group-hover:opacity-40" />
-                    
-                    {/* --- DESIGN OPTION 1: PREMIUM FRAME CENTERED TEXT --- */}
-                    <div className="absolute inset-6 border border-white/0 group-hover:border-white/30 transition-all duration-700 flex flex-col items-center justify-center text-center scale-[1.05] group-hover:scale-100 p-4">
-                      
-                      <span className="text-white/70 text-[10px] uppercase tracking-[0.3em] font-bold mb-3 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-y-2 group-hover:translate-y-0">
-                        Curated Space
-                      </span>
-                      
-                      <h3 className="text-white font-serif text-3xl md:text-5xl font-light mb-4 tracking-widest drop-shadow-lg opacity-100 transition-transform duration-500">
-                        {room.title}
-                      </h3>
-                      
-                      <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0 bg-white text-[#222222] px-6 py-3 text-[10px] uppercase tracking-widest font-bold hover:bg-[#2F4F4F] hover:text-white pointer-events-none">
-                        Shop Collection
-                      </div>
-
-                    </div>
-                    {/* -------------------------------------------------- */}
-
-                  </div>
-                </motion.div>
-              );
-            })}
           </div>
+          <button onClick={() => scroll('right')} className="absolute -right-4 top-[40%] z-20 bg-white border p-2 rounded-full hidden group-hover/slider:block shadow-sm"><ChevronRight /></button>
         </div>
       </section>
 
-      {/* 6. WHY MURO? */}
-      <section className="py-24 bg-white font-sans">
-        <div className="container mx-auto px-4 md:px-8">
-          <motion.div variants={fadeInUp} initial="hidden" whileInView="show" viewport={{ once: true }} className="text-center mb-16">
-            <h2 className="font-serif text-3xl md:text-4xl font-light mb-4">Why MURO?</h2>
-            <p className="text-[#222222]/60 max-w-md mx-auto font-light">Because your space deserves better than ordinary.</p>
-          </motion.div>
-          <motion.div initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer} className="grid grid-cols-2 md:grid-cols-4 gap-10">
-            <Feature icon={Zap} title="Premium Quality" sub="Gallery Grade Paper" />
-            <Feature icon={ShieldCheck} title="Secure Packaging" sub="Damage-Free Guarantee" />
-            <Feature icon={Heart} title="Intention" sub="Art with Meaning" />
-            <Feature icon={MessageCircle} title="Support" sub="Always Here to Help" />
-          </motion.div>
+      {/* 5. POPULAR CATEGORIES (CIRCLE BUBBLES) */}
+      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 bg-[#fcfcfc]">
+        <div className="text-center mb-12">
+            <p className="m-0 opacity-80 text-[32px] md:text-[42px] sm:px-[52px]" style={{ fontFamily: "Arsenal" }}>Popular Categories</p>
+        </div>
+        <div className="flex overflow-x-auto gap-8 no-scrollbar justify-start md:justify-center px-4">
+          {['Iconic', 'Illustration', 'Artists', 'Personalised', 'Photo Art', 'Nature'].map((cat, i) => (
+            <Link to="/category" key={i} className="flex flex-col items-center min-w-[120px] group">
+              <div className="w-24 h-24 md:w-40 md:h-40 rounded-full overflow-hidden mb-4 border-2 border-transparent group-hover:border-[#a0b695] transition-all p-1">
+                <img src={abc} className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-all duration-700" />
+              </div>
+              <span className="text-[14px] font-bold uppercase tracking-widest text-center group-hover:text-[#a0b695]">{cat}</span>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* 7. NEWSLETTER */}
-      <section className="py-24 bg-[#222222] text-white font-sans relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#2F4F4F] opacity-10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
-        <div className="container mx-auto px-4 md:px-8 relative z-10 text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="max-w-xl mx-auto">
-                <h2 className="font-serif text-3xl md:text-5xl font-light mb-4">Join the Collective</h2>
-                <p className="text-white/60 mb-8 font-light leading-relaxed">
-                    Get early access to new drops, interior design tips, and an exclusive <span className="text-white font-medium"> 10% off</span> your first order.
-                </p>
-                <form className="flex flex-col md:flex-row gap-4" onSubmit={(e) => e.preventDefault()}>
-                    <input type="email" placeholder="Your email address" className="flex-1 bg-transparent border-b border-white/30 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-white transition-colors text-center md:text-left" />
-                    <button type="submit" className="bg-white text-[#222222] px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-[#2F4F4F] hover:text-white transition-all duration-300">Subscribe</button>
-                </form>
-                <p className="text-[10px] text-white/30 mt-4 uppercase tracking-wider">No spam. Unsubscribe anytime.</p>
-            </motion.div>
+      {/* 6. LIPSCORE REVIEWS CLONE */}
+      <section className="max-w-4xl mx-auto px-4 py-20">
+        <div className="text-center mb-10">
+             <p className="m-0 opacity-80 text-[28px] md:text-[36px]" style={{ fontFamily: "Arsenal" }}>Customer Reviews</p>
+        </div>
+        <div className="bg-[#f9f7f2] p-10 rounded-2xl border border-gray-100 flex flex-col md:flex-row gap-10 items-center">
+            <div className="text-center md:border-r border-gray-200 md:pr-10">
+                <p className="text-5xl font-bold mb-2">4.3</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Excellent</p>
+                <div className="flex justify-center text-[#222] mb-2"><Star className="fill-black" /><Star className="fill-black" /><Star className="fill-black" /><Star className="fill-black" /><Star className="text-gray-300" /></div>
+                <p className="text-[11px] text-gray-400">Based on 70,914 ratings</p>
+            </div>
+            <div className="flex-1 grid grid-cols-1 gap-6">
+                <div className="italic text-[15px] text-gray-700">
+                    "Very quick delivery and fab poster thank you. Had this made up for my wedding and I can’t wait to share it with all of our guests."
+                    <p className="not-italic text-xs font-bold mt-4 uppercase tracking-widest text-[#a0b695] flex items-center gap-2"><Check className="w-3 h-3"/> Verified buyer</p>
+                </div>
+            </div>
         </div>
       </section>
 
-      {/* 8. BRAND STORY */}
-      <section className="py-32 bg-white px-6 font-sans">
-        <div className="container mx-auto max-w-3xl text-center">
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <motion.span variants={fadeInUp} className="block text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-[#2F4F4F] mb-6">Our Philosophy</motion.span>
-            <h2 className="font-serif text-3xl md:text-5xl leading-tight text-[#222222] mb-8">
-              <div className="overflow-hidden"><motion.div variants={fadeInUp}>We don’t design decorations.</motion.div></div>
-              <div className="overflow-hidden"><motion.span variants={fadeInUp} className="italic text-[#2F4F4F]/90 block">We design reminders.</motion.span></div>
-            </h2>
-            <motion.p variants={fadeInUp} className="text-lg md:text-xl font-light text-[#222222]/70 leading-relaxed max-w-xl mx-auto">
-              Your wall is the most silent influence in your room. Choose what speaks to you daily.
-            </motion.p>
-          </motion.div>
+      {/* 7. NEWSLETTER (EXACT SYNTAX) */}
+      <section className="bg-[#C2D8B8] py-20 text-center">
+        <div className="max-w-[600px] mx-auto px-4">
+          <p className="m-0 opacity-100 px-3 sm:px-[52px] text-[32px] md:text-[42px] mb-4 text-white leading-tight" style={{ fontFamily: "Arsenal" }}>
+            Stay up to date
+          </p>
+          <p className="text-[15px] text-white/80 mb-10 font-medium tracking-wide">Receive exclusive offers and discover new arrivals.</p>
+          <form className="flex flex-col sm:flex-row gap-0 max-w-md mx-auto" onSubmit={e => e.preventDefault()}>
+            <input type="email" placeholder="example@mail.com" className="flex-1 py-4 px-6 text-sm outline-none rounded-s-full sm:rounded-s-full rounded-none" />
+            <button className="bg-black text-white px-10 py-4 text-xs font-bold tracking-widest uppercase rounded-e-full sm:rounded-e-full rounded-none hover:bg-gray-900 transition-all">Send</button>
+          </form>
+        </div>
+      </section>
+
+      {/* 8. SEO CONTENT SECTION */}
+      <section className="max-w-5xl mx-auto px-8 py-20 text-center border-t border-gray-100">
+        <h2 className="text-[24px] md:text-[30px] font-bold mb-8" style={{ fontFamily: "Arsenal" }}>Wall art online at Muro</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left text-[14px] text-gray-600 leading-relaxed">
+            <div>
+                <h3 className="font-bold text-black mb-2 uppercase tracking-widest">Large selection</h3>
+                <p>Muro offers wall art for every occasion, season, and style, with posters, prints, and canvas art prints designed for self-expression. From Scandinavian-inspired designs to modern photography.</p>
+            </div>
+            <div>
+                <h3 className="font-bold text-black mb-2 uppercase tracking-widest">Affordable Art</h3>
+                <p>We make it fun to decorate with high-quality wall art - at affordable prices to make you smile. Find fantastic art at happy prices with wall art from Muro!</p>
+            </div>
         </div>
       </section>
 
     </main>
   );
 };
-
-const Feature: React.FC<FeatureProps> = ({ icon: Icon, title, sub }) => (
-  <motion.div variants={fadeInUp} className="flex flex-col items-center text-center group cursor-default">
-    <div className="w-12 h-12 rounded-full bg-[#2F4F4F]/5 flex items-center justify-center mb-6 group-hover:bg-[#2F4F4F] transition-all duration-500 ease-in-out">
-      <Icon className="w-5 h-5 text-[#2F4F4F] group-hover:text-white transition-colors duration-500" strokeWidth={1.5} />
-    </div>
-    <h3 className="font-serif text-lg mb-2 text-[#222222]">{title}</h3>
-    <p className="text-xs uppercase tracking-wider text-[#222222]/50 font-bold">{sub}</p>
-  </motion.div>
-);
 
 export default Index;
