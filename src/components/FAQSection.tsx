@@ -77,7 +77,7 @@ const FAQSection = () => {
 
             {/* CURIOUS? (Slanted left edge ONLY) */}
             <div 
-              className="bg-[#262626] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
+              className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
               style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
             >
               <span 
