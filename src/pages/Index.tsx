@@ -12,6 +12,8 @@ import {
   Check,
 } from "lucide-react";
 import { API } from "@/services/api";
+import { Award, Globe, Image as ImageIcon, Package, } from "lucide-react";
+import FAQSection from "../components/FAQSection"
 
 // ─── Image URL Helper ─────────────────────────────────────────────
 const getFullImageUrl = (path: string) => {
@@ -126,6 +128,30 @@ const Index: React.FC = () => {
       }
     };
     fetchBestsellers();
+  }, []);
+
+  // ─── Trending Products State ───
+  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
+  const [loadingTrending, setLoadingTrending] = useState(true);
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      setLoadingTrending(true);
+      try {
+        const res = await API.adminGetProducts().catch(() => []);
+        const all = Array.isArray(res)
+          ? res
+          : res?.data?.items || res?.data || [];
+        
+        // Showing top 8 products for the scrollable row
+        setTrendingProducts(all.slice(0, 8));
+      } catch (err) {
+        console.error("Failed to fetch trending products:", err);
+      } finally {
+        setLoadingTrending(false);
+      }
+    };
+    fetchTrending();
   }, []);
 
   const scroll = (direction: "left" | "right") => {
@@ -425,6 +451,255 @@ const Index: React.FC = () => {
         </div>
       </section>
 
+{/* ─── PROMO BANNER & CATEGORY GRID ─── */}
+<section className="w-full">
+  {/* Red Spring Sale Banner */}
+  <div className="bg-[#e63946] text-white py-4 px-4 text-center">
+    <h2 className="text-lg md:text-xl font-bold uppercase tracking-widest mb-1">
+      SPRING SALE - 40% OFF POSTERS*
+    </h2>
+    <div className="text-2xl md:text-3xl font-light tracking-tighter">
+      1 d 22 h 38 min 58 s
+    </div>
+  </div>
+
+  {/* 3-Column Image Grid with NEW Compact Height & Images */}
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-0 w-full">
+    {/* Item 1: New Arrivals (Gallery Wall Aesthetic) */}
+    <Link to="/new-arrivals" className="relative group overflow-hidden h-[420px]">
+      <img 
+        src="https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?q=80&w=1200&auto=format&fit=crop" 
+        alt="New Arrivals"
+        className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
+      />
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+      <div className="absolute bottom-10 left-8">
+        <h3 className="text-white text-3xl md:text-4xl font-bold tracking-tight">
+          New Arrival Prints
+        </h3>
+      </div>
+    </Link>
+
+    {/* Item 2: Canvas Art (Texture Focus) */}
+    <Link to="/canvas-art" className="relative group overflow-hidden h-[420px]">
+      <img 
+        src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1200&auto=format&fit=crop" 
+        alt="Canvas Art"
+        className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
+      />
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+      <div className="absolute bottom-10 left-8">
+        <h3 className="text-white text-3xl md:text-4xl font-bold tracking-tight">
+          Canvas Art Prints
+        </h3>
+      </div>
+    </Link>
+
+    {/* Item 3: Picture Frames (Frame Collage) */}
+    <Link to="/frames" className="relative group overflow-hidden h-[420px]">
+      <img 
+        src="https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=1200&auto=format&fit=crop" 
+        alt="Picture Frames"
+        className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
+      />
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+      <div className="absolute bottom-10 left-8">
+        <h3 className="text-white text-3xl md:text-4xl font-bold tracking-tight">
+          Picture Frames
+        </h3>
+      </div>
+    </Link>
+  </div>
+</section>
+
+<section className="w-full bg-[#eef3f6] py-16 px-4 md:px-8 mt-10">
+  <div className="max-w-[1300px] mx-auto">
+    <h2 
+      className="text-center text-[32px] md:text-[38px] font-bold text-[#111] mb-14"
+      style={{ fontFamily: "Georgia, serif" }}
+    >
+      Why shop with Muro!
+    </h2>
+    
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-12">
+      {/* 1. Superb quality */}
+      <div className="flex flex-col items-center text-center px-2">
+        <Award className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
+        <h3 
+          className="text-[17px] font-bold mb-2 text-[#111]" 
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Superb quality
+        </h3>
+        <p className="text-[13px] text-[#444] leading-relaxed">
+          Our premium papers and solid wood frames ensure your art looks stunning and lasts for years.
+        </p>
+      </div>
+
+      {/* 2. Planet smart */}
+      <div className="flex flex-col items-center text-center px-2">
+        <Globe className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
+        <h3 
+          className="text-[17px] font-bold mb-2 text-[#111]" 
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Planet smart
+        </h3>
+        <p className="text-[13px] text-[#444] leading-relaxed">
+          Our eco-friendly processes ensure you make an impact on your home, not the planet.
+        </p>
+      </div>
+
+      {/* 3. Art made easy */}
+      <div className="flex flex-col items-center text-center px-2">
+        <Heart className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
+        <h3 
+          className="text-[17px] font-bold mb-2 text-[#111]" 
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Art made easy
+        </h3>
+        <p className="text-[13px] text-[#444] leading-relaxed">
+          Clear pricing and fast delivery – we make transforming your home refreshingly straightforward.
+        </p>
+      </div>
+
+      {/* 4. Find your style */}
+      <div className="flex flex-col items-center text-center px-2">
+        <ImageIcon className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
+        <h3 
+          className="text-[17px] font-bold mb-2 text-[#111]" 
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Find your style
+        </h3>
+        <p className="text-[13px] text-[#444] leading-relaxed">
+          Our collection grows daily, ensuring you'll always find something that feels just right for your space.
+        </p>
+      </div>
+
+      {/* 5. Simple returns */}
+      <div className="flex flex-col items-center text-center px-2">
+        <Package className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
+        <h3 
+          className="text-[17px] font-bold mb-2 text-[#111]" 
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Simple returns
+        </h3>
+        <p className="text-[13px] text-[#444] leading-relaxed">
+          Something not right? We will replace or refund all orders you aren't happy with.
+        </p>
+      </div>
+
+      {/* 6. 5* Service */}
+      <div className="flex flex-col items-center text-center px-2">
+        <Star className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
+        <h3 
+          className="text-[17px] font-bold mb-2 text-[#111]" 
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          5* Service
+        </h3>
+        <p className="text-[13px] text-[#444] leading-relaxed">
+          Our expert team are always on hand to answer any questions.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ─── TRENDING WORD ART (SCROLLABLE) ─── */}
+<section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16">
+  {/* Header */}
+  <div className="flex justify-between items-end mb-6">
+    <h2 
+      className="text-[26px] md:text-[32px] font-bold text-[#111]"
+      style={{ fontFamily: "Georgia, serif" }}
+    >
+      Trending Word Art
+    </h2>
+    <Link 
+      to="/trending" 
+      className="border border-gray-300 rounded-md px-5 py-2 text-[13px] font-bold text-[#111] hover:border-[#111] transition-colors"
+    >
+      View all
+    </Link>
+  </div>
+
+  {/* Scrollable Container */}
+  {loadingTrending ? (
+    <div className="flex gap-6 overflow-hidden">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="w-[280px] h-[350px] bg-gray-100 animate-pulse shrink-0" />
+      ))}
+    </div>
+  ) : (
+    <div className="flex overflow-x-auto gap-4 md:gap-5 pb-4 snap-x no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      {/* Dynamic Products Map */}
+      {/* Dynamic Products Map */}
+      {trendingProducts.map((product) => (
+        <Link 
+          key={product.id} 
+          to={`/product/${product.id}`}
+          className="snap-start shrink-0 w-[260px] md:w-[280px] group cursor-pointer flex flex-col"
+        >
+          {/* Image Container with Hover Effects */}
+          <div className="relative bg-[#f4f5f6] aspect-[4/5] overflow-hidden rounded-md mb-3">
+            
+            {/* Background / Hover image (Scales up on hover) */}
+            <img 
+              src={getFullImageUrl(product.wall_poster_url || product.hoverImg || product.image_url)} 
+              alt={product.title} 
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
+            />
+            
+            {/* Front / Default image (Fades out on hover) */}
+            <div className="absolute inset-0 z-10 bg-[#f4f5f6] transition-opacity duration-500 ease-in-out group-hover:opacity-0 flex items-center justify-center p-6">
+              <img 
+                src={getFullImageUrl(product.main_poster_url || product.image_url)} 
+                alt={product.title} 
+                className="w-full h-full object-contain drop-shadow-[0_5px_15px_rgba(0,0,0,0.12)]"
+              />
+            </div>
+            
+            {/* Likes/Wishlist Badge (Fades in & slides up on hover) */}
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                // Add your wishlist logic here
+              }}
+              className="absolute bottom-3 right-3 bg-white rounded-full px-2.5 py-1.5 flex flex-col items-center justify-center shadow-md border border-gray-100 z-20 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:border-gray-300"
+            >
+              <Heart className="w-3.5 h-3.5 text-gray-400 mb-0.5 group-hover:fill-[#e63946] group-hover:text-[#e63946] transition-colors" />
+              <span className="text-[9px] font-bold text-gray-500 leading-none">
+                {product.likes || "1.1k"}
+              </span>
+            </button>
+          </div>
+
+          {/* Product Details */}
+          <div className="mt-1 text-left px-1">
+            <h3 className="text-[14px] text-gray-800 font-medium truncate mb-1">
+              {product.title || product.name || "Word Art Poster"}
+            </h3>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-bold text-[#111]">
+                From ₹{product.price || product.base_price || "19.95"}
+              </span>
+              {(product.original_price || product.originalPrice) && (
+                <span className="text-[12px] text-gray-400 line-through">
+                  ₹{product.original_price || product.originalPrice}
+                </span>
+              )}
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  )}
+</section>
+
       {/* ══════════════════════════════════════════
           5. POPULAR CATEGORIES
           ══════════════════════════════════════════ */}
@@ -577,7 +852,7 @@ const Index: React.FC = () => {
           </div>
         </div>
       </section>
-
+      <FAQSection/>
     </main>
   );
 };
