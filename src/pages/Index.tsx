@@ -14,19 +14,11 @@ import {
 import { API } from "@/services/api";
 
 // ─── Image URL Helper ─────────────────────────────────────────────
-const getFullImageUrl = (path: string): string => {
+const getFullImageUrl = (path: string) => {
   if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
-  if (
-    path.startsWith("http") ||
-    path.startsWith("/") ||
-    path.startsWith("data:") ||
-    path.startsWith("blob:")
-  )
-    return path;
-  let cleanPath = path;
-  if (!cleanPath.includes("uploads/product")) {
-    cleanPath = `uploads/product/${cleanPath}`;
-  }
+  if (path.startsWith("http")) return path;
+  let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  if (!cleanPath.includes("uploads/product")) cleanPath = `uploads/product/${cleanPath}`;
   return `https://muroposter.com/${cleanPath}`;
 };
 
