@@ -23,7 +23,7 @@ const Terms = () => {
 
         {/* 1. Products */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">1. Products</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Products</h2>
           <p>
             MURO POSTER offers physical wall art and related products. Descriptions, images, dimensions, and specifications are presented as accurately as possible. Minor variations in color or finish may occur due to printing processes and display differences.
           </p>
@@ -34,7 +34,7 @@ const Terms = () => {
 
         {/* 2. Orders & Payments */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">2. Orders & Payments</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Orders & Payments</h2>
           <p>
             Prices are listed in the currency shown at checkout. Payments are processed through secure third-party gateways.
           </p>
@@ -51,7 +51,7 @@ const Terms = () => {
 
         {/* 3. Shipping & Delivery */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">3. Shipping & Delivery</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Shipping & Delivery</h2>
           <p>
             Orders are processed according to our Shipping Policy. Delivery timelines depend on carriers and location. MURO POSTER is not responsible for delays caused by shipping providers, customs, or unforeseen events. Customers are responsible for providing accurate shipping information. Risk of loss transfers upon confirmed delivery.
           </p>
@@ -59,7 +59,7 @@ const Terms = () => {
 
         {/* 4. Returns, Refunds & Cancellations */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">4. Returns, Refunds & Cancellations</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Returns, Refunds & Cancellations</h2>
           <p>
             All returns, replacements, and refunds are governed exclusively by our Cancellation & Refund Policy.
           </p>
@@ -67,7 +67,7 @@ const Terms = () => {
 
         {/* 5. Intellectual Property */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">5. Intellectual Property</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Intellectual Property</h2>
           <p>
             All website content — including artwork, branding, text, and graphics — is the property of MURO POSTER and protected by intellectual property laws. Unauthorized reproduction, distribution, or commercial use is prohibited.
           </p>
@@ -84,7 +84,7 @@ const Terms = () => {
 
         {/* 6. Limitation of Liability */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">6. Limitation of Liability</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Limitation of Liability</h2>
           <p>
             To the fullest extent permitted by law, MURO POSTER is not liable for indirect, incidental, or consequential damages arising from website or product use.
           </p>
@@ -95,7 +95,7 @@ const Terms = () => {
 
         {/* 7. Warranty Disclaimer */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">7. Warranty Disclaimer</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Warranty Disclaimer</h2>
           <p>
             Except where required by law, products are provided without additional warranties, express or implied.
           </p>
@@ -103,7 +103,7 @@ const Terms = () => {
 
         {/* 8. Website Use */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">8. Website Use</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Website Use</h2>
           <p>
             Users agree not to engage in fraudulent behavior, interfere with website functionality, extract data through automated means, or violate applicable laws.
           </p>
@@ -111,7 +111,7 @@ const Terms = () => {
 
         {/* 9. Force Majeure */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">9. Force Majeure</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Force Majeure</h2>
           <p>
             MURO POSTER is not liable for delays or failure to perform due to events beyond reasonable control, including natural disasters, technical failures, or supply disruptions.
           </p>
@@ -119,7 +119,7 @@ const Terms = () => {
 
         {/* 10. Dispute Resolution */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">10. Dispute Resolution</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Dispute Resolution</h2>
           <p>
             We encourage resolution through direct communication. Any legal disputes shall be handled under the governing jurisdiction stated above.
           </p>
@@ -127,7 +127,7 @@ const Terms = () => {
 
         {/* 11. Changes to Terms */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">11. Changes to Terms</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Changes to Terms</h2>
           <p>
             We may update these Terms at any time. Continued website use indicates acceptance of revised Terms.
           </p>
@@ -135,7 +135,7 @@ const Terms = () => {
 
         {/* 12. Contact */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">12. Contact</h2>
+          <h2 className="text-xl font-bold pt-4 text-[#222222]">Contact</h2>
           <p>
             Questions regarding these Terms may be directed to: <br />
             <a href="mailto:helpmuroposter@gmail.com" className="font-bold underline hover:text-[#2F4F4F]">
