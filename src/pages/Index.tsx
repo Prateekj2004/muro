@@ -580,7 +580,8 @@ const Index: React.FC = () => {
     </Link>
   </div>
 </section>
-
+<br />
+<br />
 <section className="w-full px-2 md:px-3 py-10">
 
   {/* Header */}
@@ -600,7 +601,7 @@ const Index: React.FC = () => {
           className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2"
           style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
         >
-          EVERY
+          NEW 
         </span>
         <div
           className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
@@ -610,7 +611,7 @@ const Index: React.FC = () => {
             className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1"
             style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
           >
-            WALL
+            ARRIVALS
           </span>
         </div>
       </div>
