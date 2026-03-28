@@ -605,7 +605,7 @@ const Index: React.FC = () => {
   </style>
 
   {/* Header */}
-  <div  id="wall-slider" className="flex justify-center mb-12">
+  <div className="flex justify-center mb-12">
     <h2 
       className="text-[26px] md:text-[34px] font-bold text-[#111] text-center"
       style={{ fontFamily: "Georgia, serif" }}
@@ -615,7 +615,7 @@ const Index: React.FC = () => {
   </div>
 
   {/* Scrollable Categories */}
-  <div className="flex overflow-x-auto gap-5 pb-4 snap-x no-scrollbar">
+  <div id="wall-slider"  className="flex overflow-x-auto gap-5 pb-4 snap-x no-scrollbar">
     
     {[
       { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
@@ -812,7 +812,7 @@ const Index: React.FC = () => {
           </div>
         </div>
       </section> */} 
-      <FAQSection/>
+      <FAQSection id="faqs"/>
     </main>
   );
 };
