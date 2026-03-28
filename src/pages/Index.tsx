@@ -199,18 +199,18 @@ const Index: React.FC = () => {
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="max-w-md"
+            className="max-w-xl"
           >
             <motion.h1
               variants={fadeInUp}
-              className="font-serif text-4xl md:text-6xl text-white mb-6 leading-[1.15]"
+              className="coolvetica font-serif text-4xl md:text-6xl text-white mb-6 leading-[1.15] whitespace-nowrap"
             >
-              It starts with art
+              MURO STARTS WITH ART
             </motion.h1>
 
             <motion.p
               variants={fadeInUp}
-              className="text-white/70 text-base md:text-lg mb-10 font-light leading-relaxed"
+              className="text-white/70 text-base md:text-[1.5rem] mb-10 font-light leading-relaxed"
             >
               Refresh your space with made-to-order art from the world's best
               independent artists.
@@ -222,13 +222,13 @@ const Index: React.FC = () => {
             >
               <Link
                 to="/gallery-walls"
-                className="flex-1 text-center border border-white text-white px-8 py-4 text-sm font-semibold tracking-wider hover:bg-white hover:text-[#57663D] transition-all duration-300"
+                className="flex-1 text-center border border-white text-white px-8 py-4 text-sm tracking-wider hover:bg-white hover:text-[#57663D] transition-all duration-300"
               >
                 Gallery Walls
               </Link>
               <Link
                 to="/products"
-                className="flex-1 text-center border border-white text-white px-8 py-4 text-sm font-semibold tracking-wider hover:bg-white hover:text-[#57663D] transition-all duration-300"
+                className="flex-1 text-center border border-white text-white px-8 py-4 text-sm tracking-wider hover:bg-white hover:text-[#57663D] transition-all duration-300"
               >
                 Shop All Art
               </Link>
@@ -287,7 +287,7 @@ const Index: React.FC = () => {
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 rounded-xl" />
               </div>
-              <p className="text-[15px] font-medium text-[#111] tracking-tight flex items-center justify-center gap-1 group-hover:gap-2 transition-all duration-200 text-center flex-wrap">
+              <p className="text-[14px] font-medium text-[#111] tracking-tight flex items-center justify-center gap-1 group-hover:gap-2 transition-all duration-200 text-center flex-wrap">
                 {label}
                 <span className="opacity-50 group-hover:opacity-100 transition-opacity">
                   →
@@ -302,53 +302,56 @@ const Index: React.FC = () => {
           4. BESTSELLERS
           ══════════════════════════════════════════ */}
       <section className="w-full px-2 md:px-3 py-10">
+      <div className="flex justify-center w-full mb-16 pt-8 pb-6">
+        <div className="relative inline-flex items-center">
 
-        {/* Graphic Heading */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="flex items-center gap-4 w-full max-w-2xl mb-1">
-            <div className="flex-1 h-px bg-gray-300" />
-            <div className="flex gap-1.5">
-              {["★", "★", "★"].map((s, i) => (
-                <span key={i} className="text-[#e63946] text-[11px] leading-none">
-                  {s}
-                </span>
-              ))}
+          {/* TOP DECORATION: Line -> 3 Stars -> Line */}
+          <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
+            <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
+            <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
+              <span>★</span><span>★</span><span>★</span>
             </div>
-            <div className="flex-1 h-px bg-gray-300" />
+            <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
           </div>
 
-          <div className="flex items-stretch select-none">
-            <div className="relative bg-white px-8 py-3 z-10">
-              <span
-                className="text-[44px] md:text-[64px] font-extrabold text-black uppercase leading-none tracking-tight"
-                style={{ fontFamily: "Montserrat, sans-serif" }}
+          {/* MAIN TEXT: "STILL" & Slanted "CURIOUS?" Box */}
+          <div className="flex items-center z-0">
+            {/* STILL (Straight) */}
+            <span 
+              className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2" 
+              style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
+            >
+              BEST
+            </span>
+
+            {/* CURIOUS? (Slanted left edge ONLY) */}
+            <div 
+              className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
+              style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
+            >
+              <span 
+                className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1" 
+                style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
               >
-                BEST
-              </span>
-              <div className="absolute -right-[28px] top-0 h-full w-14 bg-white skew-x-[-35deg] z-20" />
-            </div>
-            <div className="bg-[#57663D] pl-16 pr-10 py-3 -ml-5 relative z-0">
-              <span
-                className="text-[44px] md:text-[64px] font-black text-white uppercase leading-none tracking-tight"
-                style={{ fontFamily: "Montserrat, sans-serif" }}
-              >
-                SELLERS
+                SELLER
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-full max-w-2xl mt-1">
-            <div className="flex-1 h-px bg-gray-300" />
-            <div className="flex gap-0.5">
+          {/* BOTTOM DECORATION: Line -> 9 Stars -> Line */}
+          <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
+            <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
+            <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
               {Array.from({ length: 9 }).map((_, i) => (
-                <span key={i} className="text-[#e63946] text-[9px] leading-none">
-                  ★
-                </span>
+                <span key={i}>★</span>
               ))}
             </div>
-            <div className="flex-1 h-px bg-gray-300" />
+            <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
           </div>
+
         </div>
+      </div>
+
 
         {/* Grid */}
         {loadingBestsellers ? (
@@ -418,7 +421,7 @@ const Index: React.FC = () => {
                 {/* Info */}
                 <div className="flex flex-col items-center text-center px-1">
                   <h3
-                    className="text-[15px] font-medium text-black leading-snug mb-1"
+                    className="text-[14px] font-medium text-black leading-snug mb-1"
                     style={{ fontFamily: "Montserrat, sans-serif" }}
                   >
                     {item.title || item.name}
@@ -428,10 +431,10 @@ const Index: React.FC = () => {
                     count={item.reviews || 0}
                   />
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap justify-center">
-                    <span className="text-[13px] text-gray-400 line-through">
+                    <span className="text-[14px] text-gray-400 line-through">
                       ₹{item.original_price || item.originalPrice || ""}
                     </span>
-                    <span className="text-[15px] font-medium text-black">
+                    <span className="text-[14px] font-medium text-black">
                       From ₹{item.price || item.base_price}
                     </span>
                   </div>
@@ -520,12 +523,57 @@ const Index: React.FC = () => {
 
 <section className="w-full  py-16 px-4 md:px-8 mt-10">
   <div className="max-w-[1200px] mx-auto">
-    <h2 
-      className="text-center text-[32px] md:text-[38px] font-bold text-[#111] mb-14"
-      style={{ fontFamily: "Georgia, serif" }}
-    >
-      Why shop with Muro!
-    </h2>
+    
+          <div className="flex justify-center w-full mb-16 pt-8 pb-6">
+        <div className="relative inline-flex items-center">
+
+          {/* TOP DECORATION: Line -> 3 Stars -> Line */}
+          <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
+            <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
+            <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
+              <span>★</span><span>★</span><span>★</span>
+            </div>
+            <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
+          </div>
+
+          {/* MAIN TEXT: "STILL" & Slanted "CURIOUS?" Box */}
+          <div className="flex items-center z-0">
+            {/* STILL (Straight) */}
+            <span 
+              className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2" 
+              style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
+            >
+              WITH
+            </span>
+
+            {/* CURIOUS? (Slanted left edge ONLY) */}
+            <div 
+              className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
+              style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
+            >
+              <span 
+                className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1" 
+                style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
+              >
+                MURO
+              </span>
+            </div>
+          </div>
+
+          {/* BOTTOM DECORATION: Line -> 9 Stars -> Line */}
+          <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
+            <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
+            <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <span key={i}>★</span>
+              ))}
+            </div>
+            <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
+          </div>
+
+        </div>
+      </div>
+
     
     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
       
@@ -538,7 +586,7 @@ const Index: React.FC = () => {
         >
           Premium print quality
         </h3>
-        <p className="text-[13px] text-[#555] leading-relaxed">
+        <p className="text-[14px] text-[#555] leading-relaxed">
           We use high-resolution printing and premium materials to ensure every artwork looks sharp, vibrant, and long-lasting.
         </p>
       </div>
@@ -588,13 +636,13 @@ const Index: React.FC = () => {
     </div>
   </div>
 </section>
-{/* ─── TRENDING WORD ART (SCROLLABLE) ─── */}
-<section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16">
+
+{/* <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16">
   
-  {/* Local styles */}
+  {/* Local styles 
   <style>
     {`
-      .no-scrollbar::-webkit-scrollbar {
+      .no-scrollbar::-webkit-scrollbar {`
         display: none;
       }
       .no-scrollbar {
@@ -604,17 +652,58 @@ const Index: React.FC = () => {
     `}
   </style>
 
-  {/* Header */}
-  <div className="flex justify-center mb-12">
-    <h2 
-      className="text-[26px] md:text-[34px] font-bold text-[#111] text-center"
-      style={{ fontFamily: "Georgia, serif" }}
-    >
-      Designed for every wall
-    </h2>
-  </div>
+  {/* Header 
+      <div className="flex justify-center w-full mb-16 pt-8 pb-6">
+        <div className="relative inline-flex items-center">
 
-  {/* Scrollable Categories */}
+          {/* TOP DECORATION: Line -> 3 Stars -> Line 
+          <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
+            <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
+            <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
+              <span>★</span><span>★</span><span>★</span>
+            </div>
+            <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
+          </div>
+
+          {/* MAIN TEXT: "STILL" & Slanted "CURIOUS?" Box 
+          <div className="flex items-center z-0">
+            {/* STILL (Straight) 
+            <span 
+              className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2" 
+              style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
+            >
+              EVERY
+            </span>
+
+            {/* CURIOUS? (Slanted left edge ONLY) 
+            <div 
+              className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
+              style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
+            >
+              <span 
+                className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1" 
+                style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
+              >
+                WALL
+              </span>
+            </div>
+          </div>
+
+          {/* BOTTOM DECORATION: Line -> 9 Stars -> Line 
+          <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
+            <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
+            <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <span key={i}>★</span>
+              ))}
+            </div>
+            <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
+          </div>
+
+        </div>
+      </div>
+
+  {/* Scrollable Categories 
   <div id="wall-slider"  className="flex overflow-x-auto gap-5 pb-4 snap-x no-scrollbar">
     
     {[
@@ -625,7 +714,7 @@ const Index: React.FC = () => {
       { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
       { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" },
 
-      /* Duplicate for chain effect */
+      /* Duplicate for chain effect 
       { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
       { name: "Living Room", img: "https://www.bing.com/th/id/OIP.fuOA2TczrK4FmZnqr7J87wHaGf?w=233&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" },
       { name: "Office / Workspace", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
@@ -658,6 +747,102 @@ const Index: React.FC = () => {
       </div>
     ))}
   </div>
+</section> */}
+
+<section className="max-w-[1400px] mx-auto px-4 md:px-8 py-20">
+
+  {/* Header */}
+  <div className="flex justify-center w-full mb-16">
+    <div className="relative inline-flex items-center">
+
+      {/* Top decoration */}
+      <div className="absolute -top-[14px] left-[20%] flex items-center w-max">
+        <div className="w-[80px] h-[1.5px] bg-[#222]"></div>
+        <div className="flex gap-[4px] mx-3 text-[#e63946] text-[12px]">
+          <span>★</span><span>★</span><span>★</span>
+        </div>
+        <div className="w-[140px] h-[1.5px] bg-[#222]"></div>
+      </div>
+
+      {/* Title */}
+      <div className="flex items-center">
+        <span
+          className="text-[42px] md:text-[70px] font-black text-[#262626] tracking-tight leading-none pr-2"
+          style={{ fontFamily: 'Montserrat, sans-serif' }}
+        >
+          EVERY
+        </span>
+
+        <div
+          className="bg-[#57663D] text-white px-6 md:px-10 py-2 flex items-center justify-center -ml-1"
+          style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
+        >
+          <span
+            className="text-[42px] md:text-[70px] font-black tracking-tight leading-none"
+            style={{ fontFamily: 'Montserrat, sans-serif' }}
+          >
+            WALL
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom decoration */}
+      <div className="absolute -bottom-[14px] left-[5%] flex items-center w-max">
+        <div className="w-[60px] h-[1.5px] bg-[#222]"></div>
+        <div className="flex gap-[4px] mx-3 text-[#e63946] text-[11px]">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <span key={i}>★</span>
+          ))}
+        </div>
+        <div className="w-[120px] h-[1.5px] bg-[#222]"></div>
+      </div>
+
+    </div>
+  </div>
+
+  {/* Cards Grid - 2 Rows */}
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+
+    {[
+      { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+      { name: "Living Room", img: "https://images.unsplash.com/photo-1493666438817-866a91353ca9" },
+      { name: "Office", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
+      { name: "Gym", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438" },
+      { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
+      { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" },
+      { name: "Hallway", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
+      { name: "Dining Room", img: "https://images.unsplash.com/photo-1505691938895-1758d7feb511" },
+      { name: "Studio", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
+      { name: "Bathroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+      { name: "Cafe", img: "https://images.unsplash.com/photo-1442512595331-e89e73853f31" },
+      { name: "Hotel", img: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2" },
+    ].map((item, index) => (
+
+      <div key={index} className="group cursor-pointer">
+        <div className="relative overflow-hidden rounded-xl shadow-md hover:shadow-2xl transition duration-500">
+
+          <img
+            src={item.img}
+            alt={item.name}
+            className="w-full h-[260px] object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition duration-500"></div>
+
+          {/* Text */}
+          <div className="absolute bottom-0 left-0 p-4 text-white">
+            <h3 className="text-[17px] font-semibold tracking-wide">
+              {item.name}
+            </h3>
+          </div>
+
+        </div>
+      </div>
+
+    ))}
+  </div>
+
 </section>
 
       {/* ══════════════════════════════════════════

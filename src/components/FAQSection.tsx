@@ -118,8 +118,8 @@ const FAQSection = ({ id }) => {
                 : "bg-[#f4f5f6] text-[#555] hover:bg-[#e2e4e6]"
             }`}
           >
-            <span className="text-lg leading-none">{tab.icon}</span>
-            {tab.id}
+            <span className="text-[14px] leading-none">{tab.icon}</span>
+            <p>{tab.id}</p>
           </button>
         ))}
       </div>
@@ -137,9 +137,9 @@ const FAQSection = ({ id }) => {
               onClick={() => toggleAccordion(index)}
             >
               <div className="flex items-center justify-between p-5 md:px-6 md:py-5">
-                <h3 className="font-bold text-[14px] md:text-[15px] text-[#222] pr-4">
+                <p className="font-bold text-[14px] md:text-[14.5px] text-[#222] pr-4">
                   {item.q}
-                </h3>
+                </p>
                 <span className="text-gray-400 shrink-0">
                   {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 </span>
@@ -150,7 +150,7 @@ const FAQSection = ({ id }) => {
                   isOpen ? "max-h-[200px] pb-5 opacity-100" : "max-h-0 pb-0 opacity-0"
                 }`}
               >
-                <p className="text-[13.5px] md:text-[14px] text-gray-600 leading-relaxed">
+                <p className="text-[12.5px] md:text-[14px] text-gray-600 leading-relaxed">
                   {item.a}
                 </p>
               </div>
