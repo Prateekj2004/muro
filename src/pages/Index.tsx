@@ -105,6 +105,18 @@ const Index: React.FC = () => {
 
   const [bestsellers, setBestsellers] = useState<any[]>([]);
   const [loadingBestsellers, setLoadingBestsellers] = useState(true);
+  useEffect(() => {
+  const slider = document.getElementById("wall-slider");
+  let scrollAmount = 0;
+
+  const slideTimer = setInterval(() => {
+    if (slider) {
+      slider.scrollLeft += 1;
+    }
+  }, 20);
+
+  return () => clearInterval(slideTimer);
+}, []);
 
   useEffect(() => {
     const fetchBestsellers = async () => {
@@ -284,7 +296,7 @@ const Index: React.FC = () => {
             </Link>
           ))}
         </div>
-      </section>
+      </section> 
 
       {/* ══════════════════════════════════════════
           4. BESTSELLERS
@@ -430,7 +442,7 @@ const Index: React.FC = () => {
         )}
 
         {/* Pagination + View All */}
-        <div className="flex flex-col items-center gap-4 mt-10">
+        {/* <div className="flex flex-col items-center gap-4 mt-10">
           <div className="flex items-center gap-6">
             <button className="text-gray-400 hover:text-black transition-colors">
               <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
@@ -448,21 +460,15 @@ const Index: React.FC = () => {
           >
             View all
           </Link>
-        </div>
+        </div> */}
       </section>
 
+<br />
+<br />
 {/* ─── PROMO BANNER & CATEGORY GRID ─── */}
 <section className="w-full">
   {/* Red Spring Sale Banner */}
-  <div className="bg-[#e63946] text-white py-4 px-4 text-center">
-    <h2 className="text-lg md:text-xl font-bold uppercase tracking-widest mb-1">
-      SPRING SALE - 40% OFF POSTERS*
-    </h2>
-    <div className="text-2xl md:text-3xl font-light tracking-tighter">
-      1 d 22 h 38 min 58 s
-    </div>
-  </div>
-
+  
   {/* 3-Column Image Grid with NEW Compact Height & Images */}
   <div className="grid grid-cols-1 md:grid-cols-3 gap-0 w-full">
     {/* Item 1: New Arrivals (Gallery Wall Aesthetic) */}
@@ -513,7 +519,7 @@ const Index: React.FC = () => {
 </section>
 
 <section className="w-full bg-[#eef3f6] py-16 px-4 md:px-8 mt-10">
-  <div className="max-w-[1300px] mx-auto">
+  <div className="max-w-[1200px] mx-auto">
     <h2 
       className="text-center text-[32px] md:text-[38px] font-bold text-[#111] mb-14"
       style={{ fontFamily: "Georgia, serif" }}
@@ -521,189 +527,143 @@ const Index: React.FC = () => {
       Why shop with Muro!
     </h2>
     
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-12">
-      {/* 1. Superb quality */}
-      <div className="flex flex-col items-center text-center px-2">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      
+      {/* 1 Premium print quality */}
+      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Award className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
           style={{ fontFamily: "Georgia, serif" }}
         >
-          Superb quality
+          Premium print quality
         </h3>
-        <p className="text-[13px] text-[#444] leading-relaxed">
-          Our premium papers and solid wood frames ensure your art looks stunning and lasts for years.
+        <p className="text-[13px] text-[#555] leading-relaxed">
+          We use high-resolution printing and premium materials to ensure every artwork looks sharp, vibrant, and long-lasting.
         </p>
       </div>
 
-      {/* 2. Planet smart */}
-      <div className="flex flex-col items-center text-center px-2">
-        <Globe className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
-        <h3 
-          className="text-[17px] font-bold mb-2 text-[#111]" 
-          style={{ fontFamily: "Georgia, serif" }}
-        >
-          Planet smart
-        </h3>
-        <p className="text-[13px] text-[#444] leading-relaxed">
-          Our eco-friendly processes ensure you make an impact on your home, not the planet.
-        </p>
-      </div>
-
-      {/* 3. Art made easy */}
-      <div className="flex flex-col items-center text-center px-2">
-        <Heart className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
-        <h3 
-          className="text-[17px] font-bold mb-2 text-[#111]" 
-          style={{ fontFamily: "Georgia, serif" }}
-        >
-          Art made easy
-        </h3>
-        <p className="text-[13px] text-[#444] leading-relaxed">
-          Clear pricing and fast delivery – we make transforming your home refreshingly straightforward.
-        </p>
-      </div>
-
-      {/* 4. Find your style */}
-      <div className="flex flex-col items-center text-center px-2">
-        <ImageIcon className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
-        <h3 
-          className="text-[17px] font-bold mb-2 text-[#111]" 
-          style={{ fontFamily: "Georgia, serif" }}
-        >
-          Find your style
-        </h3>
-        <p className="text-[13px] text-[#444] leading-relaxed">
-          Our collection grows daily, ensuring you'll always find something that feels just right for your space.
-        </p>
-      </div>
-
-      {/* 5. Simple returns */}
-      <div className="flex flex-col items-center text-center px-2">
+      {/* 2 Secure packaging */}
+      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Package className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
           style={{ fontFamily: "Georgia, serif" }}
         >
-          Simple returns
+          Secure packaging
         </h3>
-        <p className="text-[13px] text-[#444] leading-relaxed">
-          Something not right? We will replace or refund all orders you aren't happy with.
+        <p className="text-[13px] text-[#555] leading-relaxed">
+          Every order is carefully packed with protective materials so your frames arrive safely and in perfect condition.
         </p>
       </div>
 
-      {/* 6. 5* Service */}
-      <div className="flex flex-col items-center text-center px-2">
+      {/* 3 Designed with intention */}
+      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+        <Heart className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
+        <h3 
+          className="text-[17px] font-bold mb-2 text-[#111]" 
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Designed with intention
+        </h3>
+        <p className="text-[13px] text-[#555] leading-relaxed">
+          Each design is thoughtfully created to bring balance, warmth, and personality to your living space.
+        </p>
+      </div>
+
+      {/* 4 Easy support */}
+      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Star className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
           style={{ fontFamily: "Georgia, serif" }}
         >
-          5* Service
+          Easy support via Email & WhatsApp
         </h3>
-        <p className="text-[13px] text-[#444] leading-relaxed">
-          Our expert team are always on hand to answer any questions.
+        <p className="text-[13px] text-[#555] leading-relaxed">
+          Need help with your order or choosing a design? Our team is always available via Email and WhatsApp.
         </p>
       </div>
+
     </div>
   </div>
 </section>
-
 {/* ─── TRENDING WORD ART (SCROLLABLE) ─── */}
 <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16">
+  
+  {/* Local styles */}
+  <style>
+    {`
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    `}
+  </style>
+
   {/* Header */}
-  <div className="flex justify-between items-end mb-6">
+  <div  id="wall-slider" className="flex justify-center mb-12">
     <h2 
-      className="text-[26px] md:text-[32px] font-bold text-[#111]"
+      className="text-[26px] md:text-[34px] font-bold text-[#111] text-center"
       style={{ fontFamily: "Georgia, serif" }}
     >
-      Trending Word Art
+      Designed for every wall
     </h2>
-    <Link 
-      to="/trending" 
-      className="border border-gray-300 rounded-md px-5 py-2 text-[13px] font-bold text-[#111] hover:border-[#111] transition-colors"
-    >
-      View all
-    </Link>
   </div>
 
-  {/* Scrollable Container */}
-  {loadingTrending ? (
-    <div className="flex gap-6 overflow-hidden">
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="w-[280px] h-[350px] bg-gray-100 animate-pulse shrink-0" />
-      ))}
-    </div>
-  ) : (
-    <div className="flex overflow-x-auto gap-4 md:gap-5 pb-4 snap-x no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-      {/* Dynamic Products Map */}
-      {/* Dynamic Products Map */}
-      {trendingProducts.map((product) => (
-        <Link 
-          key={product.id} 
-          to={`/product/${product.id}`}
-          className="snap-start shrink-0 w-[260px] md:w-[280px] group cursor-pointer flex flex-col"
-        >
-          {/* Image Container with Hover Effects */}
-          <div className="relative bg-[#f4f5f6] aspect-[4/5] overflow-hidden rounded-md mb-3">
-            
-            {/* Background / Hover image (Scales up on hover) */}
-            <img 
-              src={getFullImageUrl(product.wall_poster_url || product.hoverImg || product.image_url)} 
-              alt={product.title} 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
-            />
-            
-            {/* Front / Default image (Fades out on hover) */}
-            <div className="absolute inset-0 z-10 bg-[#f4f5f6] transition-opacity duration-500 ease-in-out group-hover:opacity-0 flex items-center justify-center p-6">
-              <img 
-                src={getFullImageUrl(product.main_poster_url || product.image_url)} 
-                alt={product.title} 
-                className="w-full h-full object-contain drop-shadow-[0_5px_15px_rgba(0,0,0,0.12)]"
-              />
-            </div>
-            
-            {/* Likes/Wishlist Badge (Fades in & slides up on hover) */}
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                // Add your wishlist logic here
-              }}
-              className="absolute bottom-3 right-3 bg-white rounded-full px-2.5 py-1.5 flex flex-col items-center justify-center shadow-md border border-gray-100 z-20 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:border-gray-300"
-            >
-              <Heart className="w-3.5 h-3.5 text-gray-400 mb-0.5 group-hover:fill-[#e63946] group-hover:text-[#e63946] transition-colors" />
-              <span className="text-[9px] font-bold text-gray-500 leading-none">
-                {product.likes || "1.1k"}
-              </span>
-            </button>
-          </div>
+  {/* Scrollable Categories */}
+  <div className="flex overflow-x-auto gap-5 pb-4 snap-x no-scrollbar">
+    
+    {[
+      { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+      { name: "Living Room", img: "https://www.bing.com/th/id/OIP.fuOA2TczrK4FmZnqr7J87wHaGf?w=233&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" },
+      { name: "Office / Workspace", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
+      { name: "Gyms", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438" },
+      { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
+      { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" },
 
-          {/* Product Details */}
-          <div className="mt-1 text-left px-1">
-            <h3 className="text-[14px] text-gray-800 font-medium truncate mb-1">
-              {product.title || product.name || "Word Art Poster"}
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] font-bold text-[#111]">
-                From ₹{product.price || product.base_price || "19.95"}
-              </span>
-              {(product.original_price || product.originalPrice) && (
-                <span className="text-[12px] text-gray-400 line-through">
-                  ₹{product.original_price || product.originalPrice}
-                </span>
-              )}
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  )}
+      /* Duplicate for chain effect */
+      { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+      { name: "Living Room", img: "https://www.bing.com/th/id/OIP.fuOA2TczrK4FmZnqr7J87wHaGf?w=233&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" },
+      { name: "Office / Workspace", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
+      { name: "Gyms", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438" },
+      { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
+      { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" }
+    ].map((item, index) => (
+      
+      <div
+        key={index}
+        className="snap-start shrink-0 w-[260px] md:w-[280px] group cursor-pointer"
+      >
+        <div className="relative aspect-[4/5] overflow-hidden rounded-lg">
+          <img
+            src={item.img}
+            alt={item.name}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-500"></div>
+        </div>
+
+        <div className="text-center mt-3">
+          <h3 
+            className="text-[15px] font-semibold text-[#111]"
+            style={{ fontFamily: "Georgia, serif" }}
+          >
+            {item.name}
+          </h3>
+        </div>
+      </div>
+    ))}
+  </div>
 </section>
 
       {/* ══════════════════════════════════════════
           5. POPULAR CATEGORIES
           ══════════════════════════════════════════ */}
-      <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 bg-[#fcfcfc]">
+      {/* <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 bg-[#fcfcfc]">
         <div className="text-center mb-12">
           <p
             className="m-0 opacity-80 text-[32px] md:text-[42px]"
@@ -751,7 +711,7 @@ const Index: React.FC = () => {
       {/* ══════════════════════════════════════════
           6. CUSTOMER REVIEWS
           ══════════════════════════════════════════ */}
-      <section className="max-w-4xl mx-auto px-4 py-20">
+      {/* <section className="max-w-4xl mx-auto px-4 py-20">
         <div className="text-center mb-10">
           <p
             className="m-0 opacity-80 text-[28px] md:text-[36px]"
@@ -791,7 +751,7 @@ const Index: React.FC = () => {
       {/* ══════════════════════════════════════════
           7. NEWSLETTER
           ══════════════════════════════════════════ */}
-      <section className="bg-[#C2D8B8] py-20 text-center">
+      {/* <section className="bg-[#C2D8B8] py-20 text-center">
         <div className="max-w-[600px] mx-auto px-4">
           <p
             className="m-0 opacity-100 px-3 sm:px-[52px] text-[32px] md:text-[42px] mb-4 text-white leading-tight"
@@ -821,7 +781,7 @@ const Index: React.FC = () => {
       {/* ══════════════════════════════════════════
           8. SEO CONTENT
           ══════════════════════════════════════════ */}
-      <section className="max-w-5xl mx-auto px-8 py-20 text-center border-t border-gray-100">
+      {/* <section className="max-w-5xl mx-auto px-8 py-20 text-center border-t border-gray-100">
         <h2
           className="text-[24px] md:text-[30px] font-bold mb-8"
           style={{ fontFamily: "Arsenal" }}
@@ -851,7 +811,7 @@ const Index: React.FC = () => {
             </p>
           </div>
         </div>
-      </section>
+      </section> */} 
       <FAQSection/>
     </main>
   );
