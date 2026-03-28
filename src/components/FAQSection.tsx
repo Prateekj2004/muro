@@ -50,7 +50,7 @@ const FAQSection = () => {
   };
 
   return (
-    <section className="w-full max-w-5xl mx-auto px-4 py-20 bg-white">
+    <section className="w-full max-w-5xl mx-auto px-4 py-20 ">
       
       {/* ─── GRAPHIC HEADER (PIXEL-PERFECT IMAGE REPLICA) ─── */}
       <div className="flex justify-center w-full mb-16 pt-8 pb-6">

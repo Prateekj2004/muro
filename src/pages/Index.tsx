@@ -180,7 +180,7 @@ const Index: React.FC = () => {
   };
 
   return (
-    <main className="bg-white text-[#222] font-sans selection:bg-[#a0b695] selection:text-white overflow-x-hidden">
+    <main className="bg-[#F0EEE9] text-[#222] font-sans selection:bg-[#a0b695] selection:text-white overflow-x-hidden">
 
       {/* ══════════════════════════════════════════
           1. HERO SECTION
@@ -518,7 +518,7 @@ const Index: React.FC = () => {
   </div>
 </section>
 
-<section className="w-full bg-[#eef3f6] py-16 px-4 md:px-8 mt-10">
+<section className="w-full  py-16 px-4 md:px-8 mt-10">
   <div className="max-w-[1200px] mx-auto">
     <h2 
       className="text-center text-[32px] md:text-[38px] font-bold text-[#111] mb-14"
