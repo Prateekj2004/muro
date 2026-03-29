@@ -361,152 +361,112 @@ const Index: React.FC = () => {
       {/* ══════════════════════════════════════════
           4. BESTSELLERS
           ══════════════════════════════════════════ */}
-      <section className="w-full px-2 md:px-3 py-10">
-<div className="w-full flex justify-center my-12">
-  <div className="flex items-center gap-4">
-
-    {/* Left Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
-
-    {/* Text + Bottom Decoration */}
-    <div className="flex flex-col items-center">
-      <h2
-        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
-        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
-      >
-        BEST SELLER
-      </h2>
-
-      {/* Bottom Line */}
-      <div className="flex items-center gap-2 mt-2">
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-        <div className="text-[#C9A646] text-[14px]">★</div>
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-      </div>
-    </div>
-
-    {/* Right Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
-
+      <section className="w-full py-10">
+  {/* Header Section */}
+  <div className="max-w-[1400px] mx-auto px-6 mb-8 flex items-center justify-between">
+    <p
+      className="font-montserrat font-light tracking-[1px] text-[22px] text-black hover:text-[#57663D] transition-colors uppercase"
+    
+    >
+    BEST SELLERS
+    </p>
+    <Link
+      to="/products"
+      className="text-[12px] md:text-[14px] font-medium tracking-[1px] text-[#1C1C1C] uppercase hover:underline"
+      style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
+    >
+      View All
+    </Link>
   </div>
-</div>
 
-        {/* Grid */}
-        {loadingBestsellers ? (
-          <div className="h-[30vh] flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-[#111] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : bestsellers.length === 0 ? (
-          <div className="h-[20vh] flex items-center justify-center text-gray-400">
-            <p className="text-sm tracking-widest uppercase">No products found</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-1.5">
-            {bestsellers.map((item) => (
-              <Link
-                key={item.id}
-                to={`/product/${item.id}`}
-                className="group cursor-pointer flex flex-col"
-              >
-                {/* Image with hover swap */}
-                <div className="relative aspect-[3/4] bg-[#f2f2f2] overflow-hidden rounded-md mb-2">
-
-                  {/* Background / hover image */}
-                  <img
-                    src={getFullImageUrl(
-                      item.wall_poster_url ||
-                      item.hoverImg ||
-                      item.main_poster_url ||
-                      item.image_url
-                    )}
-                    alt={item.title}
-                    className="absolute inset-0 w-full h-full object-cover
-                               transition-transform duration-700 ease-out
-                               group-hover:scale-105 z-0"
-                  />
-
-                  {/* Front / default image — fades out on hover */}
-                  <div
-                    className="absolute inset-0 z-10 bg-white
-                               transition-opacity duration-500 ease-in-out
-                               group-hover:opacity-0"
-                  >
-                    <img
-                      src={getFullImageUrl(
-                        item.main_poster_url ||
-                        item.defaultImg ||
-                        item.image_url
-                      )}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Sale pill */}
-                  <div className="absolute bottom-2 left-2 bg-[#e63946] text-white text-[10px] font-black px-3 py-1 rounded-full z-20 uppercase tracking-wide shadow">
-                    Sale
-                  </div>
-
-                  {/* Wishlist heart */}
-                  <button
-                    onClick={(e) => e.preventDefault()}
-                    className="absolute top-2 right-2 bg-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-md z-20"
-                  >
-                    <Heart className="w-3.5 h-3.5 text-[#e63946]" />
-                  </button>
-                </div>
-
-                {/* Info */}
-                <div className="flex flex-col items-center text-center px-1">
-                  <h3
-                    className="text-[14px] font-medium text-black leading-snug mb-1"
-                    style={{ fontFamily: "Montserrat, sans-serif" }}
-                  >
-                    {item.title || item.name}
-                  </h3>
-                  <StarRating
-                    rating={item.rating || 5}
-                    count={item.reviews || 0}
-                  />
-                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap justify-center">
-                    <span className="text-[14px] text-gray-400 line-through">
-                      ₹{item.original_price || item.originalPrice || ""}
-                    </span>
-                    <span className="text-[14px] font-medium text-black">
-                      From ₹{item.price || item.base_price}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination + View All */}
-        {/* <div className="flex flex-col items-center gap-4 mt-10">
-          <div className="flex items-center gap-6">
-            <button className="text-gray-400 hover:text-black transition-colors">
-              <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
-            </button>
-            <span className="text-[15px] font-medium text-[#111] tracking-wide">
-              1 / {bestsellers.length}
-            </span>
-            <button className="text-gray-400 hover:text-black transition-colors">
-              <ChevronRight className="w-5 h-5" strokeWidth={1.5} />
-            </button>
-          </div>
+  {/* Grid */}
+  <div className="max-w-[1400px] mx-auto px-6">
+    {loadingBestsellers ? (
+      <div className="h-[30vh] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#111] border-t-transparent rounded-full animate-spin" />
+      </div>
+    ) : bestsellers.length === 0 ? (
+      <div className="h-[20vh] flex items-center justify-center text-gray-400">
+        <p className="text-sm tracking-widest uppercase">No products found</p>
+      </div>
+    ) : (
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+        {bestsellers.map((item) => (
           <Link
-            to="/products"
-            className="bg-black text-white text-[15px] font-medium px-10 py-4 rounded-xl hover:bg-[#222] transition-colors tracking-wide"
+            key={item.id}
+            to={`/product/${item.id}`}
+            className="group cursor-pointer flex flex-col"
           >
-            View all
+            {/* Image Container */}
+            <div className="relative aspect-[3/4] bg-[#f4f4f4] overflow-hidden mb-3">
+              {/* Background / hover image */}
+              <img
+                src={getFullImageUrl(
+                  item.wall_poster_url ||
+                    item.hoverImg ||
+                    item.main_poster_url ||
+                    item.image_url
+                )}
+                alt={item.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
+              />
+
+              {/* Front / default image — fades out on hover */}
+              <div className="absolute inset-0 z-10 transition-opacity duration-500 ease-in-out group-hover:opacity-0">
+                <img
+                  src={getFullImageUrl(
+                    item.main_poster_url ||
+                      item.defaultImg ||
+                      item.image_url
+                  )}
+                  alt={item.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Top Left Yellow Discount Badge */}
+              <div className="absolute top-3 left-3 bg-[#fdf2a6] text-black text-[10px] font-semibold px-2 py-1 rounded-full z-20 shadow-sm">
+                -40%
+              </div>
+
+              {/* Bottom Left White Badge (Conditional example for New Arrivals) */}
+              {/* You can wrap this in a condition like: {item.isNew && (...)} */}
+              <div className="absolute bottom-3 left-3 bg-white text-black text-[10px] font-semibold px-2 py-1 rounded-full z-20 shadow-sm">
+                New Arrivals
+              </div>
+            </div>
+
+            {/* Info Section (Left Aligned) */}
+            <div className="flex flex-col items-start text-left w-full">
+              {/* Brand Name (Optional: Replace 'Postery' with item.brand if dynamic) */}
+              <span className="text-[11px] text-gray-500 mb-0.5">
+                Postery
+              </span>
+              
+              <h3
+                className="text-[13px] font-medium text-[#1C1C1C] leading-snug mb-1 w-full pr-2"
+                style={{ fontFamily: "Montserrat, sans-serif" }}
+              >
+                {item.title || item.name}
+              </h3>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[12px] font-medium text-black">
+                  As low as ₹{item.price || item.base_price}
+                </span>
+                {(item.original_price || item.originalPrice) && (
+                  <span className="text-[12px] text-gray-400 line-through">
+                    ₹{item.original_price || item.originalPrice}
+                  </span>
+                )}
+              </div>
+            </div>
           </Link>
-        </div> */}
-      </section>
+        ))}
+      </div>
+    )}
+  </div>
+</section>
 
 <br />
 <br />
