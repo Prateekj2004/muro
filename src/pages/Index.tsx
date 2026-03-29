@@ -605,8 +605,8 @@ const Index: React.FC = () => {
 <section className="max-w-7xl mx-auto p-4 sm:p-8 font-sans">
       
       {/* Heading */}
-      <h2 className="text-center text-[56px] tracking-wide mb-10 text-[#006039]">
-        WHY BUY FROM <span className="font-extrabold text-[#006039]">MURO</span>?
+      <h2 className="text-center text-[56px] tracking-wide mb-10 text-[#1c1c1c]">
+        WHY BUY FROM <span className="font-extrabold text-[#1c1c1c]">MURO</span>?
       </h2>
 
       <div className="relative">
@@ -751,35 +751,6 @@ const Index: React.FC = () => {
 {/* ══════════════════════════════════════════
     BRAND MESSAGE SECTION
     ══════════════════════════════════════════ */}
-<section className="w-full flex flex-col md:flex-row min-h-[400px] lg:min-h-[500px]">
-  <div className="w-full md:w-1/2 bg-[#1C1C1C] px-8 md:px-16 lg:px-24 py-16 flex flex-col justify-center text-white">
-    <h2 
-      className="text-[3px] md:text-[32px] lg:text-[32px] mb-5 leading-[1.2] tracking-wide font-normal"
-      style={{ fontFamily: 'Georgia, serif' }}
-    >
-      We don’t design decorations.<br />
-      We design reminders. <br/>
-      Your wall is the most silent influence in your room.<br />
-      Choose what speaks to you daily.
-    </h2>
-    <p 
-      className="text-[15px] md:text-[17px] text-white/90 leading-relaxed max-w-lg font-light tracking-wide"
-      style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-    >
-    </p>
-  </div>
-  {/* Left Side - Image */}
-  <div className="w-full md:w-1/2 relative min-h-[300px] md:min-h-full">
-    <img
-      src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1200&auto=format&fit=crop"
-      alt="Muro Room Inspiration"
-      className="absolute inset-0 w-full h-full object-cover"
-    />
-  </div>
-
-  {/* Right Side - Text Content */}
-  
-</section>
 
       <FAQSection id="faqs"/>
     </main>

@@ -56,35 +56,20 @@ const FAQSection = ({ id }) => {
 <div className="w-full flex justify-center my-12">
   <div className="flex items-center gap-4">
 
-    {/* Left Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
 
     {/* Text + Bottom Decoration */}
     <div className="flex flex-col items-center">
-      <h2
-        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
-        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
-      >
-        STILL CURIOUS
-      </h2>
+      
 
-      {/* Bottom Line */}
-      <div className="flex items-center gap-2 mt-2">
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-        <div className="text-[#C9A646] text-[14px]">★</div>
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-      </div>
     </div>
 
-    {/* Right Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
 
   </div>
 </div>
+      <h2 className="text-center text-[56px] tracking-wide mb-10 text-[#1c1c1c]">
+        STILL <span className="font-extrabold text-[#1c1c1c]">CURIOUS?</span>
+      </h2>
+
       {/* ─── CATEGORY TABS ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
         {tabs.map((tab) => (
