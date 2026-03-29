@@ -879,159 +879,39 @@ const Index: React.FC = () => {
 
 </section>
 
+{/* ══════════════════════════════════════════
+    BRAND MESSAGE SECTION
+    ══════════════════════════════════════════ */}
+<section className="w-full flex flex-col md:flex-row min-h-[400px] lg:min-h-[500px]">
+  <div className="w-full md:w-1/2 bg-[#1C1C1C] px-8 md:px-16 lg:px-24 py-16 flex flex-col justify-center text-white">
+    <h2 
+      className="text-[3px] md:text-[32px] lg:text-[32px] mb-5 leading-[1.2] tracking-wide font-normal"
+      style={{ fontFamily: 'Georgia, serif' }}
+    >
+      We don’t design decorations.<br />
+      We design reminders. <br/>
+      Your wall is the most silent influence in your room.<br />
+      Choose what speaks to you daily.
+    </h2>
+    <p 
+      className="text-[15px] md:text-[17px] text-white/90 leading-relaxed max-w-lg font-light tracking-wide"
+      style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
+    >
+    </p>
+  </div>
+  {/* Left Side - Image */}
+  <div className="w-full md:w-1/2 relative min-h-[300px] md:min-h-full">
+    <img
+      src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1200&auto=format&fit=crop"
+      alt="Muro Room Inspiration"
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+  </div>
 
-      {/* ══════════════════════════════════════════
-          5. POPULAR CATEGORIES
-          ══════════════════════════════════════════ */}
-      {/* <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 bg-[#fcfcfc]">
-        <div className="text-center mb-12">
-          <p
-            className="m-0 opacity-80 text-[32px] md:text-[42px]"
-            style={{ fontFamily: "Arsenal" }}
-          >
-            Popular Categories
-          </p>
-        </div>
-        <div className="flex overflow-x-auto gap-8 no-scrollbar justify-start md:justify-center px-4">
-          {[
-            "Iconic",
-            "Illustration",
-            "Artists",
-            "Personalised",
-            "Photo Art",
-            "Nature",
-          ].map((cat, i) => (
-            <Link
-              to={`/products?cat=${cat.toLowerCase()}`}
-              key={i}
-              className="flex flex-col items-center min-w-[120px] group"
-            >
-              <div className="w-24 h-24 md:w-40 md:h-40 rounded-full overflow-hidden mb-4 border-2 border-transparent group-hover:border-[#a0b695] transition-all p-1">
-                <img
-                  src={
-                    bestsellers[i]
-                      ? getFullImageUrl(
-                          bestsellers[i].main_poster_url ||
-                          bestsellers[i].image_url
-                        )
-                      : "https://via.placeholder.com/160?text=Art"
-                  }
-                  alt={cat}
-                  className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-all duration-700"
-                />
-              </div>
-              <span className="text-[14px] font-bold uppercase tracking-widest text-center group-hover:text-[#a0b695]">
-                {cat}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+  {/* Right Side - Text Content */}
+  
+</section>
 
-      {/* ══════════════════════════════════════════
-          6. CUSTOMER REVIEWS
-          ══════════════════════════════════════════ */}
-      {/* <section className="max-w-4xl mx-auto px-4 py-20">
-        <div className="text-center mb-10">
-          <p
-            className="m-0 opacity-80 text-[28px] md:text-[36px]"
-            style={{ fontFamily: "Arsenal" }}
-          >
-            Customer Reviews
-          </p>
-        </div>
-        <div className="bg-[#f9f7f2] p-10 rounded-2xl border border-gray-100 flex flex-col md:flex-row gap-10 items-center">
-          <div className="text-center md:border-r border-gray-200 md:pr-10">
-            <p className="text-5xl font-bold mb-2">4.3</p>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">
-              Excellent
-            </p>
-            <div className="flex justify-center text-[#222] mb-2">
-              <Star className="fill-black" />
-              <Star className="fill-black" />
-              <Star className="fill-black" />
-              <Star className="fill-black" />
-              <Star className="text-gray-300" />
-            </div>
-            <p className="text-[11px] text-gray-400">Based on 70,914 ratings</p>
-          </div>
-          <div className="flex-1 grid grid-cols-1 gap-6">
-            <div className="italic text-[15px] text-gray-700">
-              "Very quick delivery and fab poster thank you. Had this made up
-              for my wedding and I can't wait to share it with all of our
-              guests."
-              <p className="not-italic text-xs font-bold mt-4 uppercase tracking-widest text-[#a0b695] flex items-center gap-2">
-                <Check className="w-3 h-3" /> Verified buyer
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          7. NEWSLETTER
-          ══════════════════════════════════════════ */}
-      {/* <section className="bg-[#C2D8B8] py-20 text-center">
-        <div className="max-w-[600px] mx-auto px-4">
-          <p
-            className="m-0 opacity-100 px-3 sm:px-[52px] text-[32px] md:text-[42px] mb-4 text-white leading-tight"
-            style={{ fontFamily: "Arsenal" }}
-          >
-            Stay up to date
-          </p>
-          <p className="text-[15px] text-white/80 mb-10 font-medium tracking-wide">
-            Receive exclusive offers and discover new arrivals.
-          </p>
-          <form
-            className="flex flex-col sm:flex-row gap-0 max-w-md mx-auto"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="example@mail.com"
-              className="flex-1 py-4 px-6 text-sm outline-none rounded-s-full sm:rounded-s-full rounded-none"
-            />
-            <button className="bg-black text-white px-10 py-4 text-xs font-bold tracking-widest uppercase rounded-e-full sm:rounded-e-full rounded-none hover:bg-gray-900 transition-all">
-              Send
-            </button>
-          </form>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          8. SEO CONTENT
-          ══════════════════════════════════════════ */}
-      {/* <section className="max-w-5xl mx-auto px-8 py-20 text-center border-t border-gray-100">
-        <h2
-          className="text-[24px] md:text-[30px] font-bold mb-8"
-          style={{ fontFamily: "Arsenal" }}
-        >
-          Wall art online at Muro
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left text-[14px] text-gray-600 leading-relaxed">
-          <div>
-            <h3 className="font-bold text-black mb-2 uppercase tracking-widest">
-              Large selection
-            </h3>
-            <p>
-              Muro offers wall art for every occasion, season, and style, with
-              posters, prints, and canvas art prints designed for
-              self-expression. From Scandinavian-inspired designs to modern
-              photography.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-bold text-black mb-2 uppercase tracking-widest">
-              Affordable Art
-            </h3>
-            <p>
-              We make it fun to decorate with high-quality wall art - at
-              affordable prices to make you smile. Find fantastic art at happy
-              prices with wall art from Muro!
-            </p>
-          </div>
-        </div>
-      </section> */} 
       <FAQSection id="faqs"/>
     </main>
   );

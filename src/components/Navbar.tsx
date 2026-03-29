@@ -68,8 +68,8 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  // Shared base class for all desktop nav links
- const navBase = "font-montserrat text-[15px] font-medium text-[#111] uppercase tracking-[0.08em] hover:opacity-60 transition-opacity whitespace-nowrap pb-1.5";
+  // ✅ FIX: Changed text-[#111] to text-white here so the nav links actually become white
+  const navBase = "font-montserrat text-[15px] font-medium text-white uppercase tracking-[0.08em] hover:opacity-60 transition-opacity whitespace-nowrap pb-1.5";
   const navActive = "nav-zigzag opacity-100";
 
   return (
@@ -231,9 +231,9 @@ const Navbar = () => {
       </div>
 
       {/* ══════════════════════════════════════════
-          ROW 3 — NAV LINKS (Golden Yellow + Zigzag)
+          ROW 3 — NAV LINKS 
           ══════════════════════════════════════════ */}
-      <div className="w-full bg-[#FBDA71] hidden lg:block">
+      <div className="w-full bg-[#222222] text-white hidden lg:block">
         <nav className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-center gap-5 xl:gap-8 h-[46px]">
 
           <NavLink to="/" className={navBase} activeClassName={navActive}>
@@ -251,7 +251,7 @@ const Navbar = () => {
               <ChevronDown size={12} className="group-hover:rotate-180 transition-transform duration-300" strokeWidth={3} />
             </NavLink>
 
-            <div className="absolute top-[46px] left-1/2 -translate-x-1/2 w-[300px] bg-white border border-[#E5E5E5] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col py-3 z-50">
+            <div className="absolute top-[46px] left-1/2 -translate-x-1/2 w-[300px] bg-white border border-[#E5E5E5] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col py-3 z-50 text-black">
               {categories.map((cat) => (
                 <NavLink
                   key={cat}
