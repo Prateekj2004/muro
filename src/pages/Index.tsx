@@ -489,7 +489,7 @@ const Index: React.FC = () => {
     </Link>
 
     {/* Item 2: Canvas Art (Texture Focus) */}
-    <Link to="/canvas-art" className="relative group overflow-hidden h-[420px]">
+    <Link to="/canvas-art" className="relative group overflow-hidden h-[620px]">
       <img 
         src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1200&auto=format&fit=crop" 
         alt="Canvas Art"
@@ -504,7 +504,7 @@ const Index: React.FC = () => {
     </Link>
 
     {/* Item 3: Picture Frames (Frame Collage) */}
-    <Link to="/frames" className="relative group overflow-hidden h-[420px]">
+    <Link to="/frames" className="relative group overflow-hidden h-[620px]">
       <img 
         src="https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=1200&auto=format&fit=crop" 
         alt="Picture Frames"
