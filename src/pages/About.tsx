@@ -20,7 +20,7 @@ const About: React.FC = () => {
   };
 
   return (
-    <main className="bg-[#F0EEE9] text-[#222222] font-sans selection:bg-[#2F4F4F] selection:text-white">
+    <main className="bg-[#F0EEE9] text-[#1c1c1c] font-sans selection:bg-[#2F4F4F] selection:text-white">
       
       {/* 1. HERO SECTION */}
       <section className="relative pt-32 pb-20 px-6 md:px-12 text-center overflow-hidden">
@@ -32,17 +32,17 @@ const About: React.FC = () => {
         >
           <h1 className="font-serif text-5xl md:text-8xl leading-[0.9] md:leading-[1.1] mb-8">
             Environment is not background. <br />
-            <span className="italic text-[#2F4F4F]">It is influence.</span>
+            <span className="italic text-[#006039]">It is influence.</span>
           </h1>
-          <div className="w-16 h-[1px] bg-[#222222] mx-auto mb-8" />
-          <p className="text-lg md:text-xl uppercase tracking-widest font-light opacity-70">
+          <div className="w-16 h-[1px] bg-[#1c1c1c] mx-auto mb-8" />
+          <p className="text-lg md:text-xl uppercase tracking-widest font-light ">
             What surrounds you is shaping you — every day.
           </p>
         </motion.div>
       </section>
 
       {/* 2. THE CONVICTION */}
-      <section className="py-20 px-6 md:px-12 bg-white border-y border-[#222222]/5">
+      <section className="py-20 px-6 md:px-12 bg-white border-y border-[#1c1c1c]/5">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-center">
             
@@ -70,18 +70,19 @@ const About: React.FC = () => {
               className="space-y-8"
             >
               <h2 className="font-serif text-3xl md:text-4xl leading-tight">
-                MURO POSTER was built on a simple conviction: <br/>
-                <span className="text-[#2F4F4F]">environment creates identity.</span>
+                MURO POSTER was built on a simple belief: <br/>
+                <span className="text-[#2F4F4F]">the space around you quitely shapes who you become.</span>
               </h2>
               <p className="text-lg leading-relaxed opacity-80 font-light">
-                We do not see walls as decoration. We see them as psychological space — a place where repetition becomes a mindset.
+                What you see every day doesn’t stay on the surface ; it settles into your mind, influencing how you think, feel and move through life. 
               </p>
               <p className="text-lg leading-relaxed opacity-80 font-light">
-                Every day you absorb what you repeatedly see: words, structure, form, space. They enter quietly, settle deeply, and begin to guide how you think, decide, and act. 
+                Most people treat walls as something to fill, but we see them differently.
+To us, they are a part of your mental environment - a place where ideas are reinforced and identity takes form. That’s why we don’t create posters just to decorate a room. We create them with intention- to bring clarity, focus and a sense of direction into your everyday space. 
               </p>
               <div className="pl-6 border-l-2 border-[#2F4F4F]">
                 <p className="text-xl font-serif italic">
-                  "Most environments are designed for appearance. We design for intention."
+                  "When your environment reflects purpose, you naturally begin to live with it"
                 </p>
               </div>
             </motion.div>
@@ -90,8 +91,8 @@ const About: React.FC = () => {
       </section>
 
       {/* 3. THE PHILOSOPHY */}
-      <section className="py-24 px-6 md:px-12 bg-[#222222] text-[#F0EEE9] text-center">
-        <div className="container mx-auto max-w-3xl">
+      <section className="py-24 px-4 md:px-6 bg-[#1c1c1c] text-[#F0EEE9] text-center">
+        <div className="container mx-auto max-w-5xl">
           <motion.div
              initial={{ opacity: 0, y: 40 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -100,11 +101,12 @@ const About: React.FC = () => {
           >
             <Quote className="w-10 h-10 mx-auto text-[#2F4F4F] mb-8 opacity-80" />
             <h3 className="font-serif text-3xl md:text-5xl leading-tight mb-8">
-              Not a trend. No noise. <br/>
-              <span className="italic text-white">Just Repetition.</span>
+              Most spaces are designed to look good, <br/>
+              <span className="italic text-white">but very few are designed to make you better.</span>
             </h3>
             <p className="text-lg md:text-xl font-light opacity-70 leading-relaxed mb-10">
-              Each MURO piece exists to reinforce a chosen state — clarity, discipline, focus, calm, strength, growth. Identity is not declared once; it is built daily through what you allow to surround you.
+              MURO exists to change that. Every piece we create is to build to reinforce a state of mind- clarity, discipline, calm, focus, strengh. 
+We believe in keeping things minimal but intentional- where every element has a purpose and nothing feels random. Because what you choose to see every day doesn’t occupy space, it quietly influences your thoughts and direction over time.
             </p>
           </motion.div>
         </div>
@@ -123,7 +125,7 @@ const About: React.FC = () => {
             </p>
             <Link 
               to="/shop" 
-              className="inline-flex items-center gap-3 bg-[#222222] text-white px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-[#2F4F4F] transition-all duration-300 mt-4"
+              className="inline-flex items-center gap-3 bg-[#1c1c1c] text-white px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-[#2F4F4F] transition-all duration-300 mt-4"
             >
               Start Shaping Your Space <ArrowRight className="w-4 h-4" />
             </Link>
@@ -133,9 +135,9 @@ const About: React.FC = () => {
             <img 
               src={aboutInterior} 
               alt="Atmosphere" 
-              className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+              className="w-full h-full object-cover  transition-all duration-700"
             />
-             <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur text-[#222222] px-4 py-2 text-[10px] uppercase font-bold tracking-widest border border-[#222222]/10">
+             <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur text-[#1c1c1c] px-4 py-2 text-[10px] uppercase font-bold tracking-widest border border-[#1c1c1c]/10">
                 Est. 2026
              </div>
           </div>
@@ -144,7 +146,7 @@ const About: React.FC = () => {
       </section>
 
       {/* 5. FINAL REMINDER */}
-      <section className="py-20 text-center border-t border-[#222222]/5">
+      <section className="py-20 text-center border-t border-[#1c1c1c]/5">
         <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#2F4F4F] mb-4">
           Final Thought
         </p>
