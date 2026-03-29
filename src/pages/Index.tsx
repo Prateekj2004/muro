@@ -438,10 +438,7 @@ const Index: React.FC = () => {
 
             {/* Info Section (Left Aligned) */}
             <div className="flex flex-col items-start text-left w-full">
-              {/* Brand Name (Optional: Replace 'Postery' with item.brand if dynamic) */}
-              <span className="text-[11px] text-gray-500 mb-0.5">
-                Postery
-              </span>
+              
               
               <h3
                 className="text-[13px] font-medium text-[#1C1C1C] leading-snug mb-1 w-full pr-2"
@@ -524,82 +521,85 @@ const Index: React.FC = () => {
 </section>
 <br />
 <br />
-<section className="w-full px-2 md:px-3 py-10">
-
-  {/* Header */}
-<div className="w-full flex justify-center my-12">
-  <div className="flex items-center gap-4">
-
-    {/* Left Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
-
-    {/* Text + Bottom Decoration */}
-    <div className="flex flex-col items-center">
-      <h2
-        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
-        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
-      >
-        NEW ARRIVALS
-      </h2>
-
-      {/* Bottom Line */}
-      <div className="flex items-center gap-2 mt-2">
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-        <div className="text-[#C9A646] text-[14px]">★</div>
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-      </div>
-    </div>
-
-    {/* Right Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
-
-  </div>
-</div>
-  {/* Cards Grid - Matched sizes to best sellers with text below */}
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-1.5">
-
-    {[
-      { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
-      { name: "Living Room", img: "https://images.unsplash.com/photo-1493666438817-866a91353ca9" },
-      { name: "Office", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
-      { name: "Gym", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438" },
-      { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
-      { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" },
-      { name: "Hallway", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
-      { name: "Dining Room", img: "https://images.unsplash.com/photo-1505691938895-1758d7feb511" },
-      { name: "Studio", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
-      { name: "Bathroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
-    ].map((item, index) => (
-
-      <div key={index} className="group cursor-pointer flex flex-col">
-        <div className="relative aspect-[3/4] bg-[#f2f2f2] overflow-hidden rounded-md mb-2">
-          <img
-            src={item.img}
-            alt={item.name}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
-          />
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500 z-10"></div>
-        </div>
-
-        {/* Text Below Image */}
-        <div className="flex flex-col items-center text-center px-1">
-          <h3
-            className="text-[14px] font-medium text-black leading-snug mb-1 uppercase tracking-wide"
-            style={{ fontFamily: "Montserrat, sans-serif" }}
-          >
-            {item.name}
-          </h3>
-        </div>
-      </div>
-
-    ))}
+<section className="w-full py-10">
+  {/* Header Section */}
+  <div className="max-w-[1400px] mx-auto px-6 mb-8 flex items-center justify-between">
+    <h2
+      className="font-montserrat font-light tracking-[1px] text-[22px] text-black hover:text-[#57663D] transition-colors uppercase">
+      New Arrivals
+    </h2>
+    <Link
+      to="/products"
+      className="text-[12px] md:text-[14px] font-medium tracking-[1px] text-[#1C1C1C] uppercase hover:underline"
+      style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
+    >
+      View All
+    </Link>
   </div>
 
+  {/* Cards Grid */}
+  <div className="max-w-[1400px] mx-auto px-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+      {[
+        { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+        { name: "Living Room", img: "https://images.unsplash.com/photo-1493666438817-866a91353ca9" },
+        { name: "Office", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
+        { name: "Gym", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438" },
+        { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
+        { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" },
+        { name: "Hallway", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
+        { name: "Dining Room", img: "https://images.unsplash.com/photo-1505691938895-1758d7feb511" },
+        { name: "Studio", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
+        { name: "Bathroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+      ].map((item, index) => (
+        <div key={index} className="group cursor-pointer flex flex-col">
+          
+          {/* Image Container */}
+          <div className="relative aspect-[3/4] bg-[#f4f4f4] overflow-hidden mb-3">
+            <img
+              src={item.img}
+              alt={item.name}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
+            />
+            
+            {/* Darken Overlay on Hover */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500 z-10"></div>
+
+            {/* Top Left Yellow Discount Badge */}
+            <div className="absolute top-3 left-3 bg-[#fdf2a6] text-black text-[10px] font-semibold px-2 py-1 rounded-full z-20 shadow-sm">
+              -40%
+            </div>
+
+            {/* Bottom Left White Badge */}
+            <div className="absolute bottom-3 left-3 bg-white text-black text-[10px] font-semibold px-2 py-1 rounded-full z-20 shadow-sm">
+              New Arrivals
+            </div>
+          </div>
+
+          {/* Info Section (Left Aligned) */}
+          <div className="flex flex-col items-start text-left w-full mt-1">
+            <h3
+              className="text-[13px] font-medium text-[#1C1C1C] leading-snug mb-1 w-full pr-2"
+              style={{ fontFamily: "Montserrat, sans-serif" }}
+            >
+              {item.name}
+            </h3>
+
+            {/* Price Details */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[12px] font-medium text-black">
+                As low as ₹1799
+              </span>
+              <span className="text-[12px] text-gray-400 line-through">
+                ₹2999
+              </span>
+            </div>
+          </div>
+
+        </div>
+      ))}
+    </div>
+  </div>
 </section>
 
 <section className="max-w-7xl mx-auto p-4 sm:p-8 font-sans">
@@ -686,85 +686,68 @@ const Index: React.FC = () => {
       </div>
       
     </section>
-
-<section className="w-full px-2 md:px-3 py-10">
-
-  <div className="w-full flex justify-center my-12">
-  <div className="flex items-center gap-4">
-
-    {/* Left Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
-
-    {/* Text + Bottom Decoration */}
-    <div className="flex flex-col items-center">
-      <h2
-        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
-        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
-      >
-        DESIGNED FOR EVERY WALL
-      </h2>
-
-      {/* Bottom Line */}
-      <div className="flex items-center gap-2 mt-2">
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-        <div className="text-[#C9A646] text-[14px]">★</div>
-        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
-      </div>
-    </div>
-
-    {/* Right Line */}
-    <div className="w-32 h-[2px] bg-[#C9A646] relative">
-      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
-    </div>
-
-  </div>
-</div>
-
-  {/* Cards Grid - Matched sizes to best sellers with text below */}
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-1.5">
-
-    {[
-      { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
-      { name: "Living Room", img: "https://images.unsplash.com/photo-1493666438817-866a91353ca9" },
-      { name: "Office", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
-      { name: "Gym", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438" },
-      { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
-      { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" },
-      { name: "Hallway", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
-      { name: "Dining Room", img: "https://images.unsplash.com/photo-1505691938895-1758d7feb511" },
-      { name: "Studio", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
-      { name: "Bathroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
-    ].map((item, index) => (
-
-      <div key={index} className="group cursor-pointer flex flex-col">
-        <div className="relative aspect-[3/4] bg-[#f2f2f2] overflow-hidden rounded-md mb-2">
-          <img
-            src={item.img}
-            alt={item.name}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
-          />
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500 z-10"></div>
-        </div>
-
-        {/* Text Below Image */}
-        <div className="flex flex-col items-center text-center px-1">
-          <h3
-            className="text-[14px] font-medium text-black leading-snug mb-1 uppercase tracking-wide"
-            style={{ fontFamily: "Montserrat, sans-serif" }}
-          >
-            {item.name}
-          </h3>
-        </div>
-      </div>
-
-    ))}
+<br /><br /><br />
+<section className="w-full py-10">
+  {/* Header Section */}
+  <div className="max-w-[1400px] mx-auto px-6 mb-8 flex items-center justify-between">
+    <h2
+    className="font-montserrat font-light tracking-[1px] text-[22px] text-black hover:text-[#57663D] transition-colors uppercase"
+    >
+      Designed For Every Wall
+    </h2>
+    <Link
+      to="/categories"
+      className="text-[12px] md:text-[14px] font-medium tracking-[1px] text-[#1C1C1C] uppercase hover:underline"
+      style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
+    >
+      View All
+    </Link>
   </div>
 
+  {/* Cards Grid */}
+  <div className="max-w-[1400px] mx-auto px-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+      {[
+        { name: "Bedroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+        { name: "Living Room", img: "https://images.unsplash.com/photo-1493666438817-866a91353ca9" },
+        { name: "Office", img: "https://images.unsplash.com/photo-1497215728101-856f4ea42174" },
+        { name: "Gym", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438" },
+        { name: "Kitchen", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836" },
+        { name: "Kids Room", img: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9" },
+        { name: "Hallway", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
+        { name: "Dining Room", img: "https://images.unsplash.com/photo-1505691938895-1758d7feb511" },
+        { name: "Studio", img: "https://images.unsplash.com/photo-1492724441997-5dc865305da7" },
+        { name: "Bathroom", img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85" },
+      ].map((item, index) => (
+        <div key={index} className="group cursor-pointer flex flex-col">
+          
+          {/* Image Container */}
+          <div className="relative aspect-[3/4] bg-[#f4f4f4] overflow-hidden mb-3">
+            <img
+              src={item.img}
+              alt={item.name}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
+            />
+            
+            {/* Darken Overlay on Hover */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500 z-10"></div>
+          </div>
+
+          {/* Info Section (Left Aligned) */}
+          <div className="flex flex-col items-start text-left w-full mt-1">
+            <h3
+              className="text-[13px] font-medium text-[#1C1C1C] leading-snug mb-1 w-full pr-2 uppercase tracking-wide"
+              style={{ fontFamily: "Montserrat, sans-serif" }}
+            >
+              {item.name}
+            </h3>
+          </div>
+
+        </div>
+      ))}
+    </div>
+  </div>
 </section>
-
 {/* ══════════════════════════════════════════
     BRAND MESSAGE SECTION
     ══════════════════════════════════════════ */}
