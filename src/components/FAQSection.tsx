@@ -53,56 +53,38 @@ const FAQSection = ({ id }) => {
     <section id={id} className="w-full max-w-5xl mx-auto px-4 py-20 ">
       
       {/* ─── GRAPHIC HEADER (PIXEL-PERFECT IMAGE REPLICA) ─── */}
-      <div className="flex justify-center w-full mb-16 pt-8 pb-6">
-        <div className="relative inline-flex items-center">
+<div className="w-full flex justify-center my-12">
+  <div className="flex items-center gap-4">
 
-          {/* TOP DECORATION: Line -> 3 Stars -> Line */}
-          <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
-            <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
-            <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
-              <span>★</span><span>★</span><span>★</span>
-            </div>
-            <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
-          </div>
+    {/* Left Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
+    </div>
 
-          {/* MAIN TEXT: "STILL" & Slanted "CURIOUS?" Box */}
-          <div className="flex items-center z-0">
-            {/* STILL (Straight) */}
-            <span 
-              className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2" 
-              style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-            >
-              STILL
-            </span>
+    {/* Text + Bottom Decoration */}
+    <div className="flex flex-col items-center">
+      <h2
+        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
+        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
+      >
+        STILL CURIOUS
+      </h2>
 
-            {/* CURIOUS? (Slanted left edge ONLY) */}
-            <div 
-              className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
-              style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
-            >
-              <span 
-                className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1" 
-                style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-              >
-                CURIOUS?
-              </span>
-            </div>
-          </div>
-
-          {/* BOTTOM DECORATION: Line -> 9 Stars -> Line */}
-          <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
-            <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
-            <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <span key={i}>★</span>
-              ))}
-            </div>
-            <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
-          </div>
-
-        </div>
+      {/* Bottom Line */}
+      <div className="flex items-center gap-2 mt-2">
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
+        <div className="text-[#C9A646] text-[14px]">★</div>
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
       </div>
+    </div>
 
+    {/* Right Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
+    </div>
+
+  </div>
+</div>
       {/* ─── CATEGORY TABS ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
         {tabs.map((tab) => (

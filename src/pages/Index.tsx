@@ -300,7 +300,7 @@ const Index: React.FC = () => {
       {/* ══════════════════════════════════════════
           2. MARQUEE TRUST BAR
           ══════════════════════════════════════════ */}
-      <div className="bg-[#a0b695] text-white py-2.5 overflow-hidden whitespace-nowrap">
+      <div className="bg-[#006039] text-white py-2.5 overflow-hidden whitespace-nowrap">
         <div className="flex w-max animate-marquee">
           {[0, 1].map((i) => (
             <div key={i} className="flex items-center shrink-0">
@@ -362,56 +362,38 @@ const Index: React.FC = () => {
           4. BESTSELLERS
           ══════════════════════════════════════════ */}
       <section className="w-full px-2 md:px-3 py-10">
-      <div className="flex justify-center w-full mb-16 pt-8 pb-6">
-        <div className="relative inline-flex items-center">
+<div className="w-full flex justify-center my-12">
+  <div className="flex items-center gap-4">
 
-          {/* TOP DECORATION: Line -> 3 Stars -> Line */}
-          <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
-            <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
-            <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
-              <span>★</span><span>★</span><span>★</span>
-            </div>
-            <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
-          </div>
+    {/* Left Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
+    </div>
 
-          {/* MAIN TEXT: "STILL" & Slanted "CURIOUS?" Box */}
-          <div className="flex items-center z-0">
-            {/* STILL (Straight) */}
-            <span 
-              className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2" 
-              style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-            >
-              BEST
-            </span>
+    {/* Text + Bottom Decoration */}
+    <div className="flex flex-col items-center">
+      <h2
+        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
+        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
+      >
+        BEST SELLER
+      </h2>
 
-            {/* CURIOUS? (Slanted left edge ONLY) */}
-            <div 
-              className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
-              style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
-            >
-              <span 
-                className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1" 
-                style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-              >
-                SELLER
-              </span>
-            </div>
-          </div>
-
-          {/* BOTTOM DECORATION: Line -> 9 Stars -> Line */}
-          <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
-            <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
-            <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <span key={i}>★</span>
-              ))}
-            </div>
-            <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
-          </div>
-
-        </div>
+      {/* Bottom Line */}
+      <div className="flex items-center gap-2 mt-2">
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
+        <div className="text-[#C9A646] text-[14px]">★</div>
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
       </div>
+    </div>
 
+    {/* Right Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
+    </div>
+
+  </div>
+</div>
 
         {/* Grid */}
         {loadingBestsellers ? (
@@ -585,50 +567,38 @@ const Index: React.FC = () => {
 <section className="w-full px-2 md:px-3 py-10">
 
   {/* Header */}
-  <div className="flex justify-center w-full mb-16 pt-8 pb-6">
-    <div className="relative inline-flex items-center">
+<div className="w-full flex justify-center my-12">
+  <div className="flex items-center gap-4">
 
-      <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
-        <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
-        <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
-          <span>★</span><span>★</span><span>★</span>
-        </div>
-        <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
-      </div>
-
-      <div className="flex items-center z-0">
-        <span
-          className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2"
-          style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-        >
-          NEW 
-        </span>
-        <div
-          className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
-          style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
-        >
-          <span
-            className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1"
-            style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-          >
-            ARRIVALS
-          </span>
-        </div>
-      </div>
-
-      <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
-        <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
-        <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <span key={i}>★</span>
-          ))}
-        </div>
-        <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
-      </div>
-
+    {/* Left Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
     </div>
-  </div>
 
+    {/* Text + Bottom Decoration */}
+    <div className="flex flex-col items-center">
+      <h2
+        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
+        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
+      >
+        NEW ARRIVALS
+      </h2>
+
+      {/* Bottom Line */}
+      <div className="flex items-center gap-2 mt-2">
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
+        <div className="text-[#C9A646] text-[14px]">★</div>
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
+      </div>
+    </div>
+
+    {/* Right Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
+    </div>
+
+  </div>
+</div>
   {/* Cards Grid - Matched sizes to best sellers with text below */}
   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-1.5">
 
@@ -672,64 +642,32 @@ const Index: React.FC = () => {
 
 </section>
 
-<section className="w-full  py-16 px-4 md:px-8 mt-10">
-  <div className="max-w-[1200px] mx-auto">
-    
-          <div className="flex justify-center w-full mb-16 pt-8 pb-6">
-        <div className="relative inline-flex items-center">
+<section className="max-w-7xl mx-auto p-4 sm:p-8 font-sans">
+      
+      {/* Heading */}
+      <h2 className="text-center text-[56px] tracking-wide mb-10 text-gray-800">
+        WHY BUY FROM <span className="font-extrabold text-black">MURO</span>?
+      </h2>
 
-          {/* TOP DECORATION: Line -> 3 Stars -> Line */}
-          <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
-            <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
-            <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
-              <span>★</span><span>★</span><span>★</span>
-            </div>
-            <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
-          </div>
+      <div className="relative">
+        {/* Background Image Container */}
+        <div className="w-full h-[300px] md:h-[500px] md:w-[1300px] rounded-2xl overflow-hidden shadow-sm -ml-8 ">
+          <img
+            src="images/whymuro.png"
+            alt="Muro Posters Showcase"
+            className="w-full h-full object-cover"
+          />
+        </div>
 
-          {/* MAIN TEXT: "STILL" & Slanted "CURIOUS?" Box */}
-          <div className="flex items-center z-0">
-            {/* STILL (Straight) */}
-            <span 
-              className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2" 
-              style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-            >
-              WITH
-            </span>
-
-            {/* CURIOUS? (Slanted left edge ONLY) */}
-            <div 
-              className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
-              style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
-            >
-              <span 
-                className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1" 
-                style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-              >
-                MURO
-              </span>
-            </div>
-          </div>
-
-          {/* BOTTOM DECORATION: Line -> 9 Stars -> Line */}
-          <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
-            <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
-            <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <span key={i}>★</span>
-              ))}
-            </div>
-            <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
-          </div>
+        {/* Overlapping Features Cards */}
+        <div className="relative -mt-20 md:-mt-72 z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 md:px-12 max-w-6xl mx-auto">
+          
 
         </div>
-      </div>
-
-    
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 ml-2 mr-2">
       
       {/* 1 Premium print quality */}
-      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Award className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
@@ -743,7 +681,7 @@ const Index: React.FC = () => {
       </div>
 
       {/* 2 Secure packaging */}
-      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Package className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
@@ -757,7 +695,7 @@ const Index: React.FC = () => {
       </div>
 
       {/* 3 Designed with intention */}
-      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Heart className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
@@ -771,7 +709,7 @@ const Index: React.FC = () => {
       </div>
 
       {/* 4 Easy support */}
-      <div className="bg-white rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Star className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
@@ -785,56 +723,44 @@ const Index: React.FC = () => {
       </div>
 
     </div>
-  </div>
-</section>
-
+      </div>
+      
+    </section>
 
 <section className="w-full px-2 md:px-3 py-10">
 
-  {/* Header */}
-  <div className="flex justify-center w-full mb-16 pt-8 pb-6">
-    <div className="relative inline-flex items-center">
+  <div className="w-full flex justify-center my-12">
+  <div className="flex items-center gap-4">
 
-      <div className="absolute -top-[12px] md:-top-[16px] left-[20%] md:left-[26%] flex items-center z-10 w-max">
-        <div className="w-[60px] md:w-[130px] h-[1.5px] bg-[#222]"></div>
-        <div className="flex gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[10px] md:text-[12px]">
-          <span>★</span><span>★</span><span>★</span>
-        </div>
-        <div className="w-[100px] md:w-[220px] h-[1.5px] bg-[#222]"></div>
-      </div>
-
-      <div className="flex items-center z-0">
-        <span
-          className="text-[44px] md:text-[72px] font-black text-[#262626] tracking-tighter leading-none pr-1.5 md:pr-2"
-          style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-        >
-          EVERY
-        </span>
-        <div
-          className="bg-[#57663D] text-white pl-6 pr-4 md:pl-10 md:pr-6 py-1.5 md:py-2 flex items-center justify-center -ml-1"
-          style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%)' }}
-        >
-          <span
-            className="text-[44px] md:text-[72px] font-black tracking-tighter leading-none pt-1"
-            style={{ fontFamily: 'Montserrat, system-ui, sans-serif' }}
-          >
-            WALL
-          </span>
-        </div>
-      </div>
-
-      <div className="absolute -bottom-[12px] md:-bottom-[16px] left-[2%] md:left-[5%] flex items-center z-10 w-max">
-        <div className="w-[30px] md:w-[60px] h-[1.5px] bg-[#222]"></div>
-        <div className="flex gap-[3px] md:gap-[4px] mx-2 md:mx-3 text-[#e63946] text-[9px] md:text-[11px]">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <span key={i}>★</span>
-          ))}
-        </div>
-        <div className="w-[80px] md:w-[160px] h-[1.5px] bg-[#222]"></div>
-      </div>
-
+    {/* Left Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -right-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
     </div>
+
+    {/* Text + Bottom Decoration */}
+    <div className="flex flex-col items-center">
+      <h2
+        className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
+        style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
+      >
+        DESIGN EVERY WALL
+      </h2>
+
+      {/* Bottom Line */}
+      <div className="flex items-center gap-2 mt-2">
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
+        <div className="text-[#C9A646] text-[14px]">★</div>
+        <div className="w-10 h-[2px] bg-[#C9A646]"></div>
+      </div>
+    </div>
+
+    {/* Right Line */}
+    <div className="w-32 h-[2px] bg-[#C9A646] relative">
+      <span className="absolute -left-1 -top-[4px] w-2 h-2 bg-[#C9A646] rounded-full"></span>
+    </div>
+
   </div>
+</div>
 
   {/* Cards Grid - Matched sizes to best sellers with text below */}
   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-1.5">

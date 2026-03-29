@@ -131,13 +131,18 @@ const Navbar = () => {
             <Menu className="w-5 h-5 text-black" strokeWidth={1.5} />
           </button>
 
-          <Link
+          {/* <Link
             to="/"
             className="font-coolvetica text-xl md:text-[26px] text-black hover:text-[#57663D] transition-colors whitespace-nowrap uppercase shrink-0 leading-none"
           >
             muro poster
-          </Link>
-
+          </Link> */}
+<NavLink 
+            to="/" 
+            className="text-[24px] xl:text-[28px] font-coolvetica font-bold tracking-[-0.02em] text-[#000000] lowercase whitespace-nowrap"
+          >
+            muro poster
+            </NavLink>
           <div
             className="flex-1 mx-4 md:mx-10 hidden md:flex items-center border border-[#DEDEDE] rounded-full px-5 py-2.5 gap-3 bg-[#F8F8F8] hover:border-[#BBBBBB] transition-colors cursor-text"
             onClick={() => setIsSearchOpen(true)}
@@ -233,7 +238,7 @@ const Navbar = () => {
       {/* ══════════════════════════════════════════
           ROW 3 — NAV LINKS 
           ══════════════════════════════════════════ */}
-      <div className="w-full bg-[#222222] text-white hidden lg:block">
+      <div className="w-full bg-[#006039] text-white hidden lg:block">
         <nav className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-center gap-5 xl:gap-8 h-[46px]">
 
           <NavLink to="/" className={navBase} activeClassName={navActive}>
