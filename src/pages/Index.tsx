@@ -645,8 +645,8 @@ const Index: React.FC = () => {
 <section className="max-w-7xl mx-auto p-4 sm:p-8 font-sans">
       
       {/* Heading */}
-      <h2 className="text-center text-[56px] tracking-wide mb-10 text-gray-800">
-        WHY BUY FROM <span className="font-extrabold text-black">MURO</span>?
+      <h2 className="text-center text-[56px] tracking-wide mb-10 text-[#006039]">
+        WHY BUY FROM <span className="font-extrabold text-[#006039]">MURO</span>?
       </h2>
 
       <div className="relative">

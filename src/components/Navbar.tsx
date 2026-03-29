@@ -121,7 +121,7 @@ const Navbar = () => {
       {/* ══════════════════════════════════════════
           ROW 2 — LOGO + SEARCH + ICONS
           ══════════════════════════════════════════ */}
-      <div className="w-full bg-white border-b border-[#E8E8E8]">
+      <div className="w-full bg-[#F0EEE9] border-b border-[#E8E8E8]">
         <div className="w-full px-5 md:px-8 xl:px-12 flex items-center gap-4 h-[70px]">
 
           <button
@@ -131,18 +131,13 @@ const Navbar = () => {
             <Menu className="w-5 h-5 text-black" strokeWidth={1.5} />
           </button>
 
-          {/* <Link
-            to="/"
-            className="font-coolvetica text-xl md:text-[26px] text-black hover:text-[#57663D] transition-colors whitespace-nowrap uppercase shrink-0 leading-none"
-          >
-            muro poster
-          </Link> */}
-<NavLink 
-            to="/" 
-            className="text-[24px] xl:text-[28px] font-coolvetica font-bold tracking-[-0.02em] text-[#000000] lowercase whitespace-nowrap"
-          >
-            muro poster
-            </NavLink>
+<Link
+  to="/"
+  className="font-montserrat font-semibold tracking-[1px] text-[22px] text-black hover:text-[#57663D] transition-colors uppercase"
+>
+  MURO POSTER
+</Link>
+
           <div
             className="flex-1 mx-4 md:mx-10 hidden md:flex items-center border border-[#DEDEDE] rounded-full px-5 py-2.5 gap-3 bg-[#F8F8F8] hover:border-[#BBBBBB] transition-colors cursor-text"
             onClick={() => setIsSearchOpen(true)}
