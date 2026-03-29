@@ -53,7 +53,7 @@ const FAQSection = ({ id }) => {
     <section id={id} className="w-full max-w-5xl mx-auto px-4 py-20 ">
       
       {/* ─── GRAPHIC HEADER (PIXEL-PERFECT IMAGE REPLICA) ─── */}
-<div className="w-full flex justify-center my-12">
+<div className="w-full flex justify-center ">
   <div className="flex items-center gap-4">
 
 

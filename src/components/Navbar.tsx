@@ -70,7 +70,7 @@ const Navbar = () => {
 
   // ✅ FIX: Changed text-[#111] to text-white here so the nav links actually become white
   const navBase = "font-montserrat text-[15px] font-medium text-white uppercase tracking-[0.08em] hover:opacity-60 transition-opacity whitespace-nowrap pb-1.5";
-  const navActive = "nav-zigzag opacity-100";
+  const navActive = "opacity-100";
 
   return (
     <header className="sticky top-0 z-50 w-full">
