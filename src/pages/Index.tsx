@@ -743,7 +743,7 @@ const Index: React.FC = () => {
         className="text-[42px] md:text-[56px] text-[#006039] tracking-[4px]"
         style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}
       >
-        DESIGN EVERY WALL
+        DESIGNED FOR EVERY WALL
       </h2>
 
       {/* Bottom Line */}

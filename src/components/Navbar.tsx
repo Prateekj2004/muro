@@ -133,7 +133,7 @@ const Navbar = () => {
 
 <Link
   to="/"
-  className="font-montserrat font-semibold tracking-[1px] text-[22px] text-black hover:text-[#57663D] transition-colors uppercase"
+  className="font-montserrat font-light tracking-[1px] text-[22px] text-black hover:text-[#57663D] transition-colors uppercase"
 >
   MURO POSTER
 </Link>
