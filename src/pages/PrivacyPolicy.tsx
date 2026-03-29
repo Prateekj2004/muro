@@ -8,7 +8,7 @@ const PrivacyPolicy = () => {
         
         {/* Intro Section - Drop Cap 'A' yahan apne aap apply hoga */}
         <div>
-          <p className="text-lg italic font-medium text-[#222222] mb-6">
+          <p className="text-lg italic font-medium text-[# 1c1c1c] mb-6">
             At MURO POSTER, trust is part of the experience.
           </p>
           <p>
@@ -20,12 +20,12 @@ const PrivacyPolicy = () => {
         </div>
 
         {/* Information We Collect */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Information We Collect</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Information We Collect</h2>
           <p>
             When you interact with our website or place an order, we may collect information necessary to provide our services, including:
           </p>
-          <ul className="list-disc pl-5 space-y-2 text-[#222222]/80 marker:text-[#222222]">
+          <ul className="list-disc pl-5 space-y-2  marker:text-[# 1c1c1c]">
             <li>Name, email address, shipping and billing address</li>
             <li>Contact number when required for delivery</li>
             <li>Basic website usage data through cookies or analytics tools</li>
@@ -36,10 +36,10 @@ const PrivacyPolicy = () => {
         </div>
 
         {/* How We Use Your Information */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">How We Use Your Information</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">How We Use Your Information</h2>
           <p>Your information may be used to:</p>
-          <ul className="list-disc pl-5 space-y-2 text-[#222222]/80 marker:text-[#222222]">
+          <ul className="list-disc pl-5 space-y-2 text-[# 1c1c1c]/80 marker:text-[# 1c1c1c]">
             <li>Process and deliver orders</li>
             <li>Provide confirmations, shipping updates, and support communication</li>
             <li>Improve website functionality and customer experience</li>
@@ -51,48 +51,48 @@ const PrivacyPolicy = () => {
         </div>
 
         {/* Third-Party Services */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Third-Party Services</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Third-Party Services</h2>
           <p>
             To operate effectively, we may share necessary information with trusted service providers such as payment processors, delivery partners, or hosting services. These providers are required to handle information securely and only for authorized purposes.
           </p>
         </div>
 
         {/* Payment Security */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Payment Security</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Payment Security</h2>
           <p>
             We do not store payment card details. Transactions are processed through certified third-party payment providers.
           </p>
         </div>
 
         {/* Cookies and Tracking */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Cookies and Tracking</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Cookies and Tracking</h2>
           <p>
             Our website may use cookies or similar technologies to improve performance and usability. You can manage cookie preferences through your browser settings.
           </p>
         </div>
 
         {/* Data Retention */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Data Retention</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Data Retention</h2>
           <p>
             We retain personal information only as long as necessary to fulfill orders, meet legal obligations, or support customer service.
           </p>
         </div>
 
         {/* Data Protection */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Data Protection</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Data Protection</h2>
           <p>
             We implement reasonable technical and organizational safeguards to protect personal information. While no system is completely immune to risk, we continuously work to maintain appropriate protections.
           </p>
         </div>
 
         {/* Your Rights */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Your Rights</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Your Rights</h2>
           <p>
             Depending on your location, you may have the right to request access, correction, or deletion of your personal information, subject to legal requirements.
           </p>
@@ -105,15 +105,15 @@ const PrivacyPolicy = () => {
         </div>
 
         {/* Policy Updates */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold pt-4 text-[#222222]">Policy Updates</h2>
+        <div className="space-y-4 border-t border-[# 1c1c1c]/10">
+          <h2 className="text-xl font-bold pt-4 text-[# 1c1c1c]">Policy Updates</h2>
           <p>
             We may update this Privacy Policy periodically. Continued use of our website indicates acceptance of the revised terms.
           </p>
         </div>
 
         {/* Footer Quote */}
-        <div className="mt-12 pt-8 border-t border-[#222222]/10 italic opacity-60">
+        <div className="mt-12 pt-8 border-t border-[# 1c1c1c]/10 italic opacity-60">
           <p>Your privacy matters. Your information is handled with intention and care.</p>
         </div>
 

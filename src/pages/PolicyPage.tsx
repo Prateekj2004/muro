@@ -31,7 +31,7 @@ const PolicyPage: React.FC<PolicyProps> = ({ title, children }) => {
          1. whitespace-normal: Mobile par lines mein tootne dega.
          2. md:whitespace-nowrap: iPad/Laptop se upar single line force karega.
       */}
-      <h1 className="font-coolvetica text-5xl md:text-7xl lg:text-7xl uppercase tracking-tight leading-[0.9] text-[#222222] whitespace-normal md:whitespace-nowrap">
+      <h1 className="font-montserrat font-light tracking-[1px] text-[72px] text-black transition-colors uppercase">
         {title}
       </h1>
       
@@ -70,7 +70,7 @@ const PolicyPage: React.FC<PolicyProps> = ({ title, children }) => {
             
             {/* Card 1: Quick Links */}
             <div className="bg-white p-8 border border-[#222222]/5 shadow-sm">
-              <h3 className="font-coolvetica uppercase text-xl tracking-wide mb-6">Quick Navigation</h3>
+              <h3 className="font-montserrat font-light tracking-[1px] text-XL text-black hover:text-[#57663D] transition-colors uppercase mb-6">Quick Navigation</h3>
               <nav className="flex flex-col gap-4 text-sm font-medium text-[#222222]/60">
                 <Link to="/shipping-policy" className="flex items-center justify-between hover:text-[#2F4F4F] transition-colors group">
                   Shipping Policy <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity"/>
@@ -80,7 +80,7 @@ const PolicyPage: React.FC<PolicyProps> = ({ title, children }) => {
                   Cancellation & Refund Policy <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity"/>
                 </Link>
                 <div className="h-[1px] bg-[#222222]/5" />
-                <Link to="/privacy-policy" className="flex items-center justify-between hover:text-[#2F4F4F] transition-colors group">
+                <Link to="/privacy" className="flex items-center justify-between hover:text-[#2F4F4F] transition-colors group">
                   Privacy Policy <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity"/>
                 </Link>
                 <div className="h-[1px] bg-[#222222]/5" />
@@ -92,7 +92,7 @@ const PolicyPage: React.FC<PolicyProps> = ({ title, children }) => {
 
             {/* Card 2: Contact Box */}
             <div className="bg-[#222222] text-[#F0EEE9] p-8">
-              <h3 className="font-coolvetica uppercase text-xl tracking-wide mb-2">Need Help?</h3>
+              <h3 className="font-montserrat font-light text-[#F0EEE9] hover:text-[#57663D] transition-colors uppercase text-[16px] tracking-wide mb-2">Need Help?</h3>
               <p className="text-xs opacity-70 mb-6 leading-relaxed">
                 If you have questions about this policy, our support team is available to assist you.
               </p>

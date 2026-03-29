@@ -300,7 +300,7 @@ const Index: React.FC = () => {
       {/* ══════════════════════════════════════════
           2. MARQUEE TRUST BAR
           ══════════════════════════════════════════ */}
-      <div className="bg-[#1c1c1c] text-white py-2.5 overflow-hidden whitespace-nowrap">
+      {/* <div className="bg-[#1c1c1c] text-white py-2.5 overflow-hidden whitespace-nowrap">
         <div className="flex w-max animate-marquee">
           {[0, 1].map((i) => (
             <div key={i} className="flex items-center shrink-0">
@@ -326,7 +326,7 @@ const Index: React.FC = () => {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* ══════════════════════════════════════════
           3. SHOP BY MOOD
@@ -474,7 +474,7 @@ const Index: React.FC = () => {
   {/* 3-Column Image Grid with NEW Compact Height & Images */}
   <div className="grid grid-cols-1 md:grid-cols-3 gap-0 w-full">
     {/* Item 1: New Arrivals (Gallery Wall Aesthetic) */}
-    <Link to="/new-arrivals" className="relative group overflow-hidden h-[420px]">
+    <Link to="/new-arrivals" className="relative group overflow-hidden h-[620px]">
       <img 
         src="https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?q=80&w=1200&auto=format&fit=crop" 
         alt="New Arrivals"
@@ -611,23 +611,11 @@ const Index: React.FC = () => {
 
       <div className="relative">
         {/* Background Image Container */}
-        <div className="w-full h-[300px] md:h-[500px] md:w-[1300px] rounded-2xl overflow-hidden shadow-sm -ml-8 ">
-          <img
-            src="images/whymuro.png"
-            alt="Muro Posters Showcase"
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Overlapping Features Cards */}
-        <div className="relative -mt-20 md:-mt-72 z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 md:px-12 max-w-6xl mx-auto">
-          
-
-        </div>
+        
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 ml-2 mr-2">
       
       {/* 1 Premium print quality */}
-      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#Fff] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Award className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
@@ -641,7 +629,7 @@ const Index: React.FC = () => {
       </div>
 
       {/* 2 Secure packaging */}
-      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#Fff] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Package className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
@@ -655,7 +643,7 @@ const Index: React.FC = () => {
       </div>
 
       {/* 3 Designed with intention */}
-      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#Fff] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Heart className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 
@@ -669,7 +657,7 @@ const Index: React.FC = () => {
       </div>
 
       {/* 4 Easy support */}
-      <div className="bg-[#F0EEE9] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
+      <div className="bg-[#Fff] rounded-xl p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md transition">
         <Star className="w-9 h-9 mb-4 stroke-[1.2] text-[#111]" />
         <h3 
           className="text-[17px] font-bold mb-2 text-[#111]" 

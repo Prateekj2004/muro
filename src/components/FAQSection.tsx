@@ -50,18 +50,13 @@ const FAQSection = ({ id }) => {
   };
 
   return (
-    <section id={id} className="w-full max-w-5xl mx-auto px-4 py-20 ">
+    <section id={id} className="w-full max-w-5xl mx-auto px-4 py-20 -mt-10 ">
       
       {/* ─── GRAPHIC HEADER (PIXEL-PERFECT IMAGE REPLICA) ─── */}
 <div className="w-full flex justify-center ">
   <div className="flex items-center gap-4">
 
 
-    {/* Text + Bottom Decoration */}
-    <div className="flex flex-col items-center">
-      
-
-    </div>
 
 
   </div>

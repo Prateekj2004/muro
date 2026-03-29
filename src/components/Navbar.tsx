@@ -78,10 +78,10 @@ const Navbar = () => {
       {/* ══════════════════════════════════════════
           ROW 1 — ANNOUNCEMENT BAR
           ══════════════════════════════════════════ */}
-      <div className="w-full bg-[#DDD6F0] border-b border-[#CBC2E8]">
+      <div className="w-full bg-[#1c1c1c] border-b border-[#CBC2E8]">
         <div className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-between h-9">
 
-          <div className="flex items-center gap-2 font-montserrat text-[11px] text-[#333] font-semibold">
+          <div className="flex items-center gap-2 font-montserrat text-[11px] text-[#fff] font-semibold">
             <svg width="20" height="14" viewBox="0 0 20 14" className="rounded-[2px] shrink-0">
               <rect width="20" height="4.67" y="0"    fill="#FF9933" />
               <rect width="20" height="4.67" y="4.67" fill="#FFFFFF" />
@@ -103,14 +103,14 @@ const Navbar = () => {
                 );
               })}
             </svg>
-            <span className="uppercase tracking-wider hidden sm:inline">India</span>
-            <span className="text-[#999] mx-0.5 hidden sm:inline">|</span>
-            <span className="uppercase tracking-wider hidden sm:flex items-center gap-1">
+            <span className="text-[#fff] uppercase tracking-wider hidden sm:inline">India</span>
+            <span className="text-[#fff] mx-0.5 hidden sm:inline">|</span>
+            <span className="text-[#fff] uppercase tracking-wider hidden sm:flex items-center gap-1">
               English <ChevronDown size={10} strokeWidth={2.5} />
             </span>
           </div>
 
-          <p className="mx-auto text-center font-montserrat text-[11px] text-[#333] tracking-wide font-medium">
+          <p className="mx-auto text-center font-montserrat text-[11px] text-[#fff] tracking-wide font-medium">
             Free shipping over ₹999 &nbsp;•&nbsp; Happiness Guarantee &nbsp;•&nbsp; Delivery in 4–7 business days
           </p>
 
