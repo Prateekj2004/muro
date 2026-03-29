@@ -300,7 +300,7 @@ const Index: React.FC = () => {
       {/* ══════════════════════════════════════════
           2. MARQUEE TRUST BAR
           ══════════════════════════════════════════ */}
-      <div className="bg-[#006039] text-white py-2.5 overflow-hidden whitespace-nowrap">
+      <div className="bg-[#1c1c1c] text-white py-2.5 overflow-hidden whitespace-nowrap">
         <div className="flex w-max animate-marquee">
           {[0, 1].map((i) => (
             <div key={i} className="flex items-center shrink-0">

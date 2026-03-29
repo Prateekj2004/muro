@@ -233,7 +233,7 @@ const Navbar = () => {
       {/* ══════════════════════════════════════════
           ROW 3 — NAV LINKS 
           ══════════════════════════════════════════ */}
-      <div className="w-full bg-[#006039] text-white hidden lg:block">
+      <div className="w-full bg-[#1c1c1c] text-white hidden lg:block">
         <nav className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-center gap-5 xl:gap-8 h-[46px]">
 
           <NavLink to="/" className={navBase} activeClassName={navActive}>
