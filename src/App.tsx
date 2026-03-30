@@ -23,6 +23,7 @@ import RefundPolicy from "./pages/RefundPolicy";
 import TermsAndConditions from "./pages/Terms";
 import FAQ from "./pages/FAQ";
 import Auth from "./pages/Auth";
+import Contact from "./pages/Contact";
 
 // Admin Dashboard
 import AdminDashboard from "./pages/AdminDashboard"; 
@@ -62,7 +63,7 @@ const App = () => (
             <Route path="/cancellation-refund" element={<RefundPolicy />} />
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/faq" element={<FAQ />} />
-            
+            <Route path="/contact" element={<Contact />} />            
             <Route path="/products" element={<Products />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
