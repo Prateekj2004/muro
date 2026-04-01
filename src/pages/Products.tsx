@@ -36,7 +36,7 @@ const Products: React.FC = () => {
       setLoading(true);
       try {
         const [prodRes, catRes, subcatRes] = await Promise.all([
-          API.adminGetProducts().catch(() => []), 
+          API.getProducts().catch(() => []), 
           API.adminGetCategories().catch(() => []),
           API.adminGetSubcategories().catch(() => [])
         ]);
