@@ -184,7 +184,11 @@ const Products: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-12 sm:gap-x-6 sm:gap-y-16 mt-2">
               {currentItems.map((product, idx) => (
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (idx % 8) * 0.05, duration: 0.4 }} key={product.id}>
-                  <Link to={`/product/${product.id}`} className="group block w-full">
+                  <Link 
+  to={`/product/${product.id}`} 
+  state={{ productData: product }} // Poora data yahan se bhej diya
+  className="group block w-full"
+>
                     <div className="relative w-full aspect-[3/4] bg-[#E5E3DD] overflow-hidden">
                       <img src={getFullImageUrl(product.wall_poster_url || product.hoverImg || product.main_poster_url || product.image_url)} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0" alt="Room View" />
                       {/* Using transparent bg for overlay to let the new theme colors work */}

@@ -19,6 +19,13 @@ export const API = {
     const res = await fetch(`${BASE_URL}/products?all=1`, { method: "GET", headers: { "Accept": "application/json" }});
     return res.json();
   },
+  getProductById: async (id: string | number) => {
+  const res = await fetch(`${BASE_URL}/products/detail?id=${id}`, { 
+    method: "GET", 
+    headers: { "Accept": "application/json" } 
+  });
+  return res.json();
+},
   adminGetProducts: async (params: any = {}) => {
     const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== "" && v !== null));
     const queryString = new URLSearchParams(cleanParams as any).toString();

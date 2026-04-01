@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronRight, Minus, Plus, ShoppingBag, Info, User, Tag } from "lucide-react";
 import { toast } from "sonner"; 
 import { API } from "@/services/api";
@@ -14,6 +14,7 @@ const getFullImageUrl = (path: string) => {
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [currentProduct, setCurrentProduct] = useState<any | null>(null);
@@ -28,32 +29,50 @@ const ProductDetail: React.FC = () => {
   const [isZooming, setIsZooming] = useState(false);
 
   useEffect(() => {
-    const fetchProductData = async () => {
+    const getProductData = async () => {
       setLoading(true);
-      try {
-        const res = await API.adminGetProducts(); 
-        console.log("result",res)
-        const allProducts = Array.isArray(res) ? res : (res?.data?.items || res?.data || []);
-        
-        const found = allProducts.find((p: any) => String(p.id) === String(id));
-        if (found) {
-          setCurrentProduct(found);
-          setActiveImage(getFullImageUrl(found.main_poster_url || found.defaultImg || found.image_url));
-          if(found.size_prices && found.size_prices.length > 0) {
-            setSelectedVariant(found.size_prices[0]);
-          }
-          
-          const related = allProducts.filter((p: any) => p.category === found.category && String(p.id) !== String(id)).slice(0, 5);
-          setRelatedProducts(related);
-        }
-      } catch (error) {
-        console.error("Error fetching product", error);
-      } finally {
+      
+      // Case 1: Data passed from Card click (Instant)
+      if (location.state && location.state.productData) {
+        const data = location.state.productData;
+        setupProduct(data);
+        fetchRelated(data);
         setLoading(false);
+      } else {
+        // Case 2: Page Refresh (Fetch from API)
+        try {
+          const res = await API.getProducts(); 
+          const allProducts = Array.isArray(res) ? res : (res?.data?.items || res?.data || []);
+          const found = allProducts.find((p: any) => String(p.id) === String(id));
+          
+          if (found) {
+            setupProduct(found);
+            fetchRelated(found, allProducts);
+          }
+        } catch (error) {
+          console.error("Error", error);
+        } finally {
+          setLoading(false);
+        }
       }
     };
-    fetchProductData();
-  }, [id]);
+
+    const setupProduct = (product: any) => {
+      setCurrentProduct(product);
+      setActiveImage(getFullImageUrl(product.main_poster_url || product.defaultImg || product.image_url));
+      if(product.size_prices && product.size_prices.length > 0) {
+        setSelectedVariant(product.size_prices[0]);
+      }
+    };
+
+    const fetchRelated = async (product: any, list?: any[]) => {
+      const allProducts = list || await API.getProducts().then(res => Array.isArray(res) ? res : (res?.data?.items || res?.data || []));
+      const related = allProducts.filter((p: any) => p.category === product.category && String(p.id) !== String(id)).slice(0, 5);
+      setRelatedProducts(related);
+    };
+
+    getProductData();
+  }, [id, location.state]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div></div>;
   if (!currentProduct) return <div className="min-h-screen flex items-center justify-center"><h1 className="text-3xl font-serif">Product Not Found</h1></div>;
@@ -70,7 +89,7 @@ const ProductDetail: React.FC = () => {
       const res = await API.addToCart(payload);
       if (res.success !== false) toast.success(`${currentProduct.title} added to cart!`);
       else toast.error(res.message || "Failed to add to cart");
-    } catch (error) { toast.error("Network Error. Could not add to cart."); }
+    } catch (error) { toast.error("Network Error."); }
   };
 
   const handleBuyNow = async () => {
@@ -90,10 +109,12 @@ const ProductDetail: React.FC = () => {
     currentProduct.zoom_in_url || currentProduct.hoverImg,
     currentProduct.wall_poster_url
   ].filter(Boolean).map((path: string) => getFullImageUrl(path));
+
   const displayPrice = selectedVariant ? Number(selectedVariant.price) : Number(currentProduct.price);
 
   return (
     <main className="bg-white min-h-screen font-sans text-[#222222]">
+      {/* Breadcrumbs */}
       <div className="container mx-auto px-5 py-6">
         <nav className="flex items-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
           <Link to="/">Home</Link><ChevronRight size={12} className="mx-2" />
@@ -104,6 +125,7 @@ const ProductDetail: React.FC = () => {
 
       <div className="container mx-auto px-5 pb-16 flex flex-col lg:flex-row gap-12 lg:gap-20">
         
+        {/* Left Side: Image Gallery & Zoom */}
         <div className="lg:w-1/2 flex flex-col-reverse md:flex-row gap-4 items-start">
           <div className="flex md:flex-col gap-3 overflow-x-auto md:w-20 w-full shrink-0 no-scrollbar">
             {galleryImages.map((img: string, idx: number) => (
@@ -123,23 +145,17 @@ const ProductDetail: React.FC = () => {
             onMouseLeave={() => setIsZooming(false)}
             onMouseMove={handleMouseMove}
           >
-            <img 
-              src={activeImage} 
-              className={`w-full h-full object-cover transition-opacity duration-300 ${isZooming ? 'opacity-0' : 'opacity-100'}`} 
-            />
+            <img src={activeImage} className={`w-full h-full object-cover transition-opacity duration-300 ${isZooming ? 'opacity-0' : 'opacity-100'}`} alt="Product" />
             {isZooming && (
               <div 
                 className="absolute inset-0 bg-no-repeat pointer-events-none"
-                style={{
-                  backgroundImage: `url(${activeImage})`,
-                  backgroundPosition: backgroundPosition,
-                  backgroundSize: "250%",
-                }}
+                style={{ backgroundImage: `url(${activeImage})`, backgroundPosition, backgroundSize: "250%" }}
               />
             )}
           </div>
         </div>
 
+        {/* Right Side: Product Content */}
         <div className="lg:w-1/2">
           <div className="lg:sticky lg:top-[100px]">
             <div className="mb-6 border-b border-[#E5E5E5] pb-6">
@@ -152,8 +168,10 @@ const ProductDetail: React.FC = () => {
               {currentProduct.short_description && (
                 <p className="mt-4 text-sm text-gray-500 leading-relaxed">{currentProduct.short_description}</p>
               )}
+              
             </div>
 
+            {/* Variants */}
             {currentProduct.size_prices && currentProduct.size_prices.length > 0 && (
               <div className="mb-6">
                  <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-3">Select Size</p>
@@ -170,6 +188,7 @@ const ProductDetail: React.FC = () => {
               </div>
             )}
 
+            {/* Actions */}
             <div className="flex flex-col gap-4 mt-8">
               <div className="flex items-center gap-4">
                 <div className="flex items-center border border-gray-200 h-14 w-32 bg-white">
@@ -177,7 +196,6 @@ const ProductDetail: React.FC = () => {
                   <span className="flex-1 text-center font-bold">{quantity}</span>
                   <button onClick={() => quantity < 10 && setQuantity(q => q + 1)} className="w-10 h-full flex items-center justify-center hover:bg-gray-50"><Plus size={16} /></button>
                 </div>
-
                 <button onClick={handleAddToCart} className="flex-1 h-14 bg-white border border-black text-black font-bold text-[11px] uppercase tracking-[0.2em] hover:bg-gray-50 flex items-center justify-center gap-2">
                   <ShoppingBag size={18} /> Add To Cart
                 </button>
@@ -187,6 +205,7 @@ const ProductDetail: React.FC = () => {
               </button>
             </div>
 
+            {/* Description & Artist Details (Original Content) */}
             <div className="mt-12 space-y-4">
                {currentProduct.full_description && (
                  <div className="bg-gray-50 p-4 rounded-2xl">
@@ -195,7 +214,6 @@ const ProductDetail: React.FC = () => {
                  </div>
                )}
                <div className="grid grid-cols-2 gap-4">
-                 {/* RESOLUTION AND COLOR MODE REMOVED FROM HERE */}
                  {currentProduct.author_name && (
                    <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-1 col-span-2 md:col-span-1">
                      <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest flex items-center gap-1"><User size={10}/> Artist</span>
@@ -213,17 +231,17 @@ const ProductDetail: React.FC = () => {
                  </div>
                )}
             </div>
-
           </div>
         </div>
       </div>
 
+      {/* Related Products Section (Original Content) */}
       {relatedProducts.length > 0 && (
         <div className="container mx-auto px-5 py-16 border-t border-gray-100">
           <h2 className="text-sm font-bold tracking-[0.2em] uppercase mb-8">You Might Also Like</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {relatedProducts.map((product) => (
-              <Link to={`/product/${product.id}`} key={product.id} className="group block w-full">
+              <Link to={`/product/${product.id}`} state={{ productData: product }} key={product.id} className="group block w-full">
                 <div className="relative w-full aspect-[3/4] bg-[#F4F4F4] overflow-hidden mb-3">
                   <img 
                     src={getFullImageUrl(product.wall_poster_url || product.hoverImg || product.main_poster_url || product.image_url)} 
