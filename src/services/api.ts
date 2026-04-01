@@ -16,7 +16,7 @@ const getAuthHeaders = (isFormData = false) => {
 export const API = {
   // --- PRODUCTS ---
   getProducts: async () => {
-    const res = await fetch(`${BASE_URL}/products`, { method: "GET", headers: { "Accept": "application/json" }});
+    const res = await fetch(`${BASE_URL}/products?all=1`, { method: "GET", headers: { "Accept": "application/json" }});
     return res.json();
   },
   adminGetProducts: async (params: any = {}) => {
