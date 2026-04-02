@@ -26,7 +26,7 @@ const Products: React.FC = () => {
 
   // --- PAGINATION STATES ---
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 16; // 4 rows on desktop
+  const itemsPerPage = 40; // 4 rows on desktop
 
   useEffect(() => {
     if (urlCategory !== selectedCategory) {
