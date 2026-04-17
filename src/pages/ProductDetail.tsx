@@ -214,13 +214,13 @@ const ProductDetail: React.FC = () => {
                  </div>
                )}
                <div className="grid grid-cols-2 gap-4">
-                 {currentProduct.author_name && (
+                 {/* {currentProduct.author_name && (
                    <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-1 col-span-2 md:col-span-1">
                      <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest flex items-center gap-1"><User size={10}/> Artist</span>
                      <span className="text-sm font-semibold">{currentProduct.author_name}</span>
                      {currentProduct.author_bio && <span className="text-xs text-gray-500">{currentProduct.author_bio}</span>}
                    </div>
-                 )}
+                 )} */}
                </div>
                {currentProduct.tags && (
                  <div className="flex flex-wrap items-center gap-2 mt-4">
