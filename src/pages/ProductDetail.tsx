@@ -210,7 +210,7 @@ const ProductDetail: React.FC = () => {
                {currentProduct.full_description && (
                  <div className="bg-gray-50 p-4 rounded-2xl">
                     <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-800 mb-2"><Info size={14}/> About this artwork</h4>
-                    <p className="text-sm text-gray-600 leading-relaxed">{currentProduct.full_description}</p>
+                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{currentProduct.full_description}</p>
                  </div>
                )}
                <div className="grid grid-cols-2 gap-4">
