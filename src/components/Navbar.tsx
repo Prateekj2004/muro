@@ -68,9 +68,9 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  // ✅ FIX: Changed text-[#111] to text-white here so the nav links actually become white
-  const navBase = "font-montserrat text-[15px] font-medium text-white uppercase tracking-[0.08em] hover:opacity-60 transition-opacity whitespace-nowrap pb-1.5";
-  const navActive = "opacity-100";
+  // ✅ Lighter font weight and wider tracking for a cleaner, premium aesthetic
+  const navBase = "font-montserrat text-[11px] xl:text-[12px] font-medium text-black uppercase tracking-widest hover:opacity-60 transition-opacity whitespace-nowrap";
+  const navActive = "opacity-60"; 
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -78,12 +78,15 @@ const Navbar = () => {
       {/* ══════════════════════════════════════════
           ROW 1 — ANNOUNCEMENT BAR
           ══════════════════════════════════════════ */}
-      <div className="w-full bg-[#1c1c1c] border-b border-[#CBC2E8]">
+      {/* ══════════════════════════════════════════
+          ROW 1 — ANNOUNCEMENT BAR (Hidden on phones)
+          ══════════════════════════════════════════ */}
+      <div className="hidden sm:block w-full bg-[#1c1c1c] border-b border-[#CBC2E8]">
         <div className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-between h-9">
 
           <div className="flex items-center gap-2 font-montserrat text-[11px] text-[#fff] font-semibold">
             <svg width="20" height="14" viewBox="0 0 20 14" className="rounded-[2px] shrink-0">
-              <rect width="20" height="4.67" y="0"    fill="#FF9933" />
+              <rect width="20" height="4.67" y="0"      fill="#FF9933" />
               <rect width="20" height="4.67" y="4.67" fill="#FFFFFF" />
               <rect width="20" height="4.67" y="9.33" fill="#138808" />
               <circle cx="10" cy="7" r="1.8" fill="none" stroke="#000080" strokeWidth="0.4" />
@@ -103,9 +106,9 @@ const Navbar = () => {
                 );
               })}
             </svg>
-            <span className="text-[#fff] uppercase tracking-wider hidden sm:inline">India</span>
-            <span className="text-[#fff] mx-0.5 hidden sm:inline">|</span>
-            <span className="text-[#fff] uppercase tracking-wider hidden sm:flex items-center gap-1">
+            <span className="text-[#fff] uppercase tracking-wider">India</span>
+            <span className="text-[#fff] mx-0.5">|</span>
+            <span className="text-[#fff] uppercase tracking-wider flex items-center gap-1">
               English <ChevronDown size={10} strokeWidth={2.5} />
             </span>
           </div>
@@ -114,45 +117,101 @@ const Navbar = () => {
             Free shipping over ₹999 &nbsp;•&nbsp; Happiness Guarantee &nbsp;•&nbsp; Delivery in 4–7 business days
           </p>
 
-          <div className="hidden md:block w-[140px]" />
+          <div className="w-[140px]" />
         </div>
       </div>
 
       {/* ══════════════════════════════════════════
-          ROW 2 — LOGO + SEARCH + ICONS
+          ROW 2 — LOGO + NAV + SEARCH + ICONS
           ══════════════════════════════════════════ */}
       <div className="w-full bg-[#F0EEE9] border-b border-[#E8E8E8]">
-        <div className="w-full px-5 md:px-8 xl:px-12 flex items-center gap-4 h-[70px]">
+        <div className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-between h-[80px]">
 
-          <button
-            className="lg:hidden hover:opacity-60 transition-opacity shrink-0"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu className="w-5 h-5 text-black" strokeWidth={1.5} />
-          </button>
+          {/* LEFT ZONE: Mobile Menu & Logo */}
+          <div className="flex items-center gap-4 shrink-0 lg:w-[280px]">
+            <button
+              className="lg:hidden hover:opacity-60 transition-opacity shrink-0"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="w-5 h-5 text-black" strokeWidth={1.5} />
+            </button>
 
-<Link
-  to="/"
-  className="font-montserrat font-light tracking-[1px] text-[22px] text-black  transition-colors uppercase"
->
-  MURO POSTER
-</Link>
-
-          <div
-            className="flex-1 mx-4 md:mx-10 hidden md:flex items-center border border-[#DEDEDE] rounded-full px-5 py-2.5 gap-3 bg-[#F8F8F8] hover:border-[#BBBBBB] transition-colors cursor-text"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <input
-              type="text"
-              placeholder="Search product, name, brand..."
-              className="w-full bg-transparent font-montserrat text-[13px] text-black outline-none placeholder:text-[#AAAAAA] cursor-text"
-              onFocus={() => setIsSearchOpen(true)}
-              readOnly
-            />
-            <Search className="w-4 h-4 text-[#888] shrink-0" strokeWidth={1.8} />
+            <Link
+              to="/"
+              className="font-montserrat font-medium tracking-[1.5px] text-[18px] xl:text-[22px] text-black transition-colors uppercase whitespace-nowrap"
+            >
+              MURO POSTER
+            </Link>
           </div>
 
-          <div className="flex items-center gap-4 xl:gap-5 ml-auto shrink-0">
+          {/* CENTER ZONE: Desktop Navigation */}
+          <nav className="hidden lg:flex flex-1 justify-center items-center gap-5 xl:gap-8">
+            <NavLink to="/" className={navBase} activeClassName={navActive}>
+              Home
+            </NavLink>
+
+            {/* PRODUCTS DROPDOWN */}
+            <div className="relative group h-[80px] flex items-center">
+              <NavLink
+                to="/products"
+                className={`${navBase} flex items-center gap-1`}
+                activeClassName={navActive}
+              >
+                Products
+                <ChevronDown size={12} className="group-hover:rotate-180 transition-transform duration-300" strokeWidth={2.5} />
+              </NavLink>
+
+              <div className="absolute top-[80px] left-1/2 -translate-x-1/2 w-[260px] bg-white border border-[#E5E5E5] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col py-3 z-50 text-black">
+                {categories.map((cat) => (
+                  <NavLink
+                    key={cat}
+                    to={`/products?cat=${encodeURIComponent(cat)}`}
+                    className="px-6 py-2.5 font-montserrat text-[11px] font-medium text-[#111] uppercase tracking-[0.07em] hover:bg-[#F9F9F9] hover:text-[#57663D] transition-colors border-l-2 border-transparent"
+                    activeClassName="border-l-2 border-[#57663D] bg-[#F9F9F9] text-[#57663D]"
+                  >
+                    {cat}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+
+            <NavLink to="/bestsellers" className={navBase} activeClassName={navActive}>
+              Bestsellers
+            </NavLink>
+
+            <NavLink to="/new-arrivals" className={navBase} activeClassName={navActive}>
+              New Arrivals
+            </NavLink>
+
+            <NavLink to="/customisation" className={navBase} activeClassName={navActive}>
+              Postcard
+            </NavLink>
+
+            <NavLink to="/about" className={navBase} activeClassName={navActive}>
+              About MURO
+            </NavLink>
+
+            <NavLink to="/contact" className={navBase} activeClassName={navActive}>
+              Contact
+            </NavLink>
+          </nav>
+
+          {/* RIGHT ZONE: Search + Icons */}
+          <div className="flex items-center justify-end gap-3 xl:gap-5 shrink-0 lg:w-[280px]">
+            {/* Search Bar */}
+            <div
+              className="hidden md:flex items-center border border-[#DEDEDE] rounded-full px-4 py-2 gap-2 bg-[#F8F8F8] hover:border-[#BBBBBB] transition-colors cursor-text w-[160px] xl:w-[200px]"
+              onClick={() => setIsSearchOpen(true)}
+            >
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full bg-transparent font-montserrat text-[11px] text-black outline-none placeholder:text-[#AAAAAA] cursor-text"
+                onFocus={() => setIsSearchOpen(true)}
+                readOnly
+              />
+              <Search className="w-3.5 h-3.5 text-[#888] shrink-0" strokeWidth={1.8} />
+            </div>
 
             <button onClick={() => setIsSearchOpen(true)} className="md:hidden hover:opacity-60 transition-opacity">
               <Search className="w-[18px] h-[18px] text-black" strokeWidth={1.3} />
@@ -228,64 +287,6 @@ const Navbar = () => {
 
           </div>
         </div>
-      </div>
-
-      {/* ══════════════════════════════════════════
-          ROW 3 — NAV LINKS 
-          ══════════════════════════════════════════ */}
-      <div className="w-full bg-[#1c1c1c] text-white hidden lg:block">
-        <nav className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-center gap-5 xl:gap-8 h-[46px]">
-
-          <NavLink to="/" className={navBase} activeClassName={navActive}>
-            Home
-          </NavLink>
-
-          {/* PRODUCTS DROPDOWN */}
-          <div className="relative group h-full flex items-center">
-            <NavLink
-              to="/products"
-              className={`${navBase} flex items-center gap-1`}
-              activeClassName={navActive}
-            >
-              Products
-              <ChevronDown size={12} className="group-hover:rotate-180 transition-transform duration-300" strokeWidth={3} />
-            </NavLink>
-
-            <div className="absolute top-[46px] left-1/2 -translate-x-1/2 w-[300px] bg-white border border-[#E5E5E5] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col py-3 z-50 text-black">
-              {categories.map((cat) => (
-                <NavLink
-                  key={cat}
-                  to={`/products?cat=${encodeURIComponent(cat)}`}
-                  className="px-6 py-2.5 font-montserrat text-[11px] font-semibold text-[#111] uppercase tracking-[0.07em] hover:bg-[#F9F9F9] hover:text-[#57663D] transition-colors border-l-2 border-transparent"
-                  activeClassName="border-l-2 border-[#57663D] bg-[#F9F9F9] text-[#57663D]"
-                >
-                  {cat}
-                </NavLink>
-              ))}
-            </div>
-          </div>
-
-          <NavLink to="/bestsellers" className={navBase} activeClassName={navActive}>
-            Bestsellers
-          </NavLink>
-
-          <NavLink to="/new-arrivals" className={navBase} activeClassName={navActive}>
-            New Arrivals
-          </NavLink>
-
-          <NavLink to="/customisation" className={navBase} activeClassName={navActive}>
-            Customisation
-          </NavLink>
-
-          <NavLink to="/about" className={navBase} activeClassName={navActive}>
-            About MURO
-          </NavLink>
-
-          <NavLink to="/contact" className={navBase} activeClassName={navActive}>
-            Contact
-          </NavLink>
-
-        </nav>
       </div>
 
       {/* ══════════════════════════════════════════
