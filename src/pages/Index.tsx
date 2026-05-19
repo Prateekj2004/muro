@@ -398,7 +398,7 @@ const Index: React.FC = () => {
             className="group cursor-pointer flex flex-col"
           >
             {/* Image Container */}
-            <div className="relative aspect-[3/4] bg-[#f4f4f4] overflow-hidden mb-3">
+            <div className="relative aspect-[3/4] bg-[#f4f4f4] overflow-hidden mb-3 rounded-xl">
               {/* Background / hover image */}
               <img
                 src={getFullImageUrl(
@@ -483,7 +483,7 @@ const Index: React.FC = () => {
       <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
       <div className="absolute bottom-10 left-8">
         <h3 className="text-white text-3xl md:text-4xl font-bold tracking-tight">
-          New Arrival Prints
+          Posters
         </h3>
       </div>
     </Link>
@@ -498,7 +498,7 @@ const Index: React.FC = () => {
       <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
       <div className="absolute bottom-10 left-8">
         <h3 className="text-white text-3xl md:text-4xl font-bold tracking-tight">
-          Canvas Art Prints
+          Cutouts
         </h3>
       </div>
     </Link>
@@ -513,7 +513,7 @@ const Index: React.FC = () => {
       <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
       <div className="absolute bottom-10 left-8">
         <h3 className="text-white text-3xl md:text-4xl font-bold tracking-tight">
-          Picture Frames
+          Postcards
         </h3>
       </div>
     </Link>
@@ -631,7 +631,7 @@ const Index: React.FC = () => {
         <div key={index} className="group cursor-pointer flex flex-col">
           
           {/* Image Container */}
-          <div className="relative aspect-[3/4] bg-[#f4f4f4] overflow-hidden mb-3">
+          <div className="relative aspect-[3/4] bg-[#f4f4f4] overflow-hidden mb-3 rounded-xl">
             <img
               src={item.img}
               alt={item.name}
