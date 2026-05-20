@@ -503,7 +503,7 @@ const Products: React.FC = () => {
                           <div className="relative w-full aspect-[3/4] bg-[#E5E3DD] overflow-hidden">
   {/* Sirf wall image dikhegi, hover swap hata diya gaya hai */}
   <img 
-    src={getFullImageUrl(mainProduct.main_poster_url || mainProduct.main_poster_url)} 
+    src={getFullImageUrl(mainProduct.mainy_poster_url || mainProduct.main_poster_url)} 
     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
     alt={title} 
   />
