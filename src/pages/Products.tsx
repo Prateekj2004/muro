@@ -501,11 +501,13 @@ const Products: React.FC = () => {
                           className="block w-full"
                         >
                           <div className="relative w-full aspect-[3/4] bg-[#E5E3DD] overflow-hidden">
-                            <img src={getFullImageUrl(mainProduct.wall_poster_url || mainProduct.hoverImg || mainProduct.main_poster_url || mainProduct.image_url)} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0" alt={title} />
-                            <div className="absolute inset-0 z-10 bg-[#F0EEE9] transition-opacity duration-500 ease-in-out group-hover:opacity-0">
-                              <img src={getFullImageUrl(mainProduct.main_poster_url || mainProduct.defaultImg || mainProduct.image_url)} className="w-full h-full object-cover" alt={title} />
-                            </div>
-                          </div>
+  {/* Sirf wall image dikhegi, hover swap hata diya gaya hai */}
+  <img 
+    src={getFullImageUrl(mainProduct.main_poster_url || mainProduct.main_poster_url)} 
+    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
+    alt={title} 
+  />
+</div>
                         </Link>
 
                         <div className="mt-4 flex flex-col items-start px-1">

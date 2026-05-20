@@ -476,7 +476,7 @@ const Index: React.FC = () => {
     {/* Item 1: New Arrivals (Gallery Wall Aesthetic) */}
     <Link to="/new-arrivals" className="relative group overflow-hidden h-[620px]">
       <img 
-        src="https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?q=80&w=1200&auto=format&fit=crop" 
+        src="images/posters.webp" 
         alt="New Arrivals"
         className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
       />
@@ -491,7 +491,7 @@ const Index: React.FC = () => {
     {/* Item 2: Canvas Art (Texture Focus) */}
     <Link to="/canvas-art" className="relative group overflow-hidden h-[620px]">
       <img 
-        src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1200&auto=format&fit=crop" 
+        src="images/cutouts.webp" 
         alt="Canvas Art"
         className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
       />
@@ -506,7 +506,7 @@ const Index: React.FC = () => {
     {/* Item 3: Picture Frames (Frame Collage) */}
     <Link to="/frames" className="relative group overflow-hidden h-[620px]">
       <img 
-        src="https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=1200&auto=format&fit=crop" 
+        src="images/postcards.webp" 
         alt="Picture Frames"
         className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
       />
