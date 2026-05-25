@@ -61,12 +61,23 @@ const getProductPrice = (product?: ProductItem | null) => {
   return product?.price || product?.base_price || 500;
 };
 
+const formatPrice = (price?: string | number) => {
+  const value = price || 500;
+  const numericValue = Number(value);
+
+  if (Number.isFinite(numericValue)) {
+    return `₹${numericValue.toLocaleString("en-IN")}`;
+  }
+
+  return `₹${value}`;
+};
+
 const getMainPosterImage = (product?: ProductItem | null) => {
   return (
+    product?.zoom_in_url ||
     product?.main_poster_url ||
     product?.defaultImg ||
     product?.image_url ||
-    product?.zoom_in_url ||
     product?.wall_poster_url ||
     product?.hoverImg
   );
@@ -115,10 +126,7 @@ const ProductDetails: React.FC = () => {
         setAllProducts(items);
 
         if (!stateProduct) {
-          const found = items.find(
-            (item) => String(item.id) === String(id)
-          );
-
+          const found = items.find((item) => String(item.id) === String(id));
           setProduct(found || null);
         }
       } catch (error) {
@@ -233,6 +241,7 @@ const ProductDetails: React.FC = () => {
           <h1 className="text-[28px] font-semibold text-[#1C1C1C] mb-4">
             Product not found
           </h1>
+
           <Link
             to="/products"
             className="inline-flex items-center justify-center bg-[#1C1C1C] text-white px-8 py-3 text-[12px] uppercase tracking-[0.18em]"
@@ -252,21 +261,22 @@ const ProductDetails: React.FC = () => {
         color: COLORS.blackboard,
       }}
     >
-      {/* PRODUCT DETAIL SECTION */}
       <section className="w-full py-8 md:py-12">
         <div className="max-w-[1400px] mx-auto px-6">
-          {/* Breadcrumb */}
           <div className="mb-8 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[#1C1C1C]/45">
             <Link to="/" className="hover:text-[#1C1C1C] transition-colors">
               Home
             </Link>
+
             <ChevronRight size={13} />
+
             <Link
               to="/products"
               className="hover:text-[#1C1C1C] transition-colors"
             >
               Products
             </Link>
+
             {product.category && (
               <>
                 <ChevronRight size={13} />
@@ -278,20 +288,14 @@ const ProductDetails: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-start">
-            {/* LEFT IMAGE - ONLY MAIN IMAGE */}
             <div className="w-full">
-              <div className="w-full bg-white border border-[#1C1C1C]/10 p-4 md:p-6">
-                <div className="relative w-full min-h-[620px] md:min-h-[760px] bg-[#F7F6F2] flex items-center justify-center overflow-hidden">
-                  <img
-                    src={getFullImageUrl(mainImage)}
-                    alt={productTitle}
-                    className="w-full h-full max-h-[780px] object-contain"
-                  />
-                </div>
-              </div>
+              <img
+                src={getFullImageUrl(mainImage)}
+                alt={productTitle}
+                className="block w-full h-auto object-contain"
+              />
             </div>
 
-            {/* RIGHT INFO */}
             <div className="w-full lg:pt-2">
               <p className="text-[11px] uppercase tracking-[0.24em] text-[#1C1C1C]/40 mb-5">
                 {product.category || "Poster"}
@@ -302,8 +306,8 @@ const ProductDetails: React.FC = () => {
                 {productTitle}
               </h1>
 
-              <p className="text-[26px] md:text-[30px] font-semibold text-[#1C1C1C] mb-5">
-                ₹{productPrice}
+              <p className="text-[28px] md:text-[32px] font-semibold text-[#1C1C1C] mb-5">
+                {formatPrice(productPrice)}
               </p>
 
               <p className="text-[15px] md:text-[16px] leading-relaxed text-[#1C1C1C]/60 mb-8 max-w-[620px]">
@@ -314,7 +318,6 @@ const ProductDetails: React.FC = () => {
 
               <div className="h-px bg-[#1C1C1C]/12 mb-8" />
 
-              {/* SIZE OPTIONS */}
               <div className="mb-8">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[#1C1C1C]/45 font-semibold mb-4">
                   Select Size
@@ -338,7 +341,6 @@ const ProductDetails: React.FC = () => {
                 </div>
               </div>
 
-              {/* CART ROW */}
               <div className="grid grid-cols-[120px_1fr] gap-4 mb-5">
                 <div className="h-[56px] border border-[#1C1C1C]/15 bg-white flex items-center justify-between px-4">
                   <button
@@ -380,10 +382,10 @@ const ProductDetails: React.FC = () => {
                 Buy It Now
               </button>
 
-              {/* ABOUT */}
               <div className="rounded-[22px] bg-white/65 border border-[#1C1C1C]/8 p-6 md:p-7 mb-7">
                 <div className="flex items-center gap-2 mb-4">
                   <Info size={17} className="text-[#1C1C1C]" />
+
                   <h2 className="text-[13px] uppercase tracking-[0.18em] font-semibold text-[#1C1C1C]">
                     About This Artwork
                   </h2>
@@ -401,7 +403,6 @@ const ProductDetails: React.FC = () => {
                 </p>
               </div>
 
-              {/* TAGS */}
               <div className="flex flex-wrap items-center gap-2">
                 <Tag size={15} className="text-[#1C1C1C]/45" />
 
@@ -419,7 +420,6 @@ const ProductDetails: React.FC = () => {
         </div>
       </section>
 
-      {/* YOU MIGHT ALSO LIKE - SAME AS INDEX BEST SELLERS STYLE */}
       <section className="w-full py-12 md:py-14 bg-[#F0EEE9] border-t border-[#1C1C1C]/10">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="mb-8 flex items-center justify-between gap-4">
@@ -442,10 +442,11 @@ const ProductDetails: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-start">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5 md:gap-7 items-start">
               {relatedProducts.map((item, index) => {
                 const itemTitle = getProductTitle(item);
                 const posterImage = getCardPosterImage(item);
+                const itemPrice = getProductPrice(item);
 
                 return (
                   <Link
@@ -455,31 +456,29 @@ const ProductDetails: React.FC = () => {
                     className="group cursor-pointer flex flex-col h-full w-full"
                   >
                     <div className="w-full">
-                      <div className="relative w-full mb-3 overflow-hidden bg-white">
+                      <div className="relative w-full mb-4 overflow-hidden">
                         <img
                           src={getFullImageUrl(posterImage)}
                           alt={itemTitle}
                           className="block w-full aspect-[3/4] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.02]"
                         />
-
-                        <div className="absolute bottom-3 left-3 bg-white text-[#1C1C1C] text-[10px] font-semibold px-2 py-1 rounded-full z-20 shadow-sm">
-                          New Arrivals
-                        </div>
                       </div>
 
                       <div className="w-full text-left">
-                        <h3 className="text-[13px] md:text-[14px] font-medium text-[#1C1C1C] leading-snug mb-4 w-full min-h-[34px]">
+                        <h3 className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C] leading-snug mb-2 w-full min-h-[42px]">
                           {itemTitle}
                         </h3>
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[12px] md:text-[13px] font-medium text-[#1C1C1C]">
-                            As low as ₹{getProductPrice(item)}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
+                            {formatPrice(itemPrice)}
                           </span>
 
                           {(item.original_price || item.originalPrice) && (
-                            <span className="text-[12px] text-[#1C1C1C]/35 line-through">
-                              ₹{item.original_price || item.originalPrice}
+                            <span className="text-[13px] md:text-[14px] text-[#1C1C1C]/40 line-through">
+                              {formatPrice(
+                                item.original_price || item.originalPrice
+                              )}
                             </span>
                           )}
                         </div>

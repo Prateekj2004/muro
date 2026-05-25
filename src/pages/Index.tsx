@@ -338,37 +338,36 @@ const Index: React.FC = () => {
 
                 const posterImage =
                   item.zoom_in_url ||
+                  item.wall_poster_url ||
                   item.main_poster_url ||
+                  item.hoverImg ||
                   item.defaultImg ||
                   item.image_url;
+
+                const productPrice = item.price || item.base_price || 500;
 
                 return (
                   <Link
                     key={item.id || index}
                     to={`/product/${item.id}`}
-                    className="group cursor-pointer flex flex-col h-full w-full"
+                    className="group cursor-pointer block w-full"
                   >
-                    <div className="w-full">
-                      <div className="relative w-full mb-3 overflow-hidden bg-white">
-                        <img
-                          src={getFullImageUrl(posterImage)}
-                          alt={productTitle}
-                          className="block w-full aspect-[3/4] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-                        />
+                    <article className="w-full">
+                      {/* Direct image only: no wrapper background, no border, no badge */}
+                      <img
+                        src={getFullImageUrl(posterImage)}
+                        alt={productTitle}
+                        className="block w-full h-auto rounded-[14px] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+                      />
 
-                        <div className="absolute bottom-3 left-3 bg-white text-[#1C1C1C] text-[10px] font-semibold px-2 py-1 rounded-full z-20 shadow-sm">
-                          New Arrivals
-                        </div>
-                      </div>
-
-                      <div className="w-full text-left">
-                        <h3 className="text-[13px] md:text-[14px] font-medium text-[#1C1C1C] leading-snug mb-4 w-full min-h-[34px]">
+                      <div className="mt-4">
+                        <h3 className="text-[14px] md:text-[15px] font-medium text-[#1C1C1C] leading-snug min-h-[42px]">
                           {productTitle}
                         </h3>
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[12px] md:text-[13px] font-medium text-[#1C1C1C]">
-                            As low as ₹{item.price || item.base_price || 500}
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
+                            ₹{productPrice}
                           </span>
 
                           {(item.original_price || item.originalPrice) && (
@@ -378,7 +377,7 @@ const Index: React.FC = () => {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </article>
                   </Link>
                 );
               })}
@@ -495,7 +494,10 @@ const Index: React.FC = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-start">
             {wallRooms.map((item) => (
-              <div key={item.name} className="group cursor-pointer flex flex-col">
+              <div
+                key={item.name}
+                className="group cursor-pointer flex flex-col"
+              >
                 <div className="relative aspect-[3/4] bg-white overflow-hidden mb-3 rounded-[18px]">
                   <img
                     src={item.img}
@@ -517,7 +519,7 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* FAQ SECTION - OUTER BORDER REMOVED */}
+      {/* FAQ SECTION */}
       <section className="w-full py-10 md:py-12 bg-[#F0EEE9]">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
