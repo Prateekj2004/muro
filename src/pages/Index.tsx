@@ -337,12 +337,7 @@ const Index: React.FC = () => {
                 const productTitle = item.title || item.name || "Product";
 
                 const posterImage =
-                  item.zoom_in_url ||
-                  item.wall_poster_url ||
-                  item.main_poster_url ||
-                  item.hoverImg ||
-                  item.defaultImg ||
-                  item.image_url;
+                  item.zoom_in_url
 
                 const productPrice = item.price || item.base_price || 500;
 

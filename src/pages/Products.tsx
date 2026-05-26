@@ -20,13 +20,7 @@ const getFullImageUrl = (path?: string) => {
 
 const getProductImage = (product: any) => {
   return (
-    product?.zoom_in_url ||
-    product?.main_poster_url ||
-    product?.defaultImg ||
-    product?.image_url ||
-    product?.wall_poster_url ||
-    product?.hoverImg ||
-    ""
+    product?.zoom_in_url 
   );
 };
 

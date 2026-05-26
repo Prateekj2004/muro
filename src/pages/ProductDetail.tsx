@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Minus,
   Plus,
@@ -8,11 +8,14 @@ import {
   Info,
   ChevronRight,
 } from "lucide-react";
+import { toast } from "sonner";
 import { API } from "@/services/api";
-import { useCart } from "@/lib/cart";
+import { cartApi } from "@/services/cartApi";
 
 type ProductItem = {
   id?: string | number;
+  product_id?: string | number;
+  productId?: string | number;
   title?: string;
   name?: string;
   price?: string | number;
@@ -53,23 +56,26 @@ const getFullImageUrl = (path?: string) => {
   return `https://muroposter.com/${cleanPath}`;
 };
 
+const safeNumber = (value?: string | number) => {
+  const cleanValue = String(value ?? "")
+    .replace(/[₹,\s]/g, "")
+    .trim();
+
+  const num = Number(cleanValue);
+  return Number.isFinite(num) && num > 0 ? num : 500;
+};
+
+const formatPrice = (price?: string | number) => {
+  const numericValue = safeNumber(price);
+  return `₹${numericValue.toLocaleString("en-IN")}`;
+};
+
 const getProductTitle = (product?: ProductItem | null) => {
   return product?.title || product?.name || "Product";
 };
 
 const getProductPrice = (product?: ProductItem | null) => {
   return product?.price || product?.base_price || 500;
-};
-
-const formatPrice = (price?: string | number) => {
-  const value = price || 500;
-  const numericValue = Number(value);
-
-  if (Number.isFinite(numericValue)) {
-    return `₹${numericValue.toLocaleString("en-IN")}`;
-  }
-
-  return `₹${value}`;
 };
 
 const getMainPosterImage = (product?: ProductItem | null) => {
@@ -79,7 +85,8 @@ const getMainPosterImage = (product?: ProductItem | null) => {
     product?.defaultImg ||
     product?.image_url ||
     product?.wall_poster_url ||
-    product?.hoverImg
+    product?.hoverImg ||
+    ""
   );
 };
 
@@ -90,8 +97,35 @@ const getCardPosterImage = (product?: ProductItem | null) => {
     product?.defaultImg ||
     product?.image_url ||
     product?.wall_poster_url ||
-    product?.hoverImg
+    product?.hoverImg ||
+    ""
   );
+};
+
+const resolveProductId = (
+  product?: ProductItem | null,
+  routeId?: string
+): number | null => {
+  const possibleId =
+    product?.id ??
+    product?.product_id ??
+    product?.productId ??
+    routeId ??
+    "";
+
+  const cleanId = String(possibleId).trim();
+
+  if (!cleanId || cleanId === "undefined" || cleanId === "null") {
+    return null;
+  }
+
+  const numericId = Number(cleanId);
+
+  if (!Number.isFinite(numericId) || numericId <= 0) {
+    return null;
+  }
+
+  return numericId;
 };
 
 const sizeOptions = ["A4", "A6", "12x18"];
@@ -99,7 +133,7 @@ const sizeOptions = ["A4", "A6", "12x18"];
 const ProductDetails: React.FC = () => {
   const { id } = useParams();
   const location = useLocation();
-  const { addItem } = useCart();
+  const navigate = useNavigate();
 
   const stateProduct = (location.state as any)?.productData as
     | ProductItem
@@ -108,10 +142,12 @@ const ProductDetails: React.FC = () => {
   const [product, setProduct] = useState<ProductItem | null>(
     stateProduct || null
   );
+
   const [allProducts, setAllProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(!stateProduct);
   const [selectedSize, setSelectedSize] = useState("A4");
   const [quantity, setQuantity] = useState(1);
+  const [cartLoading, setCartLoading] = useState(false);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -126,7 +162,11 @@ const ProductDetails: React.FC = () => {
         setAllProducts(items);
 
         if (!stateProduct) {
-          const found = items.find((item) => String(item.id) === String(id));
+          const found = items.find((item) => {
+            const itemId = resolveProductId(item);
+            return String(itemId) === String(id);
+          });
+
           setProduct(found || null);
         }
       } catch (error) {
@@ -161,8 +201,12 @@ const ProductDetails: React.FC = () => {
   const relatedProducts = useMemo(() => {
     if (!product) return [];
 
+    const currentProductId = resolveProductId(product, id);
+
     const sameCategory = allProducts.filter((item) => {
-      const notSame = String(item.id) !== String(product.id);
+      const itemId = resolveProductId(item);
+      const notSame = String(itemId) !== String(currentProductId);
+
       const categoryMatch =
         product.category &&
         item.category &&
@@ -171,12 +215,13 @@ const ProductDetails: React.FC = () => {
       return notSame && categoryMatch;
     });
 
-    const fallback = allProducts.filter(
-      (item) => String(item.id) !== String(product.id)
-    );
+    const fallback = allProducts.filter((item) => {
+      const itemId = resolveProductId(item);
+      return String(itemId) !== String(currentProductId);
+    });
 
     return (sameCategory.length > 0 ? sameCategory : fallback).slice(0, 5);
-  }, [allProducts, product]);
+  }, [allProducts, product, id]);
 
   const productTitle = getProductTitle(product);
   const productPrice = getProductPrice(product);
@@ -205,25 +250,54 @@ const ProductDetails: React.FC = () => {
     });
   };
 
-  const handleAddToCart = () => {
-    if (!product) return;
+  const handleAddToCart = async (): Promise<boolean> => {
+    if (!product) {
+      toast.error("Product data missing");
+      return false;
+    }
 
-    addItem({
-      id: `${product.id}-${selectedSize}`,
-      productId: product.id,
-      title: productTitle,
-      name: productTitle,
-      price: Number(productPrice),
-      quantity,
-      size: selectedSize,
-      image: getFullImageUrl(mainImage),
-      product,
-    } as any);
+    const productId = resolveProductId(product, id);
+
+    if (!productId) {
+      console.error("Invalid cart product id:", {
+        routeId: id,
+        product,
+      });
+
+      toast.error("Product id missing or invalid");
+      return false;
+    }
+
+    setCartLoading(true);
+
+    try {
+      await cartApi.addItem({
+        product_id: productId,
+        qty: quantity,
+      });
+
+      toast.success("Item added to cart");
+      window.dispatchEvent(new Event("muro_cart_updated"));
+      return true;
+    } catch (error: any) {
+      console.error("Add to cart failed:", error);
+      toast.error(error?.message || "Failed to add item to cart");
+      return false;
+    } finally {
+      setCartLoading(false);
+    }
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-    window.location.href = "/cart";
+  const handleBuyNow = async () => {
+    const added = await handleAddToCart();
+
+    if (added) {
+      navigate("/cart", {
+        state: {
+          openCheckout: true,
+        },
+      });
+    }
   };
 
   if (loading) {
@@ -367,19 +441,25 @@ const ProductDetails: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="h-[56px] border border-[#1C1C1C] bg-transparent text-[#1C1C1C] hover:bg-[#1C1C1C] hover:text-white transition-all text-[12px] font-semibold uppercase tracking-[0.18em] flex items-center justify-center gap-3"
+                  disabled={cartLoading}
+                  className={`h-[56px] border border-[#1C1C1C] bg-transparent text-[#1C1C1C] hover:bg-[#1C1C1C] hover:text-white transition-all text-[12px] font-semibold uppercase tracking-[0.18em] flex items-center justify-center gap-3 ${
+                    cartLoading ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
                 >
                   <ShoppingBag size={17} />
-                  Add To Cart
+                  {cartLoading ? "Adding..." : "Add To Cart"}
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="w-full h-[58px] bg-[#1C1C1C] text-white hover:bg-[#006039] transition-colors text-[12px] font-semibold uppercase tracking-[0.2em] mb-8"
+                disabled={cartLoading}
+                className={`w-full h-[58px] bg-[#1C1C1C] text-white hover:bg-[#006039] transition-colors text-[12px] font-semibold uppercase tracking-[0.2em] mb-8 ${
+                  cartLoading ? "opacity-60 cursor-not-allowed" : ""
+                }`}
               >
-                Buy It Now
+                {cartLoading ? "Processing..." : "Buy It Now"}
               </button>
 
               <div className="rounded-[22px] bg-white/65 border border-[#1C1C1C]/8 p-6 md:p-7 mb-7">
@@ -447,11 +527,14 @@ const ProductDetails: React.FC = () => {
                 const itemTitle = getProductTitle(item);
                 const posterImage = getCardPosterImage(item);
                 const itemPrice = getProductPrice(item);
+                const relatedId = resolveProductId(item);
+
+                if (!relatedId) return null;
 
                 return (
                   <Link
-                    key={item.id || index}
-                    to={`/product/${item.id}`}
+                    key={relatedId || index}
+                    to={`/product/${relatedId}`}
                     state={{ productData: item }}
                     className="group cursor-pointer flex flex-col h-full w-full"
                   >
@@ -460,7 +543,7 @@ const ProductDetails: React.FC = () => {
                         <img
                           src={getFullImageUrl(posterImage)}
                           alt={itemTitle}
-                          className="block w-full aspect-[3/4] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                          className="block w-full h-auto object-contain transition-transform duration-700 ease-out group-hover:scale-[1.02]"
                         />
                       </div>
 

@@ -24,7 +24,7 @@ import TermsAndConditions from "./pages/Terms";
 import FAQ from "./pages/FAQ";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
-
+import Profile from "./pages/Profile";
 // Admin Dashboard
 import AdminDashboard from "./pages/AdminDashboard"; 
 
@@ -67,7 +67,7 @@ const App = () => (
             <Route path="/products" element={<Products />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
-
+<Route path="/profile" element={<Profile />} />
             {/* --- ADMIN ROUTE SECURED --- */}
             <Route 
               path="/admin/dashboard" 
