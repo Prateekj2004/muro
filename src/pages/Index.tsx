@@ -1,14 +1,38 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, Variants } from "framer-motion";
+import { motion, Variants, AnimatePresence } from "framer-motion";
 import { Award, Heart, Package, Star } from "lucide-react";
 
 import { API } from "@/services/api";
 import FAQSection from "../components/FAQSection";
 import heroBanner from "@/assets/hero-banner.jpg";
 
+type SizePriceItem = {
+  id?: string | number;
+  size_id?: string | number;
+  size_name?: string;
+  name?: string;
+  size_code?: string;
+  code?: string;
+  price?: string | number;
+  is_active?: string | number;
+};
+
+type ProductImageItem = {
+  id?: string | number;
+  image_title?: string;
+  title?: string;
+  image_url?: string;
+  url?: string;
+  file_url?: string;
+  path?: string;
+  sort_order?: string | number;
+};
+
 type ProductItem = {
   id?: string | number;
+  product_id?: string | number;
+  productId?: string | number;
   title?: string;
   name?: string;
   price?: string | number;
@@ -21,6 +45,12 @@ type ProductItem = {
   main_poster_url?: string;
   defaultImg?: string;
   image_url?: string;
+  category?: string;
+  subcategory?: string;
+  product_images?: ProductImageItem[];
+  images?: ProductImageItem[];
+  size_prices?: SizePriceItem[];
+  sizes?: SizePriceItem[];
 };
 
 const COLORS = {
@@ -34,13 +64,121 @@ const getFullImageUrl = (path?: string) => {
 
   if (path.startsWith("http")) return path;
 
-  let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
 
-  if (!cleanPath.includes("uploads/product")) {
-    cleanPath = `uploads/product/${cleanPath}`;
+  if (cleanPath.includes("api/public/uploads")) {
+    return `https://muroposter.com/${cleanPath}`;
   }
 
-  return `https://muroposter.com/${cleanPath}`;
+  if (cleanPath.includes("uploads/product")) {
+    return `https://muroposter.com/${cleanPath}`;
+  }
+
+  return `https://muroposter.com/uploads/product/${cleanPath}`;
+};
+
+const safeNumber = (value?: string | number) => {
+  const cleanValue = String(value ?? "")
+    .replace(/[₹,\s]/g, "")
+    .trim();
+
+  const num = Number(cleanValue);
+  return Number.isFinite(num) && num > 0 ? num : 0;
+};
+
+const formatPrice = (value?: string | number) => {
+  const price = safeNumber(value) || 500;
+  return `₹${price.toLocaleString("en-IN")}`;
+};
+
+const getProductId = (product: ProductItem) => {
+  return product.id || product.product_id || product.productId;
+};
+
+const getFirstProductImageTitle = (product?: ProductItem | null) => {
+  const imageRows = Array.isArray(product?.product_images)
+    ? product?.product_images
+    : Array.isArray(product?.images)
+    ? product?.images
+    : [];
+
+  const firstImage = imageRows
+    .slice()
+    .sort(
+      (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
+    )
+    .find((img) => Boolean(img.image_title || img.title));
+
+  return String(firstImage?.image_title || firstImage?.title || "").trim();
+};
+
+const looksLikeUploadedFileName = (title?: string) => {
+  const value = String(title || "").trim();
+
+  return (
+    /^screenshot\s+\d{4}/i.test(value) ||
+    /^img[_\-\s]?\d+/i.test(value) ||
+    /^dsc[_\-\s]?\d+/i.test(value) ||
+    /\.(jpg|jpeg|png|webp|pdf)$/i.test(value)
+  );
+};
+
+const getProductTitle = (product?: ProductItem | null) => {
+  const title = String(product?.title || product?.name || "").trim();
+  const imageTitle = getFirstProductImageTitle(product);
+
+  if (!title || looksLikeUploadedFileName(title)) {
+    return imageTitle || "Product";
+  }
+
+  return title;
+};
+
+const getUploadedProductImage = (product?: ProductItem | null) => {
+  const imageRows = Array.isArray(product?.product_images)
+    ? product?.product_images
+    : Array.isArray(product?.images)
+    ? product?.images
+    : [];
+
+  const firstUploaded = imageRows
+    .slice()
+    .sort(
+      (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
+    )
+    .find((img) =>
+      Boolean(img.image_url || img.url || img.file_url || img.path)
+    );
+
+  return (
+    firstUploaded?.image_url ||
+    firstUploaded?.url ||
+    firstUploaded?.file_url ||
+    firstUploaded?.path ||
+    product?.main_poster_url ||
+    product?.zoom_in_url ||
+    product?.image_url ||
+    product?.wall_poster_url ||
+    ""
+  );
+};
+
+const getLowestSizePrice = (product?: ProductItem | null) => {
+  const sizeRows = Array.isArray(product?.size_prices)
+    ? product?.size_prices
+    : Array.isArray(product?.sizes)
+    ? product?.sizes
+    : [];
+
+  const prices = sizeRows
+    .map((size) => safeNumber(size.price))
+    .filter((price) => price > 0);
+
+  if (prices.length > 0) {
+    return Math.min(...prices);
+  }
+
+  return safeNumber(product?.price || product?.base_price) || 500;
 };
 
 const smoothEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
@@ -61,6 +199,32 @@ const staggerContainer: Variants = {
     transition: { staggerChildren: 0.1, delayChildren: 0.1 },
   },
 };
+
+const heroSlides = [
+  {
+    image: heroBanner,
+    title: "Transform Your Walls.",
+    subtitle: "Premium poster prints curated for beautiful living.",
+    buttonText: "Start Curating →",
+    buttonLink: "/products",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&auto=format&fit=crop",
+    title: "Art For Every Space.",
+    subtitle: "Bring warmth, mood and personality into your room.",
+    buttonText: "Explore Posters →",
+    buttonLink: "/products",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?w=1800&auto=format&fit=crop",
+    title: "Curated Wall Prints.",
+    subtitle: "Simple, premium and meaningful posters for modern homes.",
+    buttonText: "Shop Now →",
+    buttonLink: "/products",
+  },
+];
 
 const moods = [
   {
@@ -191,6 +355,15 @@ const whyBuyItems = [
 const Index: React.FC = () => {
   const [bestsellers, setBestsellers] = useState<ProductItem[]>([]);
   const [loadingBestsellers, setLoadingBestsellers] = useState(true);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveHeroIndex((prev) => (prev + 1) % heroSlides.length);
+    }, 4500);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const fetchBestsellers = async () => {
@@ -202,7 +375,11 @@ const Index: React.FC = () => {
           ? res
           : res?.data?.items || res?.data || [];
 
-        setBestsellers(all.slice(0, 5));
+        const productsWithUploadedImages = all.filter((item) =>
+          Boolean(getUploadedProductImage(item))
+        );
+
+        setBestsellers(productsWithUploadedImages.slice(0, 5));
       } catch (err) {
         console.error("Failed to fetch bestsellers:", err);
       } finally {
@@ -213,6 +390,8 @@ const Index: React.FC = () => {
     fetchBestsellers();
   }, []);
 
+  const activeHero = heroSlides[activeHeroIndex];
+
   return (
     <main
       className="min-h-screen overflow-x-hidden font-sans selection:text-white"
@@ -221,62 +400,80 @@ const Index: React.FC = () => {
         color: COLORS.blackboard,
       }}
     >
-      {/* HERO SECTION */}
       <section className="relative h-[85vh] min-h-[600px] flex items-center overflow-hidden">
-        <motion.div
-          initial={{ scale: 1.15 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 12, ease: smoothEase }}
-          className="absolute inset-0"
-        >
-          <img
-            src={heroBanner}
-            alt="Hero"
-            className="w-full h-full object-cover"
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2 }}
-          className="absolute inset-0 bg-black/35"
-        />
-
-        <div className="relative w-full max-w-[1400px] mx-auto px-6 md:px-8">
+        <AnimatePresence mode="wait">
           <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="max-w-2xl mx-auto md:mx-0 text-center md:text-left"
+            key={activeHeroIndex}
+            initial={{ opacity: 0, scale: 1.08 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.03 }}
+            transition={{ duration: 1.1, ease: smoothEase }}
+            className="absolute inset-0"
           >
-            <motion.h1
-              variants={fadeInUp}
-              className="text-5xl md:text-8xl text-white mb-6 drop-shadow-md leading-[1.05] font-semibold tracking-[-0.04em]"
-            >
-              Transform Your Walls.
-            </motion.h1>
-
-            <motion.p
-              variants={fadeInUp}
-              className="text-white text-lg md:text-2xl mb-8 font-normal"
-            >
-              Premium poster prints curated for beautiful living.
-            </motion.p>
-
-            <motion.div variants={fadeInUp}>
-              <Link
-                to="/products"
-                className="inline-flex items-center justify-center bg-white text-[#1C1C1C] px-10 py-4 text-xs font-semibold uppercase tracking-[0.18em] hover:bg-[#006039] hover:text-white transition-all"
-              >
-                Start Curating →
-              </Link>
-            </motion.div>
+            <img
+              src={activeHero.image}
+              alt={activeHero.title}
+              className="w-full h-full object-cover"
+            />
           </motion.div>
+        </AnimatePresence>
+
+        <div className="absolute inset-0 bg-black/35" />
+
+        <div className="relative w-full max-w-[1400px] mx-auto px-6 md:px-8 z-10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`content-${activeHeroIndex}`}
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35 }}
+              className="max-w-2xl mx-auto md:mx-0 text-center md:text-left"
+            >
+              <motion.h1
+                variants={fadeInUp}
+                className="text-5xl md:text-8xl text-white mb-6 drop-shadow-md leading-[1.05] font-semibold tracking-[-0.04em]"
+              >
+                {activeHero.title}
+              </motion.h1>
+
+              <motion.p
+                variants={fadeInUp}
+                className="text-white text-lg md:text-2xl mb-8 font-normal"
+              >
+                {activeHero.subtitle}
+              </motion.p>
+
+              <motion.div variants={fadeInUp}>
+                <Link
+                  to={activeHero.buttonLink}
+                  className="inline-flex items-center justify-center bg-white text-[#1C1C1C] px-10 py-4 text-xs font-semibold uppercase tracking-[0.18em] hover:bg-[#006039] hover:text-white transition-all"
+                >
+                  {activeHero.buttonText}
+                </Link>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <div className="absolute left-0 right-0 bottom-8 z-20 flex items-center justify-center gap-2">
+          {heroSlides.map((slide, index) => (
+            <button
+              key={slide.title}
+              type="button"
+              onClick={() => setActiveHeroIndex(index)}
+              aria-label={`Go to slide ${index + 1}`}
+              className={`h-[8px] rounded-full transition-all duration-300 ${
+                activeHeroIndex === index
+                  ? "w-[34px] bg-white"
+                  : "w-[8px] bg-white/55 hover:bg-white"
+              }`}
+            />
+          ))}
         </div>
       </section>
 
-      {/* SHOP BY MOOD */}
       <section className="w-full py-12">
         <div className="max-w-[1400px] mx-auto px-2 md:px-4">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-2 items-start">
@@ -305,7 +502,6 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* BESTSELLERS */}
       <section className="w-full py-10 bg-[#F0EEE9]">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="mb-8 flex items-center justify-between gap-4">
@@ -328,27 +524,27 @@ const Index: React.FC = () => {
           ) : bestsellers.length === 0 ? (
             <div className="h-[20vh] flex items-center justify-center text-[#1C1C1C]/45">
               <p className="text-sm tracking-widest uppercase">
-                No products found
+                No products with uploaded images found
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-start">
               {bestsellers.map((item, index) => {
-                const productTitle = item.title || item.name || "Product";
+                const productTitle = getProductTitle(item);
+                const posterImage = getUploadedProductImage(item);
+                const productPrice = getLowestSizePrice(item);
+                const productId = getProductId(item);
 
-                const posterImage =
-                  item.zoom_in_url
-
-                const productPrice = item.price || item.base_price || 500;
+                if (!posterImage || !productId) return null;
 
                 return (
                   <Link
-                    key={item.id || index}
-                    to={`/product/${item.id}`}
+                    key={productId || index}
+                    to={`/product/${productId}`}
+                    state={{ productData: item }}
                     className="group cursor-pointer block w-full"
                   >
                     <article className="w-full">
-                      {/* Direct image only: no wrapper background, no border, no badge */}
                       <img
                         src={getFullImageUrl(posterImage)}
                         alt={productTitle}
@@ -362,12 +558,14 @@ const Index: React.FC = () => {
 
                         <div className="mt-2 flex items-center gap-2">
                           <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
-                            ₹{productPrice}
+                            {formatPrice(productPrice)}
                           </span>
 
                           {(item.original_price || item.originalPrice) && (
                             <span className="text-[12px] text-[#1C1C1C]/35 line-through">
-                              ₹{item.original_price || item.originalPrice}
+                              {formatPrice(
+                                item.original_price || item.originalPrice
+                              )}
                             </span>
                           )}
                         </div>
@@ -381,7 +579,6 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* CATEGORY IMAGE SECTION */}
       <section className="w-full py-12 md:py-14 bg-[#F0EEE9]">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
@@ -419,7 +616,6 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* WHY BUY FROM MURO */}
       <section className="w-full py-12 md:py-14 bg-[#F0EEE9]">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -471,7 +667,6 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* DESIGNED FOR EVERY WALL */}
       <section className="w-full py-10 bg-[#F0EEE9]">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="mb-8 flex items-center justify-between gap-4">
@@ -514,7 +709,6 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* FAQ SECTION */}
       <section className="w-full py-10 md:py-12 bg-[#F0EEE9]">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">

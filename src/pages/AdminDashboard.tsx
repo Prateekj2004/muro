@@ -5,13 +5,14 @@ import {
   Edit,
   Eye,
   Filter,
+  ImagePlus,
   LayoutDashboard,
   Menu,
-  MinusCircle,
   Package,
   Plus,
   PlusCircle,
   RefreshCw,
+  Save,
   Tags,
   Trash2,
   Truck,
@@ -22,33 +23,54 @@ import { API } from "@/services/api";
 
 type AdminTab = "inventory" | "add" | "orders" | "attributes";
 
-type SizePriceRow = {
-  size_id: string;
-  price: string;
-  sku: string;
+type ProductImageRow = {
+  id?: number;
+  image_title: string;
+  file: File | null;
+  existing_url?: string;
+  preview_url?: string;
+  sort_order: number;
+  marked_delete?: boolean;
 };
 
 type ProductFormState = {
-  title: string;
-  short_description: string;
-  full_description: string;
   category: string;
   subcategory: string;
-  tags: string;
-  seo_title: string;
-  seo_description: string;
-  author_name: string;
-  author_bio: string;
-  size_prices: SizePriceRow[];
+  short_description: string;
+  full_description: string;
+  product_images: ProductImageRow[];
+  hidden_title: string;
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
+type SizeFormState = {
+  name: string;
+  price: string;
+};
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
+
+const emptyImageRow = (): ProductImageRow => ({
+  image_title: "",
+  file: null,
+  preview_url: "",
+  sort_order: Date.now(),
+  marked_delete: false,
+});
+
+const getCategoryId = (item: any) => item?.id || item?.category_id;
+const getSubcategoryId = (item: any) => item?.id || item?.subcategory_id;
+const getSizeId = (item: any) => item?.id || item?.size_id;
 
 const getFullImageUrl = (path?: string) => {
   if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
   if (path.startsWith("http")) return path;
 
   let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+
+  if (cleanPath.startsWith("api/public/uploads")) {
+    return `https://muroposter.com/${cleanPath}`;
+  }
 
   if (!cleanPath.includes("uploads/product")) {
     cleanPath = `uploads/product/${cleanPath}`;
@@ -58,12 +80,16 @@ const getFullImageUrl = (path?: string) => {
 };
 
 const formatPrice = (value: any) => {
-  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+  return `₹${Number(value || 0).toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  })}`;
 };
 
 const formatDate = (value: any) => {
   if (!value) return "-";
+
   const date = new Date(value);
+
   if (Number.isNaN(date.getTime())) return value;
 
   return date.toLocaleDateString("en-IN", {
@@ -89,6 +115,63 @@ const getStatusClass = (status: string) => {
   }
 
   return "bg-gray-50 text-gray-600 border-gray-200";
+};
+
+const normalizeProductImages = (product: any): ProductImageRow[] => {
+  const directImages = product?.product_images || product?.images || [];
+
+  if (Array.isArray(directImages) && directImages.length > 0) {
+    return directImages.map((img: any, index: number) => ({
+      id: Number(img.id || img.image_id || 0) || undefined,
+      image_title:
+        img.image_title ||
+        img.title ||
+        img.alt ||
+        img.name ||
+        `Image ${index + 1}`,
+      file: null,
+      existing_url:
+        img.image_url ||
+        img.url ||
+        img.file_url ||
+        img.path ||
+        img.main_poster_url ||
+        "",
+      preview_url:
+        img.image_url ||
+        img.url ||
+        img.file_url ||
+        img.path ||
+        img.main_poster_url ||
+        "",
+      sort_order: Number(img.sort_order || index + 1),
+      marked_delete: false,
+    }));
+  }
+
+  const fallbackImages = [
+    {
+      image_title: "Main Poster Image",
+      existing_url: product?.main_poster_url || "",
+    },
+    {
+      image_title: "Zoom-In Image",
+      existing_url: product?.zoom_in_url || "",
+    },
+    {
+      image_title: "Wall Poster Room View",
+      existing_url: product?.wall_poster_url || "",
+    },
+  ].filter((item) => item.existing_url);
+
+  return fallbackImages.map((img, index) => ({
+    image_title: img.image_title,
+    file: null,
+    existing_url: img.existing_url,
+    preview_url: img.existing_url,
+    sort_order: index + 1,
+    marked_delete: false,
+  }));
 };
 
 const AdminDashboard: React.FC = () => {
@@ -118,6 +201,8 @@ const AdminDashboard: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [orderDetailLoading, setOrderDetailLoading] = useState(false);
 
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+
   const [filters, setFilters] = useState({
     page: 1,
     limit: 10,
@@ -128,7 +213,6 @@ const AdminDashboard: React.FC = () => {
     is_active: 1,
     min_price: "",
     max_price: "",
-    author_name: "",
     sort: "latest",
   });
 
@@ -141,26 +225,15 @@ const AdminDashboard: React.FC = () => {
   });
 
   const initialFormState: ProductFormState = {
-    title: "",
-    short_description: "",
-    full_description: "",
     category: "",
     subcategory: "",
-    tags: "",
-    seo_title: "",
-    seo_description: "",
-    author_name: "",
-    author_bio: "",
-    size_prices: [{ size_id: "", price: "", sku: "" }],
+    short_description: "",
+    full_description: "",
+    product_images: [emptyImageRow()],
+    hidden_title: "",
   };
 
   const [formData, setFormData] = useState<ProductFormState>(initialFormState);
-
-  const [fileData, setFileData] = useState({
-    main_poster: null as File | null,
-    zoom_in_file: null as File | null,
-    wall_poster_file: null as File | null,
-  });
 
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
   const [editingSubcat, setEditingSubcat] = useState<any | null>(null);
@@ -169,16 +242,20 @@ const AdminDashboard: React.FC = () => {
   const [newCatName, setNewCatName] = useState("");
   const [newSubcatName, setNewSubcatName] = useState("");
   const [selectedCatIdForSub, setSelectedCatIdForSub] = useState("");
-  const [newSize, setNewSize] = useState({
+  const [newSize, setNewSize] = useState<SizeFormState>({
     name: "",
-    code: "",
-    width: "",
-    height: "",
-    unit: "inch",
+    price: "",
   });
 
+  const visibleProductImages = formData.product_images.filter(
+    (row) => !row.marked_delete
+  );
+
   const totalOrderAmount = useMemo(() => {
-    return orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    return orders.reduce(
+      (sum, order) => sum + Number(order.total_amount || 0),
+      0
+    );
   }, [orders]);
 
   useEffect(() => {
@@ -206,6 +283,36 @@ const AdminDashboard: React.FC = () => {
     return data;
   };
 
+  const adminMultipartRequest = async (
+    endpoint: string,
+    form: FormData,
+    method = "POST"
+  ) => {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: form,
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || data?.success === false) {
+      throw new Error(data?.message || "Request failed");
+    }
+
+    return data;
+  };
+
+  const createProductRequest = async (body: FormData) => {
+    return adminMultipartRequest("/admin/products/create", body);
+  };
+
+  const updateProductRequest = async (body: FormData) => {
+    return adminMultipartRequest("/admin/products/update", body);
+  };
+
   const fetchOrders = async () => {
     setLoading(true);
 
@@ -214,9 +321,17 @@ const AdminDashboard: React.FC = () => {
       params.set("page", String(orderFilters.page));
       params.set("limit", String(orderFilters.limit));
 
-      if (orderFilters.search.trim()) params.set("search", orderFilters.search.trim());
-      if (orderFilters.payment_status) params.set("payment_status", orderFilters.payment_status);
-      if (orderFilters.order_status) params.set("order_status", orderFilters.order_status);
+      if (orderFilters.search.trim()) {
+        params.set("search", orderFilters.search.trim());
+      }
+
+      if (orderFilters.payment_status) {
+        params.set("payment_status", orderFilters.payment_status);
+      }
+
+      if (orderFilters.order_status) {
+        params.set("order_status", orderFilters.order_status);
+      }
 
       const res = await adminRequest(`/admin/orders?${params.toString()}`, {
         method: "GET",
@@ -240,28 +355,56 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchMasterData = async () => {
+    const catRes = await API.adminGetCategories().catch(() => []);
+    const fetchedCategories = Array.isArray(catRes) ? catRes : catRes?.data || [];
+
+    setCategories(fetchedCategories);
+
+    const subcatRes = await API.adminGetSubcategories().catch(() => null);
+    const fetchedSubcategories = Array.isArray(subcatRes)
+      ? subcatRes
+      : subcatRes?.data || [];
+
+    if (fetchedSubcategories.length > 0) {
+      setSubcategories(fetchedSubcategories);
+    } else {
+      const flattened = fetchedCategories.flatMap((cat: any) =>
+        Array.isArray(cat.subcategories)
+          ? cat.subcategories.map((sub: any) => ({
+              ...sub,
+              category_id: getCategoryId(cat),
+              category_name: cat.name,
+            }))
+          : []
+      );
+
+      setSubcategories(flattened);
+    }
+
+    const sizeRes = await API.adminGetSizes().catch(() => []);
+    setSizes(Array.isArray(sizeRes) ? sizeRes : sizeRes?.data || []);
+  };
+
+  const fetchProducts = async () => {
+    const res = await API.adminGetProducts(filters).catch(() => []);
+    setProducts(Array.isArray(res) ? res : res?.data?.items || res?.data || []);
+  };
+
   const fetchAllData = async () => {
     setLoading(true);
 
     try {
-      if (activeTab === "inventory") {
-        const res = await API.adminGetProducts(filters).catch(() => []);
-        setProducts(Array.isArray(res) ? res : res?.data?.items || res?.data || []);
-      }
-
       if (activeTab === "orders") {
         await fetchOrders();
         return;
       }
 
-      const catRes = await API.adminGetCategories().catch(() => []);
-      setCategories(Array.isArray(catRes) ? catRes : catRes?.data || []);
+      await fetchMasterData();
 
-      const subcatRes = await API.adminGetSubcategories().catch(() => []);
-      setSubcategories(Array.isArray(subcatRes) ? subcatRes : subcatRes?.data || []);
-
-      const sizeRes = await API.adminGetSizes().catch(() => []);
-      setSizes(Array.isArray(sizeRes) ? sizeRes : sizeRes?.data || []);
+      if (activeTab === "inventory") {
+        await fetchProducts();
+      }
     } catch (error) {
       console.error("Fetch Error", error);
     } finally {
@@ -313,102 +456,280 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleSizePriceChange = (index: number, field: string, value: string) => {
-    const newSizePrices = [...formData.size_prices];
-    newSizePrices[index] = { ...newSizePrices[index], [field]: value };
-    setFormData({ ...formData, size_prices: newSizePrices });
+  const resetProductForm = () => {
+    setEditingProduct(null);
+    setFormData(initialFormState);
   };
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    key: "main_poster" | "zoom_in_file" | "wall_poster_file"
+  const handleProductImageTitleChange = (index: number, value: string) => {
+    const rows = [...formData.product_images];
+    rows[index] = { ...rows[index], image_title: value };
+    setFormData({ ...formData, product_images: rows });
+  };
+
+  const handleProductImageFileChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFileData({ ...fileData, [key]: e.target.files[0] });
+    const file = e.target.files?.[0] || null;
+    const rows = [...formData.product_images];
+
+    if (!file) {
+      rows[index] = {
+        ...rows[index],
+        file: null,
+        preview_url: rows[index].existing_url || "",
+      };
+      setFormData({ ...formData, product_images: rows });
+      return;
     }
+
+    rows[index] = {
+      ...rows[index],
+      file,
+      preview_url: URL.createObjectURL(file),
+      image_title: rows[index].image_title || "",
+    };
+
+    setFormData({ ...formData, product_images: rows });
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const addProductImageRow = () => {
+    setFormData({
+      ...formData,
+      product_images: [...formData.product_images, emptyImageRow()],
+    });
+  };
+
+  const removeProductImageRow = (index: number) => {
+    const rows = [...formData.product_images];
+    const row = rows[index];
+
+    if (row.id || row.existing_url) {
+      rows[index] = { ...row, marked_delete: true };
+    } else {
+      rows.splice(index, 1);
+    }
+
+    setFormData({
+      ...formData,
+      product_images: rows.length > 0 ? rows : [emptyImageRow()],
+    });
+  };
+
+  const buildProductFormData = () => {
+    const lowestMasterPrice =
+      sizes.length > 0
+        ? Math.min(...sizes.map((s) => Number(s.price || 0)).filter((p) => p > 0))
+        : 500;
+
+    const firstUsableImage = formData.product_images.find(
+      (img) => !img.marked_delete && (img.file || img.existing_url || img.image_title)
+    );
+
+    const cleanImageTitle = String(firstUsableImage?.image_title || "").trim();
+
+    const autoTitle =
+      cleanImageTitle ||
+      formData.hidden_title ||
+      `${formData.category || "Poster"} ${formData.subcategory || ""}`.trim() ||
+      `Product ${Date.now()}`;
+
+    const body = new FormData();
+
+    const editProductId =
+      editingProduct?.id ??
+      editingProduct?.product_id ??
+      editingProduct?.productId ??
+      editingProduct?.product?.id ??
+      editingProduct?.product?.product_id ??
+      null;
+
+    if (editingProduct && !editProductId) {
+      throw new Error("Product ID missing for update. Please go back to Inventory and click Edit again.");
+    }
+
+    if (editProductId) {
+      body.append("product_id", String(editProductId));
+    }
+
+    body.append("title", autoTitle);
+    body.append("short_description", formData.short_description || "");
+    body.append("full_description", formData.full_description || "");
+    body.append("description", formData.short_description || "");
+    body.append("category", formData.category || "");
+    body.append("subcategory", formData.subcategory || "");
+    body.append("tags", "");
+    body.append("seo_title", "");
+    body.append("seo_description", "");
+    body.append("author_name", "");
+    body.append("author_bio", "");
+    body.append("price", String(lowestMasterPrice || 500));
+    body.append("stock", "100");
+    body.append("resolution", "300 DPI");
+    body.append("color_mode", "RGB");
+    body.append("visibility", "PUBLISH");
+    body.append("is_active", "1");
+
+    const formattedImages = formData.product_images.map((img, index) => ({
+      id: img.id || null,
+      image_title: img.image_title || `Image ${index + 1}`,
+      existing_url: img.existing_url || "",
+      sort_order: index + 1,
+      delete: img.marked_delete ? 1 : 0,
+    }));
+
+    body.append("product_images", JSON.stringify(formattedImages));
+
+    formData.product_images.forEach((img, index) => {
+      body.append(`image_titles[${index}]`, img.image_title || `Image ${index + 1}`);
+      body.append(`image_sort_orders[${index}]`, String(index + 1));
+
+      if (img.id) {
+        body.append(`image_ids[${index}]`, String(img.id));
+      }
+
+      if (img.marked_delete) {
+        body.append(`image_delete[${index}]`, "1");
+      }
+
+      if (img.file && !img.marked_delete) {
+        body.append(`product_image_files[${index}]`, img.file);
+      }
+    });
+
+    const activeImages = formData.product_images.filter(
+      (img) => !img.marked_delete
+    );
+
+    if (activeImages[0]?.file) {
+      body.append("main_poster", activeImages[0].file);
+    }
+
+    if (activeImages[1]?.file) {
+      body.append("zoom_in_file", activeImages[1].file);
+    }
+
+    if (activeImages[2]?.file) {
+      body.append("wall_poster_file", activeImages[2].file);
+    }
+
+    return body;
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.category) {
+      toast.error("Select category");
+      return;
+    }
+
+    if (!formData.subcategory) {
+      toast.error("Select subcategory");
+      return;
+    }
+
+    const hasImage = formData.product_images.some(
+      (img) => !img.marked_delete && (img.file || img.existing_url)
+    );
+
+    if (!hasImage) {
+      toast.error("Add at least one image");
+      return;
+    }
+
+    if (sizes.length === 0) {
+      toast.error("Please add at least one Size and Price in Attributes first");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const validPrices = formData.size_prices
-        .map((sp) => Number(sp.price))
-        .filter((p) => !Number.isNaN(p) && p > 0);
+      const form = buildProductFormData();
 
-      const lowestPrice = validPrices.length > 0 ? Math.min(...validPrices) : 500;
-      const firstImage = fileData.main_poster || fileData.zoom_in_file || fileData.wall_poster_file;
-      const autoTitle = firstImage
-        ? firstImage.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ")
-        : `Untitled Product ${Date.now()}`;
+      const res = editingProduct?.id
+        ? await updateProductRequest(form)
+        : await createProductRequest(form);
 
-      const formDataToSend = new FormData();
-      formDataToSend.append("title", formData.title.trim() || autoTitle);
-      formDataToSend.append("short_description", formData.short_description || "");
-      formDataToSend.append("full_description", formData.full_description || "");
-      formDataToSend.append("category", formData.category || "");
-      formDataToSend.append("subcategory", formData.subcategory || "");
-      formDataToSend.append("tags", formData.tags || "");
-      formDataToSend.append("seo_title", formData.seo_title || "");
-      formDataToSend.append("seo_description", formData.seo_description || "");
-      formDataToSend.append("author_name", formData.author_name || "");
-      formDataToSend.append("author_bio", formData.author_bio || "");
-      formDataToSend.append("price", String(lowestPrice));
-      formDataToSend.append("stock", "100");
-      formDataToSend.append("resolution", "300 DPI");
-      formDataToSend.append("color_mode", "RGB");
-      formDataToSend.append("visibility", "PUBLISH");
-      formDataToSend.append("is_active", "1");
+      if (res?.success !== false) {
+        toast.success(
+          editingProduct?.id
+            ? "Product updated successfully"
+            : "Product published successfully"
+        );
 
-      if (fileData.main_poster) formDataToSend.append("main_poster", fileData.main_poster);
-      if (fileData.zoom_in_file) formDataToSend.append("zoom_in_file", fileData.zoom_in_file);
-      if (fileData.wall_poster_file) formDataToSend.append("wall_poster_file", fileData.wall_poster_file);
-
-      const formattedSizes = formData.size_prices
-        .filter((sp) => sp.size_id && Number(sp.price) > 0)
-        .map((sp) => ({
-          size_id: Number(sp.size_id),
-          price: Number(sp.price),
-          stock: 100,
-          sku: sp.sku || "",
-          is_active: 1,
-        }));
-
-      formDataToSend.append("size_prices", JSON.stringify(formattSizes));
-
-      const res = await API.adminCreateProduct(formDataToSend);
-
-      if (res.success !== false) {
-        toast.success("Product published successfully");
-        setFormData(initialFormState);
-        setFileData({ main_poster: null, zoom_in_file: null, wall_poster_file: null });
+        resetProductForm();
         setActiveTab("inventory");
+        fetchAllData();
       } else {
-        toast.error(res.message || "Failed to create product");
+        toast.error(res?.message || "Failed to save product");
       }
-    } catch (error) {
-      console.error("Create product failed:", error);
-      toast.error("Error creating product");
+    } catch (error: any) {
+      console.error("Save product failed:", error);
+      toast.error(error?.message || "Error saving product");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleEditProduct = async (product: any) => {
+    try {
+      let detail = product;
+
+      if (typeof (API as any).adminViewProduct === "function") {
+        const res = await (API as any).adminViewProduct({
+          product_id: product.id || product.product_id || product.productId,
+        });
+        detail = res?.data?.product || res?.data || product;
+      }
+
+      const imageRows = normalizeProductImages(detail);
+
+      setEditingProduct({
+        ...detail,
+        id: detail.id || product.id || product.product_id || product.productId,
+        product_id:
+          detail.product_id || detail.id || product.id || product.product_id || product.productId,
+      });
+      setFormData({
+        category: detail.category || "",
+        subcategory: detail.subcategory || "",
+        short_description:
+          detail.short_description || detail.description || "",
+        full_description: detail.full_description || "",
+        product_images: imageRows.length > 0 ? imageRows : [emptyImageRow()],
+        hidden_title: detail.title || "",
+      });
+
+      setActiveTab("add");
+    } catch (error: any) {
+      console.error("Edit product failed:", error);
+      toast.error(error?.message || "Failed to open product for edit");
+    }
+  };
+
   const handleDeleteProduct = async (id: number) => {
     if (!window.confirm("Delete this product?")) return;
-    await API.adminDeleteProduct({ product_id: id } as any).then(() => {
+
+    try {
+      await API.adminDeleteProduct({ product_id: id } as any);
       toast.success("Deleted");
       fetchAllData();
-    });
+    } catch (error: any) {
+      console.error("Delete product failed:", error);
+      toast.error(error?.message || "Failed to delete product");
+    }
   };
 
   const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const payload: any = { name: newCatName, is_active: 1 };
 
     if (editingCategory) {
-      payload.category_id = editingCategory.id || editingCategory.category_id;
+      payload.category_id = getCategoryId(editingCategory);
       await API.adminUpdateCategory(payload).then(() => {
         toast.success("Updated");
         setEditingCategory(null);
@@ -426,6 +747,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleDeleteCategory = async (id: number) => {
     if (!window.confirm("Delete?")) return;
+
     await API.adminDeleteCategory({ category_id: id }).then(() => {
       toast.success("Deleted");
       fetchAllData();
@@ -434,7 +756,11 @@ const AdminDashboard: React.FC = () => {
 
   const handleSaveSubcategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCatIdForSub) return toast.error("Select parent category");
+
+    if (!selectedCatIdForSub) {
+      toast.error("Select parent category");
+      return;
+    }
 
     const payload: any = {
       name: newSubcatName,
@@ -443,7 +769,7 @@ const AdminDashboard: React.FC = () => {
     };
 
     if (editingSubcat) {
-      payload.subcategory_id = editingSubcat.id || editingSubcat.subcategory_id;
+      payload.subcategory_id = getSubcategoryId(editingSubcat);
       await API.adminUpdateSubcategory(payload).then(() => {
         toast.success("Updated");
         setEditingSubcat(null);
@@ -463,6 +789,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleDeleteSubcategory = async (id: number) => {
     if (!window.confirm("Delete?")) return;
+
     await API.adminDeleteSubcategory({ subcategory_id: id }).then(() => {
       toast.success("Deleted");
       fetchAllData();
@@ -471,20 +798,41 @@ const AdminDashboard: React.FC = () => {
 
   const handleSaveSize = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload: any = { ...newSize, is_active: 1 };
+
+    const payload: any = {
+      name: newSize.name,
+      price: Number(newSize.price || 0),
+      is_active: 1,
+    };
+
+    if (!payload.name.trim()) {
+      toast.error("Enter size");
+      return;
+    }
+
+    if (payload.price <= 0) {
+      toast.error("Enter valid price");
+      return;
+    }
 
     if (editingSize) {
-      payload.size_id = editingSize.id || editingSize.size_id;
+      payload.size_id = getSizeId(editingSize);
       await API.adminUpdateSize(payload).then(() => {
         toast.success("Updated");
         setEditingSize(null);
-        setNewSize({ name: "", code: "", width: "", height: "", unit: "inch" });
+        setNewSize({
+          name: "",
+          price: "",
+        });
         fetchAllData();
       });
     } else {
       await API.adminCreateSize(payload).then(() => {
         toast.success("Added");
-        setNewSize({ name: "", code: "", width: "", height: "", unit: "inch" });
+        setNewSize({
+          name: "",
+          price: "",
+        });
         fetchAllData();
       });
     }
@@ -492,6 +840,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleDeleteSize = async (id: number) => {
     if (!window.confirm("Delete?")) return;
+
     await API.adminDeleteSize({ size_id: id }).then(() => {
       toast.success("Deleted");
       fetchAllData();
@@ -501,45 +850,82 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="fixed inset-0 z-[100] bg-[#F8F9FA] flex font-sans text-black overflow-hidden">
       <aside
-        className={`fixed inset-y-0 left-0 z-[120] w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 lg:static ${
+        className={`fixed inset-y-0 left-0 z-[120] w-[230px] bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 lg:static ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="h-full flex flex-col p-8">
-          <div className="flex items-center justify-between mb-12">
+        <div className="h-full flex flex-col p-6">
+          <div className="flex items-center justify-between mb-10">
             <div>
               <h2 className="font-coolvetica text-3xl tracking-tighter uppercase leading-none text-gray-900">
                 Muro
               </h2>
+
               <p className="text-[10px] text-gray-500 font-extrabold uppercase mt-1 tracking-widest">
                 Admin
               </p>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 text-gray-500 hover:text-black">
+
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 text-gray-500 hover:text-black"
+              type="button"
+            >
               <X size={20} />
             </button>
           </div>
 
           <nav className="flex-1 space-y-2">
-            <SideButton active={activeTab === "inventory"} onClick={() => setActiveTab("inventory")} icon={<LayoutDashboard size={18} />} label="Inventory" />
-            <SideButton active={activeTab === "add"} onClick={() => setActiveTab("add")} icon={<Plus size={18} />} label="Add Product" />
-            <SideButton active={activeTab === "attributes"} onClick={() => setActiveTab("attributes")} icon={<Tags size={18} />} label="Attributes" />
-            <SideButton active={activeTab === "orders"} onClick={() => setActiveTab("orders")} icon={<Package size={18} />} label="Orders" />
+            <SideButton
+              active={activeTab === "inventory"}
+              onClick={() => setActiveTab("inventory")}
+              icon={<LayoutDashboard size={17} />}
+              label="Inventory"
+            />
+
+            <SideButton
+              active={activeTab === "add"}
+              onClick={() => {
+                resetProductForm();
+                setActiveTab("add");
+              }}
+              icon={<Plus size={17} />}
+              label="Add Product"
+            />
+
+            <SideButton
+              active={activeTab === "attributes"}
+              onClick={() => setActiveTab("attributes")}
+              icon={<Tags size={17} />}
+              label="Attributes"
+            />
+
+            <SideButton
+              active={activeTab === "orders"}
+              onClick={() => setActiveTab("orders")}
+              icon={<Package size={17} />}
+              label="Orders"
+            />
           </nav>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-12 shrink-0">
+        <header className="h-[72px] bg-white border-b border-gray-200 flex items-center justify-between px-5 lg:px-9 shrink-0">
           <div className="flex items-center gap-4">
-            <Menu size={22} className="lg:hidden cursor-pointer text-gray-800" onClick={() => setSidebarOpen(true)} />
+            <Menu
+              size={22}
+              className="lg:hidden cursor-pointer text-gray-800"
+              onClick={() => setSidebarOpen(true)}
+            />
+
             <h2 className="hidden md:block text-lg font-extrabold text-gray-800 uppercase tracking-widest">
               Dashboard
             </h2>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 lg:p-12 pb-24">
+        <main className="flex-1 overflow-y-auto p-5 lg:p-8 pb-20">
           {activeTab === "inventory" && renderInventory()}
           {activeTab === "add" && renderAddProduct()}
           {activeTab === "orders" && renderOrders()}
@@ -551,85 +937,307 @@ const AdminDashboard: React.FC = () => {
 
   function renderInventory() {
     return (
-      <section className="max-w-[1600px] mx-auto animate-in fade-in duration-500">
-        <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-3xl font-serif font-bold text-gray-900">Catalogue</h1>
+      <section className="w-full max-w-none animate-in fade-in duration-500">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-gray-900">
+              Catalogue
+            </h1>
+
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+              Products use master size prices from attributes
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              resetProductForm();
+              setActiveTab("add");
+            }}
+            className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 flex items-center gap-2"
+          >
+            <Plus size={15} />
+            Add Product
+          </button>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm mb-8">
+        <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm mb-7">
           <div className="flex items-center gap-2 mb-4">
             <Filter size={16} className="text-gray-800" />
-            <h3 className="text-xs font-extrabold text-gray-800 uppercase tracking-widest">Filters</h3>
+
+            <h3 className="text-xs font-extrabold text-gray-800 uppercase tracking-widest">
+              Filters
+            </h3>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            <input type="text" placeholder="Search Keyword" value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black" />
-            <select value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
+            <input
+              type="text"
+              placeholder="Search Keyword"
+              value={filters.search}
+              onChange={(e) =>
+                setFilters({ ...filters, search: e.target.value, page: 1 })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            />
+
+            <select
+              value={filters.category}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  category: e.target.value,
+                  subcategory: "",
+                  page: 1,
+                })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            >
               <option value="">All Categories</option>
-              {categories.map((c) => <option key={c.id || c.category_id} value={c.name}>{c.name}</option>)}
+              {categories.map((c) => (
+                <option key={getCategoryId(c)} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
             </select>
-            <select value={filters.subcategory} onChange={(e) => setFilters({ ...filters, subcategory: e.target.value })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black">
+
+            <select
+              value={filters.subcategory}
+              onChange={(e) =>
+                setFilters({ ...filters, subcategory: e.target.value, page: 1 })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            >
               <option value="">All Subcategories</option>
-              {subcategories.map((s) => <option key={s.id || s.subcategory_id} value={s.name}>{s.name}</option>)}
+              {subcategories
+                .filter((s) => {
+                  if (!filters.category) return true;
+
+                  const selectedCategory = categories.find(
+                    (c) => c.name === filters.category
+                  );
+
+                  return (
+                    s.category_name === filters.category ||
+                    String(s.category_id) === String(getCategoryId(selectedCategory))
+                  );
+                })
+                .map((s) => (
+                  <option key={getSubcategoryId(s)} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
             </select>
-            <input type="number" placeholder="Min Price" value={filters.min_price} onChange={(e) => setFilters({ ...filters, min_price: e.target.value })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black" />
-            <input type="number" placeholder="Max Price" value={filters.max_price} onChange={(e) => setFilters({ ...filters, max_price: e.target.value })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black" />
-            <input type="text" placeholder="Author Name" value={filters.author_name} onChange={(e) => setFilters({ ...filters, author_name: e.target.value })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black" />
-            <select value={filters.sort} onChange={(e) => setFilters({ ...filters, sort: e.target.value })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black">
-              <option value="latest">Latest First</option>
-              <option value="price_low">Price: Low to High</option>
-              <option value="price_high">Price: High to Low</option>
-            </select>
-            <button onClick={fetchAllData} className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 transition-all md:col-span-2 lg:col-span-1">
-              Apply Filters
-            </button>
+
+            <input
+              type="number"
+              placeholder="Min Price"
+              value={filters.min_price}
+              onChange={(e) =>
+                setFilters({ ...filters, min_price: e.target.value, page: 1 })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            />
+
+            <input
+              type="number"
+              placeholder="Max Price"
+              value={filters.max_price}
+              onChange={(e) =>
+                setFilters({ ...filters, max_price: e.target.value, page: 1 })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={filters.sort}
+                onChange={(e) =>
+                  setFilters({ ...filters, sort: e.target.value, page: 1 })
+                }
+                className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+              >
+                <option value="latest">Latest</option>
+                <option value="price_low">Low Price</option>
+                <option value="price_high">High Price</option>
+              </select>
+
+              <button
+                onClick={fetchAllData}
+                className="bg-black text-white px-4 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 transition-all"
+                type="button"
+              >
+                Apply
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-[1.5rem] border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[900px]">
+            <table className="w-full text-left">
               <thead className="bg-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="px-8 py-5 text-xs uppercase font-extrabold text-gray-800">Product</th>
-                  <th className="px-8 py-5 text-xs uppercase font-extrabold text-gray-800">Author</th>
-                  <th className="px-8 py-5 text-xs uppercase font-extrabold text-gray-800">Price</th>
-                  <th className="px-8 py-5 text-right"></th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Product
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Master Sizes
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Base Price
+                  </th>
+                  <th className="px-5 py-4 text-right text-xs uppercase font-extrabold text-gray-800">
+                    Actions
+                  </th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={4} className="p-20 text-center animate-pulse text-sm font-bold text-gray-500">Fetching data...</td></tr>
-                ) : products.length === 0 ? (
-                  <tr><td colSpan={4} className="p-20 text-center text-sm font-bold text-gray-500">No products found.</td></tr>
-                ) : products.map((p: any) => (
-                  <tr key={p.id} className="group hover:bg-gray-50 transition-all">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-16 bg-gray-100 rounded-xl overflow-hidden shrink-0">
-                          <img src={getFullImageUrl(p.main_poster_url || p.zoom_in_url || p.wall_poster_url)} alt={p.title} className="w-full h-full object-contain" />
-                        </div>
-                        <div>
-                          <span className="text-sm font-extrabold text-gray-900 block mb-1">{p.title}</span>
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500">{p.category || "No Category"} {p.subcategory ? `> ${p.subcategory}` : ""}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-xs font-bold text-gray-600 uppercase">{p.author_name || "N/A"}</td>
-                    <td className="px-8 py-6 text-sm font-extrabold text-gray-900">{formatPrice(p.price)}</td>
-                    <td className="px-8 py-6 text-right">
-                      <button type="button" onClick={() => handleDeleteProduct(p.id)} className="p-2.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all"><Trash2 size={16} /></button>
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="p-16 text-center animate-pulse text-sm font-bold text-gray-500"
+                    >
+                      Fetching data...
                     </td>
                   </tr>
-                ))}
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="p-16 text-center text-sm font-bold text-gray-500"
+                    >
+                      No products found.
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((p: any) => {
+                    const sizeList = Array.isArray(p.size_prices)
+                      ? p.size_prices
+                      : sizes;
+
+                    return (
+                      <tr
+                        key={p.id}
+                        className="group hover:bg-gray-50 transition-all"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-4 min-w-[360px]">
+                            <div className="w-12 h-14 bg-gray-100 rounded-xl overflow-hidden shrink-0">
+                              <img
+                                src={getFullImageUrl(
+                                  p.main_poster_url ||
+                                    p.zoom_in_url ||
+                                    p.wall_poster_url ||
+                                    p.image_url
+                                )}
+                                alt={p.title}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+
+                            <div>
+                              <span className="text-sm font-extrabold text-gray-900 block mb-1">
+                                {p.title}
+                              </span>
+
+                              <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500">
+                                {p.category || "No Category"}{" "}
+                                {p.subcategory ? `> ${p.subcategory}` : ""}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          {sizeList.length === 0 ? (
+                            <span className="text-xs font-bold text-gray-400">
+                              No master size
+                            </span>
+                          ) : (
+                            <div className="flex flex-wrap gap-2 max-w-[420px]">
+                              {sizeList.slice(0, 4).map((sp: any, idx: number) => (
+                                <span
+                                  key={`${p.id}-${getSizeId(sp) || idx}`}
+                                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-gray-700"
+                                >
+                                  {sp.size_name || sp.name}
+                                  <span className="text-gray-400">|</span>
+                                  {formatPrice(sp.price)}
+                                </span>
+                              ))}
+
+                              {sizeList.length > 4 && (
+                                <span className="text-[10px] font-extrabold text-gray-400 px-2 py-1">
+                                  +{sizeList.length - 4}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4 text-sm font-extrabold text-gray-900 whitespace-nowrap">
+                          {formatPrice(p.price)}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleEditProduct(p)}
+                              className="p-2 bg-gray-100 text-gray-800 hover:bg-black hover:text-white rounded-lg transition-all"
+                              title="Edit"
+                            >
+                              <Edit size={15} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProduct(p.id)}
+                              className="p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all"
+                              title="Delete"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-          <div className="bg-gray-50 border-t border-gray-200 p-6 flex items-center justify-between">
-            <span className="text-xs font-extrabold text-gray-600 uppercase tracking-widest">Page {filters.page}</span>
+
+          <div className="bg-gray-50 border-t border-gray-200 p-5 flex items-center justify-between">
+            <span className="text-xs font-extrabold text-gray-600 uppercase tracking-widest">
+              Page {filters.page}
+            </span>
+
             <div className="flex gap-3">
-              <button disabled={filters.page === 1} onClick={() => setFilters({ ...filters, page: filters.page - 1 })} className="px-5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-extrabold text-gray-800 hover:bg-gray-100 disabled:opacity-50 uppercase tracking-widest">Prev</button>
-              <button onClick={() => setFilters({ ...filters, page: filters.page + 1 })} className="px-5 py-2.5 bg-black rounded-xl text-xs font-extrabold text-white hover:bg-gray-800 uppercase tracking-widest">Next</button>
+              <button
+                disabled={filters.page === 1}
+                onClick={() =>
+                  setFilters({ ...filters, page: filters.page - 1 })
+                }
+                className="px-5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-extrabold text-gray-800 hover:bg-gray-100 disabled:opacity-50 uppercase tracking-widest"
+                type="button"
+              >
+                Prev
+              </button>
+
+              <button
+                onClick={() =>
+                  setFilters({ ...filters, page: filters.page + 1 })
+                }
+                className="px-5 py-2.5 bg-black rounded-xl text-xs font-extrabold text-white hover:bg-gray-800 uppercase tracking-widest"
+                type="button"
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
@@ -639,74 +1247,172 @@ const AdminDashboard: React.FC = () => {
 
   function renderAddProduct() {
     return (
-      <section className="max-w-5xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
-        <h1 className="text-3xl font-serif font-bold mb-8 text-gray-900 uppercase tracking-widest">Publish Listing</h1>
-        <div className="bg-white p-10 lg:p-14 rounded-[2.5rem] border border-gray-200 shadow-sm">
-          <form onSubmit={handleAddProduct} className="space-y-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <SectionTitle title="Basic Details" />
-                <FormGroup label="Title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Leave blank to use image name" />
-                <div className="grid grid-cols-2 gap-6">
-                  <SelectBox label="Category" value={formData.category} onChange={(v) => setFormData({ ...formData, category: v })} items={categories} placeholder="Select Category" />
-                  <SelectBox label="Subcategory" value={formData.subcategory} onChange={(v) => setFormData({ ...formData, subcategory: v })} items={subcategories} placeholder="Select Subcategory" />
-                </div>
-                <FormGroup label="Tags" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder="motivation, success" />
+      <section className="w-full max-w-[1150px] mx-auto animate-in slide-in-from-bottom-4 duration-500">
+        <div className="mb-7 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-gray-900 uppercase tracking-widest">
+              {editingProduct ? "Update Listing" : "Publish Listing"}
+            </h1>
+
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+              Only category, subcategory, descriptions and images
+            </p>
+          </div>
+
+          {editingProduct && (
+            <button
+              type="button"
+              onClick={resetProductForm}
+              className="bg-white border border-gray-300 text-gray-900 px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-100 flex items-center gap-2"
+            >
+              <X size={15} />
+              Cancel Edit
+            </button>
+          )}
+        </div>
+
+        <div className="bg-white p-6 lg:p-8 rounded-[2rem] border border-gray-200 shadow-sm">
+          <form onSubmit={handleSaveProduct} className="space-y-8">
+            <div className="space-y-5">
+              <SectionTitle title="Product Details" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <SelectBox
+                  label="Category"
+                  value={formData.category}
+                  onChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      category: v,
+                      subcategory: "",
+                    })
+                  }
+                  items={categories}
+                  placeholder="Select Category"
+                />
+
+                <SelectBox
+                  label="Subcategory"
+                  value={formData.subcategory}
+                  onChange={(v) =>
+                    setFormData({ ...formData, subcategory: v })
+                  }
+                  items={subcategories.filter((sub) => {
+                    if (!formData.category) return true;
+
+                    const selectedCategory = categories.find(
+                      (cat) => cat.name === formData.category
+                    );
+
+                    return (
+                      sub.category_name === formData.category ||
+                      String(sub.category_id) ===
+                        String(getCategoryId(selectedCategory))
+                    );
+                  })}
+                  placeholder="Select Subcategory"
+                />
               </div>
 
-              <div className="space-y-6">
-                <SectionTitle title="Media Uploads" />
-                <FileInput label="Main Poster Image" onChange={(e) => handleFileChange(e, "main_poster")} />
-                <FileInput label="Zoom-In Image" onChange={(e) => handleFileChange(e, "zoom_in_file")} />
-                <FileInput label="Wall Poster Room View" onChange={(e) => handleFileChange(e, "wall_poster_file")} />
-              </div>
-            </div>
+              <TextArea
+                label="Short Description"
+                value={formData.short_description}
+                onChange={(value) =>
+                  setFormData({ ...formData, short_description: value })
+                }
+                height="h-24"
+              />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-gray-200 pt-8">
-              <div className="space-y-6">
-                <SectionTitle title="Descriptions" />
-                <TextArea label="Short Description" value={formData.short_description} onChange={(value) => setFormData({ ...formData, short_description: value })} height="h-24" />
-                <TextArea label="Full Description" value={formData.full_description} onChange={(value) => setFormData({ ...formData, full_description: value })} height="h-36" />
-              </div>
-              <div className="space-y-6">
-                <SectionTitle title="SEO & Author" />
-                <FormGroup label="SEO Title" value={formData.seo_title} onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })} />
-                <FormGroup label="SEO Description" value={formData.seo_description} onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })} />
-                <div className="grid grid-cols-2 gap-6 pt-2">
-                  <FormGroup label="Author Name" value={formData.author_name} onChange={(e) => setFormData({ ...formData, author_name: e.target.value })} />
-                  <FormGroup label="Author Bio" value={formData.author_bio} onChange={(e) => setFormData({ ...formData, author_bio: e.target.value })} />
-                </div>
-              </div>
+              <TextArea
+                label="Full Description"
+                value={formData.full_description}
+                onChange={(value) =>
+                  setFormData({ ...formData, full_description: value })
+                }
+                height="h-36"
+              />
             </div>
 
             <div className="border-t border-gray-200 pt-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xs font-extrabold tracking-[0.2em] uppercase border-b border-gray-200 pb-3 flex-1 text-gray-900">Size Variants & Pricing</h3>
-                <button type="button" onClick={() => setFormData({ ...formData, size_prices: [...formData.size_prices, { size_id: "", price: "", sku: "" }] })} className="flex items-center gap-2 text-xs uppercase font-extrabold text-blue-700 bg-blue-50 px-5 py-3 rounded-full hover:bg-blue-100">
-                  <PlusCircle size={16} /> Add Variant
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <SectionTitle title="Images" noMargin />
+
+                <button
+                  type="button"
+                  onClick={addProductImageRow}
+                  className="inline-flex items-center justify-center gap-2 text-xs uppercase font-extrabold text-blue-700 bg-blue-50 px-5 py-3 rounded-full hover:bg-blue-100"
+                >
+                  <ImagePlus size={16} />
+                  Add Image Row
                 </button>
               </div>
 
               <div className="space-y-4">
-                {formData.size_prices.map((variant, index) => (
-                  <div key={index} className="flex flex-wrap items-end gap-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
-                    <div className="flex-1 min-w-[150px] space-y-2">
-                      <label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">Size</label>
-                      <select value={variant.size_id} onChange={(e) => handleSizePriceChange(index, "size_id", e.target.value)} className="w-full bg-white border border-gray-300 p-4 rounded-2xl outline-none focus:ring-2 ring-black/5 text-sm font-semibold text-gray-900 cursor-pointer">
-                        <option value="">Select Size</option>
-                        {sizes.map((sz) => <option key={sz.id || sz.size_id} value={sz.id || sz.size_id}>{sz.name} ({sz.code})</option>)}
-                      </select>
+                {formData.product_images.map((row, index) => {
+                  if (row.marked_delete) return null;
+
+                  return (
+                    <div
+                      key={`${row.id || "new"}-${index}-${row.sort_order}`}
+                      className="grid grid-cols-1 lg:grid-cols-[130px_1fr_1fr_auto] gap-4 items-end p-4 bg-gray-50 border border-gray-200 rounded-2xl"
+                    >
+                      <div className="w-full h-[130px] rounded-2xl bg-white border border-gray-200 overflow-hidden flex items-center justify-center">
+                        {row.preview_url || row.existing_url ? (
+                          <img
+                            src={
+                              row.preview_url?.startsWith("blob:")
+                                ? row.preview_url
+                                : getFullImageUrl(row.preview_url || row.existing_url)
+                            }
+                            alt={row.image_title || "Preview"}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <ImagePlus className="text-gray-300" size={32} />
+                        )}
+                      </div>
+
+                      <FormGroup
+                        label="Image Title"
+                        value={row.image_title}
+                        onChange={(e) =>
+                          handleProductImageTitleChange(index, e.target.value)
+                        }
+                        placeholder="Example: Front View / Room View"
+                      />
+
+                      <FileInput
+                        label="Image"
+                        onChange={(e) => handleProductImageFileChange(index, e)}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => removeProductImageRow(index)}
+                        disabled={visibleProductImages.length === 1}
+                        className="p-4 text-red-500 bg-white border border-gray-300 hover:bg-red-50 hover:border-red-200 rounded-2xl disabled:opacity-50"
+                      >
+                        <Trash2 size={20} />
+                      </button>
                     </div>
-                    <div className="flex-1 min-w-[150px]"><FormGroup label="SKU" value={variant.sku} onChange={(e) => handleSizePriceChange(index, "sku", e.target.value)} /></div>
-                    <div className="flex-1 min-w-[150px]"><FormGroup label="Price" type="number" value={variant.price} onChange={(e) => handleSizePriceChange(index, "price", e.target.value)} /></div>
-                    <button type="button" onClick={() => setFormData({ ...formData, size_prices: formData.size_prices.filter((_, i) => i !== index) })} disabled={formData.size_prices.length === 1} className="p-4 text-red-500 bg-white border border-gray-300 hover:bg-red-50 hover:border-red-200 rounded-2xl disabled:opacity-50"><MinusCircle size={20} /></button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="w-full bg-black text-white py-6 rounded-2xl text-xs font-extrabold uppercase tracking-[0.3em] shadow-xl hover:bg-gray-800 transition-all disabled:opacity-60">
-              {isSubmitting ? "Publishing..." : "Publish Final Listing"}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-black text-white py-5 rounded-2xl text-xs font-extrabold uppercase tracking-[0.3em] shadow-xl hover:bg-gray-800 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {editingProduct ? <Save size={16} /> : <PlusCircle size={16} />}
+              {isSubmitting
+                ? editingProduct
+                  ? "Updating..."
+                  : "Publishing..."
+                : editingProduct
+                ? "Update Listing"
+                : "Publish Final Listing"}
             </button>
           </form>
         </div>
@@ -716,126 +1422,1010 @@ const AdminDashboard: React.FC = () => {
 
   function renderOrders() {
     return (
-      <section className="max-w-[1600px] mx-auto animate-in fade-in duration-500">
+      <section className="w-full max-w-none animate-in fade-in duration-500">
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-serif font-bold text-gray-900">Manage Orders</h1>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">Paid orders, pending orders and delivery status</p>
+            <h1 className="text-3xl font-serif font-bold text-gray-900">
+              Manage Orders
+            </h1>
+
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+              Paid orders, pending orders and delivery status
+            </p>
           </div>
-          <button type="button" onClick={fetchOrders} className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 flex items-center gap-2"><RefreshCw size={15} /> Refresh</button>
+
+          <button
+            type="button"
+            onClick={fetchOrders}
+            className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 flex items-center gap-2"
+          >
+            <RefreshCw size={15} />
+            Refresh
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <StatCard label="Orders" value={ordersPagination.total} icon={<Package size={20} />} />
-          <StatCard label="Visible Amount" value={formatPrice(totalOrderAmount)} icon={<CreditCard size={20} />} />
-          <StatCard label="Page" value={`${ordersPagination.page}/${ordersPagination.pages || 1}`} icon={<Truck size={20} />} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-7">
+          <StatCard
+            label="Orders"
+            value={ordersPagination.total}
+            icon={<Package size={20} />}
+          />
+
+          <StatCard
+            label="Visible Amount"
+            value={formatPrice(totalOrderAmount)}
+            icon={<CreditCard size={20} />}
+          />
+
+          <StatCard
+            label="Page"
+            value={`${ordersPagination.page}/${ordersPagination.pages || 1}`}
+            icon={<Truck size={20} />}
+          />
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm mb-8">
-          <div className="flex items-center gap-2 mb-4"><Filter size={16} className="text-gray-800" /><h3 className="text-xs font-extrabold text-gray-800 uppercase tracking-widest">Order Filters</h3></div>
+        <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm mb-7">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter size={16} className="text-gray-800" />
+
+            <h3 className="text-xs font-extrabold text-gray-800 uppercase tracking-widest">
+              Order Filters
+            </h3>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input type="text" placeholder="Search order, name, phone, email" value={orderFilters.search} onChange={(e) => setOrderFilters({ ...orderFilters, search: e.target.value, page: 1 })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black" />
-            <select value={orderFilters.payment_status} onChange={(e) => setOrderFilters({ ...orderFilters, payment_status: e.target.value, page: 1 })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black">
-              <option value="">All Payments</option><option value="PAID">Paid</option><option value="PENDING">Pending</option><option value="FAILED">Failed</option>
+            <input
+              type="text"
+              placeholder="Search order, name, phone, email"
+              value={orderFilters.search}
+              onChange={(e) =>
+                setOrderFilters({
+                  ...orderFilters,
+                  search: e.target.value,
+                  page: 1,
+                })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            />
+
+            <select
+              value={orderFilters.payment_status}
+              onChange={(e) =>
+                setOrderFilters({
+                  ...orderFilters,
+                  payment_status: e.target.value,
+                  page: 1,
+                })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            >
+              <option value="">All Payments</option>
+              <option value="PAID">Paid</option>
+              <option value="PENDING">Pending</option>
+              <option value="FAILED">Failed</option>
             </select>
-            <select value={orderFilters.order_status} onChange={(e) => setOrderFilters({ ...orderFilters, order_status: e.target.value, page: 1 })} className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black">
-              <option value="">All Order Status</option><option value="PENDING">Pending</option><option value="PLACED">Placed</option><option value="PROCESSING">Processing</option><option value="SHIPPED">Shipped</option><option value="DELIVERED">Delivered</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option>
+
+            <select
+              value={orderFilters.order_status}
+              onChange={(e) =>
+                setOrderFilters({
+                  ...orderFilters,
+                  order_status: e.target.value,
+                  page: 1,
+                })
+              }
+              className="border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            >
+              <option value="">All Order Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="PLACED">Placed</option>
+              <option value="PROCESSING">Processing</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
-            <button type="button" onClick={fetchOrders} className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800">Apply Filters</button>
+
+            <button
+              type="button"
+              onClick={fetchOrders}
+              className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800"
+            >
+              Apply Filters
+            </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-[1.5rem] border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[1150px]">
+            <table className="w-full text-left min-w-[1050px]">
               <thead className="bg-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-5 text-xs uppercase font-extrabold text-gray-800">Order</th><th className="px-6 py-5 text-xs uppercase font-extrabold text-gray-800">Customer</th><th className="px-6 py-5 text-xs uppercase font-extrabold text-gray-800">Amount</th><th className="px-6 py-5 text-xs uppercase font-extrabold text-gray-800">Payment</th><th className="px-6 py-5 text-xs uppercase font-extrabold text-gray-800">Order Status</th><th className="px-6 py-5 text-xs uppercase font-extrabold text-gray-800">Items</th><th className="px-6 py-5 text-xs uppercase font-extrabold text-gray-800">Date</th><th className="px-6 py-5 text-right"></th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Order
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Customer
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Amount
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Payment
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Order Status
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Items
+                  </th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">
+                    Date
+                  </th>
+                  <th className="px-5 py-4 text-right"></th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-100">
-                {loading ? <tr><td colSpan={8} className="p-20 text-center animate-pulse text-sm font-bold text-gray-500">Fetching orders...</td></tr>
-                : orders.length === 0 ? <tr><td colSpan={8} className="p-20 text-center text-sm font-bold text-gray-500">No orders found.</td></tr>
-                : orders.map((order: any) => (
-                  <tr key={order.id} className="group hover:bg-gray-50 transition-all">
-                    <td className="px-6 py-6"><span className="text-sm font-extrabold text-gray-900 block">{order.order_no}</span><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">ID: {order.id}</span></td>
-                    <td className="px-6 py-6"><span className="text-sm font-extrabold text-gray-900 block">{order.shipping_name || "Customer"}</span><span className="text-xs font-bold text-gray-500 block">{order.shipping_phone || "-"}</span><span className="text-xs font-bold text-gray-500 block">{order.shipping_email || "-"}</span></td>
-                    <td className="px-6 py-6"><span className="text-sm font-extrabold text-gray-900 block">{formatPrice(order.total_amount)}</span><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Cart: {formatPrice(order.subtotal)}</span></td>
-                    <td className="px-6 py-6"><span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[10px] font-extrabold uppercase tracking-widest ${getStatusClass(order.payment_status)}`}><CreditCard size={12} />{order.payment_status || "PENDING"}</span></td>
-                    <td className="px-6 py-6"><select value={order.order_status || "PENDING"} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className={`border px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-widest outline-none ${getStatusClass(order.order_status)}`}><option value="PENDING">Pending</option><option value="PLACED">Placed</option><option value="PROCESSING">Processing</option><option value="SHIPPED">Shipped</option><option value="DELIVERED">Delivered</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option></select></td>
-                    <td className="px-6 py-6 text-sm font-extrabold text-gray-900">{order.item_count || 0}</td>
-                    <td className="px-6 py-6 text-xs font-bold text-gray-500 uppercase">{formatDate(order.created_at)}</td>
-                    <td className="px-6 py-6 text-right"><button type="button" onClick={() => openOrderDetail(order.id)} className="inline-flex items-center gap-2 bg-black text-white px-4 py-3 rounded-xl text-[11px] font-extrabold uppercase tracking-widest hover:bg-gray-800"><Eye size={15} /> View</button></td>
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="p-16 text-center animate-pulse text-sm font-bold text-gray-500"
+                    >
+                      Fetching orders...
+                    </td>
                   </tr>
-                ))}
+                ) : orders.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="p-16 text-center text-sm font-bold text-gray-500"
+                    >
+                      No orders found.
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((order: any) => (
+                    <tr
+                      key={order.id}
+                      className="group hover:bg-gray-50 transition-all"
+                    >
+                      <td className="px-5 py-5">
+                        <span className="text-sm font-extrabold text-gray-900 block">
+                          {order.order_no}
+                        </span>
+
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                          ID: {order.id}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-5">
+                        <span className="text-sm font-extrabold text-gray-900 block">
+                          {order.shipping_name || "Customer"}
+                        </span>
+
+                        <span className="text-xs font-bold text-gray-500 block">
+                          {order.shipping_phone || "-"}
+                        </span>
+
+                        <span className="text-xs font-bold text-gray-500 block">
+                          {order.shipping_email || "-"}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-5">
+                        <span className="text-sm font-extrabold text-gray-900 block">
+                          {formatPrice(order.total_amount)}
+                        </span>
+
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                          Cart: {formatPrice(order.subtotal)}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-5">
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[10px] font-extrabold uppercase tracking-widest ${getStatusClass(
+                            order.payment_status
+                          )}`}
+                        >
+                          <CreditCard size={12} />
+                          {order.payment_status || "PENDING"}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-5">
+                        <select
+                          value={order.order_status || "PENDING"}
+                          onChange={(e) =>
+                            updateOrderStatus(order.id, e.target.value)
+                          }
+                          className={`border px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-widest outline-none ${getStatusClass(
+                            order.order_status
+                          )}`}
+                        >
+                          <option value="PENDING">Pending</option>
+                          <option value="PLACED">Placed</option>
+                          <option value="PROCESSING">Processing</option>
+                          <option value="SHIPPED">Shipped</option>
+                          <option value="DELIVERED">Delivered</option>
+                          <option value="COMPLETED">Completed</option>
+                          <option value="CANCELLED">Cancelled</option>
+                        </select>
+                      </td>
+
+                      <td className="px-5 py-5 text-sm font-extrabold text-gray-900">
+                        {order.item_count || 0}
+                      </td>
+
+                      <td className="px-5 py-5 text-xs font-bold text-gray-500 uppercase">
+                        {formatDate(order.created_at)}
+                      </td>
+
+                      <td className="px-5 py-5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => openOrderDetail(order.id)}
+                          className="inline-flex items-center gap-2 bg-black text-white px-4 py-3 rounded-xl text-[11px] font-extrabold uppercase tracking-widest hover:bg-gray-800"
+                        >
+                          <Eye size={15} />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-          <div className="bg-gray-50 border-t border-gray-200 p-6 flex items-center justify-between">
-            <span className="text-xs font-extrabold text-gray-600 uppercase tracking-widest">Page {ordersPagination.page} of {ordersPagination.pages || 1}</span>
-            <div className="flex gap-3"><button disabled={orderFilters.page === 1} onClick={() => setOrderFilters({ ...orderFilters, page: Math.max(1, orderFilters.page - 1) })} className="px-5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-extrabold text-gray-800 hover:bg-gray-100 disabled:opacity-50 uppercase tracking-widest">Prev</button><button disabled={orderFilters.page >= ordersPagination.pages} onClick={() => setOrderFilters({ ...orderFilters, page: orderFilters.page + 1 })} className="px-5 py-2.5 bg-black rounded-xl text-xs font-extrabold text-white hover:bg-gray-800 disabled:opacity-50 uppercase tracking-widest">Next</button></div>
+
+          <div className="bg-gray-50 border-t border-gray-200 p-5 flex items-center justify-between">
+            <span className="text-xs font-extrabold text-gray-600 uppercase tracking-widest">
+              Page {ordersPagination.page} of {ordersPagination.pages || 1}
+            </span>
+
+            <div className="flex gap-3">
+              <button
+                disabled={orderFilters.page === 1}
+                onClick={() =>
+                  setOrderFilters({
+                    ...orderFilters,
+                    page: Math.max(1, orderFilters.page - 1),
+                  })
+                }
+                className="px-5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-extrabold text-gray-800 hover:bg-gray-100 disabled:opacity-50 uppercase tracking-widest"
+                type="button"
+              >
+                Prev
+              </button>
+
+              <button
+                disabled={orderFilters.page >= ordersPagination.pages}
+                onClick={() =>
+                  setOrderFilters({
+                    ...orderFilters,
+                    page: orderFilters.page + 1,
+                  })
+                }
+                className="px-5 py-2.5 bg-black rounded-xl text-xs font-extrabold text-white hover:bg-gray-800 disabled:opacity-50 uppercase tracking-widest"
+                type="button"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
 
-        {selectedOrder && <OrderDetailModal selectedOrder={selectedOrder} orderDetailLoading={orderDetailLoading} onClose={() => setSelectedOrder(null)} updateOrderStatus={updateOrderStatus} />}
+        {selectedOrder && (
+          <OrderDetailModal
+            selectedOrder={selectedOrder}
+            orderDetailLoading={orderDetailLoading}
+            onClose={() => setSelectedOrder(null)}
+            updateOrderStatus={updateOrderStatus}
+          />
+        )}
       </section>
     );
   }
 
   function renderAttributes() {
     return (
-      <section className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
-        <h1 className="text-3xl font-serif font-bold uppercase tracking-widest text-gray-900 mb-8">Manage Attributes</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <AttributeBox title="Categories" items={categories} getMain={(i) => i.name} getSub={(i) => `ID: ${i.id || i.category_id}`} onEdit={(i) => { setEditingCategory(i); setNewCatName(i.name); }} onDelete={(id) => handleDeleteCategory(id)} form={<CategoryForm editing={!!editingCategory} value={newCatName} setValue={setNewCatName} onSubmit={handleSaveCategory} onCancel={() => { setEditingCategory(null); setNewCatName(""); }} />} />
-          <AttributeBox title="Subcategories" items={subcategories} getMain={(i) => i.name} getSub={(i) => `Cat ID: ${i.category_id} | Sub ID: ${i.id || i.subcategory_id}`} onEdit={(i) => { setEditingSubcat(i); setNewSubcatName(i.name); setSelectedCatIdForSub(i.category_id); }} onDelete={(id) => handleDeleteSubcategory(id)} form={<SubcategoryForm editing={!!editingSubcat} categories={categories} selectedCatIdForSub={selectedCatIdForSub} setSelectedCatIdForSub={setSelectedCatIdForSub} value={newSubcatName} setValue={setNewSubcatName} onSubmit={handleSaveSubcategory} onCancel={() => { setEditingSubcat(null); setNewSubcatName(""); setSelectedCatIdForSub(""); }} />} />
-          <AttributeBox title="Sizes" items={sizes} getMain={(i) => `${i.name} (${i.code})`} getSub={(i) => `${i.width || "-"}x${i.height || "-"} ${i.unit || ""} | ID: ${i.id || i.size_id}`} onEdit={(i) => { setEditingSize(i); setNewSize({ name: i.name || "", code: i.code || "", width: i.width || "", height: i.height || "", unit: i.unit || "inch" }); }} onDelete={(id) => handleDeleteSize(id)} form={<SizeForm editing={!!editingSize} value={newSize} setValue={setNewSize} onSubmit={handleSaveSize} onCancel={() => { setEditingSize(null); setNewSize({ name: "", code: "", width: "", height: "", unit: "inch" }); }} />} />
+      <section className="w-full max-w-none space-y-8 animate-in fade-in duration-500">
+        <h1 className="text-3xl font-serif font-bold uppercase tracking-widest text-gray-900 mb-8">
+          Manage Attributes
+        </h1>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <AttributeBox
+            title="Categories"
+            items={categories}
+            getMain={(i) => i.name}
+            getSub={() => ""}
+            onEdit={(i) => {
+              setEditingCategory(i);
+              setNewCatName(i.name);
+            }}
+            onDelete={(id) => handleDeleteCategory(id)}
+            form={
+              <CategoryForm
+                editing={!!editingCategory}
+                value={newCatName}
+                setValue={setNewCatName}
+                onSubmit={handleSaveCategory}
+                onCancel={() => {
+                  setEditingCategory(null);
+                  setNewCatName("");
+                }}
+              />
+            }
+          />
+
+          <AttributeBox
+            title="Subcategories"
+            items={subcategories}
+            getMain={(i) => i.name}
+            getSub={(i) => i.category_name || ""}
+            onEdit={(i) => {
+              setEditingSubcat(i);
+              setNewSubcatName(i.name);
+              setSelectedCatIdForSub(String(i.category_id || ""));
+            }}
+            onDelete={(id) => handleDeleteSubcategory(id)}
+            form={
+              <SubcategoryForm
+                editing={!!editingSubcat}
+                categories={categories}
+                selectedCatIdForSub={selectedCatIdForSub}
+                setSelectedCatIdForSub={setSelectedCatIdForSub}
+                value={newSubcatName}
+                setValue={setNewSubcatName}
+                onSubmit={handleSaveSubcategory}
+                onCancel={() => {
+                  setEditingSubcat(null);
+                  setNewSubcatName("");
+                  setSelectedCatIdForSub("");
+                }}
+              />
+            }
+          />
+
+          <AttributeBox
+            title="Sizes"
+            items={sizes}
+            getMain={(i) => i.name}
+            getSub={(i) => formatPrice(i.price)}
+            onEdit={(i) => {
+              setEditingSize(i);
+              setNewSize({
+                name: i.name || "",
+                price: String(i.price || ""),
+              });
+            }}
+            onDelete={(id) => handleDeleteSize(id)}
+            form={
+              <SizeForm
+                editing={!!editingSize}
+                value={newSize}
+                setValue={setNewSize}
+                onSubmit={handleSaveSize}
+                onCancel={() => {
+                  setEditingSize(null);
+                  setNewSize({
+                    name: "",
+                    price: "",
+                  });
+                }}
+              />
+            }
+          />
         </div>
       </section>
     );
   }
 };
 
-const SideButton = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
-  <button type="button" onClick={onClick} className={`flex w-full items-center gap-4 px-7 py-5 rounded-2xl text-xs font-extrabold uppercase ${active ? "bg-black text-white" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"}`}>{icon}{label}</button>
+const SideButton = ({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex w-full items-center gap-4 px-6 py-4 rounded-2xl text-xs font-extrabold uppercase ${
+      active
+        ? "bg-black text-white"
+        : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+    }`}
+  >
+    {icon}
+    {label}
+  </button>
 );
 
-const SectionTitle = ({ title }: { title: string }) => <h3 className="text-xs font-extrabold tracking-[0.2em] uppercase border-b border-gray-200 pb-3 mb-5 text-gray-900">{title}</h3>;
-
-const FormGroup = ({ label, value, onChange, placeholder = "", type = "text" }: { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; type?: string }) => (
-  <div className="space-y-2"><label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">{label}</label><input type={type} value={value} onChange={onChange} placeholder={placeholder} className="w-full bg-white border border-gray-300 p-4 rounded-2xl outline-none focus:ring-2 ring-black/5 text-sm font-semibold text-gray-900" /></div>
+const SectionTitle = ({
+  title,
+  noMargin = false,
+}: {
+  title: string;
+  noMargin?: boolean;
+}) => (
+  <h3
+    className={`text-xs font-extrabold tracking-[0.2em] uppercase border-b border-gray-200 pb-3 text-gray-900 ${
+      noMargin ? "" : "mb-5"
+    }`}
+  >
+    {title}
+  </h3>
 );
 
-const SelectBox = ({ label, value, onChange, items, placeholder }: { label: string; value: string; onChange: (value: string) => void; items: any[]; placeholder: string }) => (
-  <div className="space-y-2"><label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">{label}</label><select value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-white border border-gray-300 p-4 rounded-2xl outline-none focus:ring-2 ring-black/5 text-sm font-semibold text-gray-900 cursor-pointer"><option value="">{placeholder}</option>{items.map((item) => <option key={item.id || item.category_id || item.subcategory_id} value={item.name}>{item.name}</option>)}</select></div>
+const FormGroup = ({
+  label,
+  value,
+  onChange,
+  placeholder = "",
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  type?: string;
+}) => (
+  <div className="space-y-2">
+    <label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">
+      {label}
+    </label>
+
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full bg-white border border-gray-300 p-4 rounded-2xl outline-none focus:ring-2 ring-black/5 text-sm font-semibold text-gray-900"
+    />
+  </div>
 );
 
-const FileInput = ({ label, onChange }: { label: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-  <div className="space-y-2"><label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">{label}</label><input type="file" accept="image/*" onChange={onChange} className="w-full bg-white border border-gray-300 p-3.5 rounded-2xl text-xs font-semibold text-gray-900 cursor-pointer" /></div>
+const SelectBox = ({
+  label,
+  value,
+  onChange,
+  items,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  items: any[];
+  placeholder: string;
+}) => (
+  <div className="space-y-2">
+    <label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">
+      {label}
+    </label>
+
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-white border border-gray-300 p-4 rounded-2xl outline-none focus:ring-2 ring-black/5 text-sm font-semibold text-gray-900 cursor-pointer"
+    >
+      <option value="">{placeholder}</option>
+
+      {items.map((item) => (
+        <option
+          key={item.id || item.category_id || item.subcategory_id}
+          value={item.name}
+        >
+          {item.name}
+        </option>
+      ))}
+    </select>
+  </div>
 );
 
-const TextArea = ({ label, value, onChange, height }: { label: string; value: string; onChange: (value: string) => void; height: string }) => (
-  <div className="space-y-2"><label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">{label}</label><textarea value={value} onChange={(e) => onChange(e.target.value)} className={`w-full bg-white border border-gray-300 p-4 rounded-2xl outline-none focus:ring-2 ring-black/5 text-sm ${height} resize-none font-semibold text-gray-900`} /></div>
+const FileInput = ({
+  label,
+  onChange,
+}: {
+  label: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => (
+  <div className="space-y-2">
+    <label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">
+      {label}
+    </label>
+
+    <input
+      type="file"
+      accept="image/*"
+      onChange={onChange}
+      className="w-full bg-white border border-gray-300 p-3.5 rounded-2xl text-xs font-semibold text-gray-900 cursor-pointer"
+    />
+  </div>
 );
 
-const StatCard = ({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ReactNode }) => (
-  <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm"><div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-4">{icon}</div><p className="text-xs uppercase tracking-widest font-extrabold text-gray-500 mb-1">{label}</p><p className="text-2xl font-extrabold text-gray-900">{value}</p></div>
+const TextArea = ({
+  label,
+  value,
+  onChange,
+  height,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  height: string;
+}) => (
+  <div className="space-y-2">
+    <label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">
+      {label}
+    </label>
+
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`w-full bg-white border border-gray-300 p-4 rounded-2xl outline-none focus:ring-2 ring-black/5 text-sm ${height} resize-none font-semibold text-gray-900`}
+    />
+  </div>
 );
 
-const AttributeBox = ({ title, items, getMain, getSub, onEdit, onDelete, form }: { title: string; items: any[]; getMain: (item: any) => string; getSub: (item: any) => string; onEdit: (item: any) => void; onDelete: (id: number) => void; form: React.ReactNode }) => (
-  <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 flex flex-col h-[600px]"><h3 className="text-xs font-extrabold tracking-[0.2em] uppercase border-b border-gray-200 pb-4 mb-4 shrink-0 text-gray-900">{title}</h3><div className="flex-1 overflow-y-auto pr-2 space-y-3 mb-6 no-scrollbar">{items.map((item) => { const id = item.id || item.category_id || item.subcategory_id || item.size_id; return <div key={id} className="group bg-gray-50 hover:bg-white p-4 rounded-xl flex items-center justify-between border border-gray-200 hover:border-black transition-all"><div><span className="text-sm font-extrabold uppercase text-gray-900 block">{getMain(item)}</span><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{getSub(item)}</span></div><div className="flex gap-2 opacity-0 group-hover:opacity-100"><button type="button" onClick={() => onEdit(item)} className="p-2 bg-gray-200 hover:bg-black hover:text-white rounded-md"><Edit size={14} /></button><button type="button" onClick={() => onDelete(Number(id))} className="p-2 bg-gray-200 hover:bg-red-500 hover:text-white rounded-md"><Trash2 size={14} /></button></div></div>; })}</div>{form}</div>
+const StatCard = ({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ReactNode;
+}) => (
+  <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
+    <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-4">
+      {icon}
+    </div>
+
+    <p className="text-xs uppercase tracking-widest font-extrabold text-gray-500 mb-1">
+      {label}
+    </p>
+
+    <p className="text-2xl font-extrabold text-gray-900">{value}</p>
+  </div>
 );
 
-const CategoryForm = ({ editing, value, setValue, onSubmit, onCancel }: any) => <form onSubmit={onSubmit} className="flex flex-col gap-3 mt-auto shrink-0 border-t border-gray-200 pt-6"><input required value={value} onChange={(e) => setValue(e.target.value)} placeholder={editing ? "Update name" : "New category"} className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900" /><div className="flex gap-2"><button type="submit" className="flex-1 bg-black text-white py-4 rounded-xl text-[11px] tracking-[0.2em] uppercase font-extrabold">{editing ? "Update" : "Add"}</button>{editing && <button type="button" onClick={onCancel} className="px-6 bg-red-50 text-red-600 rounded-xl text-[11px] font-extrabold uppercase tracking-widest">Cancel</button>}</div></form>;
+const AttributeBox = ({
+  title,
+  items,
+  getMain,
+  getSub,
+  onEdit,
+  onDelete,
+  form,
+}: {
+  title: string;
+  items: any[];
+  getMain: (item: any) => string;
+  getSub: (item: any) => string;
+  onEdit: (item: any) => void;
+  onDelete: (id: number) => void;
+  form: React.ReactNode;
+}) => (
+  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 flex flex-col h-[580px]">
+    <h3 className="text-xs font-extrabold tracking-[0.2em] uppercase border-b border-gray-200 pb-4 mb-4 shrink-0 text-gray-900">
+      {title}
+    </h3>
 
-const SubcategoryForm = ({ editing, categories, selectedCatIdForSub, setSelectedCatIdForSub, value, setValue, onSubmit, onCancel }: any) => <form onSubmit={onSubmit} className="space-y-3 mt-auto shrink-0 border-t border-gray-200 pt-6"><select required value={selectedCatIdForSub} onChange={(e) => setSelectedCatIdForSub(e.target.value)} className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold cursor-pointer outline-none text-gray-900"><option value="">Select Parent Category</option>{categories.map((c: any) => <option key={c.id || c.category_id} value={c.id || c.category_id}>{c.name}</option>)}</select><input required value={value} onChange={(e) => setValue(e.target.value)} placeholder={editing ? "Update subcategory" : "New subcategory"} className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900" /><div className="flex gap-2"><button type="submit" className="flex-1 bg-black text-white py-4 rounded-xl text-[11px] tracking-[0.2em] uppercase font-extrabold">{editing ? "Update" : "Add"}</button>{editing && <button type="button" onClick={onCancel} className="px-6 bg-red-50 text-red-600 rounded-xl text-[11px] font-extrabold uppercase tracking-widest">Cancel</button>}</div></form>;
+    <div className="flex-1 overflow-y-auto pr-2 space-y-3 mb-6 no-scrollbar">
+      {items.map((item) => {
+        const id =
+          item.id || item.category_id || item.subcategory_id || item.size_id;
+        const subText = getSub(item);
 
-const SizeForm = ({ editing, value, setValue, onSubmit, onCancel }: any) => <form onSubmit={onSubmit} className="space-y-3 mt-auto shrink-0 border-t border-gray-200 pt-6"><input required value={value.name} onChange={(e) => setValue({ ...value, name: e.target.value })} placeholder="Name" className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900" /><div className="grid grid-cols-2 gap-3"><input required value={value.code} onChange={(e) => setValue({ ...value, code: e.target.value })} placeholder="Code" className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900" /><input value={value.unit} onChange={(e) => setValue({ ...value, unit: e.target.value })} placeholder="Unit" className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900" /></div><div className="grid grid-cols-2 gap-3"><input value={value.width} onChange={(e) => setValue({ ...value, width: e.target.value })} placeholder="Width" className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900" /><input value={value.height} onChange={(e) => setValue({ ...value, height: e.target.value })} placeholder="Height" className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900" /></div><div className="flex gap-2"><button type="submit" className="flex-1 bg-black text-white py-4 rounded-xl text-[11px] tracking-[0.2em] uppercase font-extrabold">{editing ? "Update" : "Add"}</button>{editing && <button type="button" onClick={onCancel} className="px-6 bg-red-50 text-red-600 rounded-xl text-[11px] font-extrabold uppercase tracking-widest">Cancel</button>}</div></form>;
+        return (
+          <div
+            key={id}
+            className="group bg-gray-50 hover:bg-white p-4 rounded-xl flex items-center justify-between border border-gray-200 hover:border-black transition-all"
+          >
+            <div>
+              <span className="text-sm font-extrabold uppercase text-gray-900 block">
+                {getMain(item)}
+              </span>
 
-const OrderDetailModal = ({ selectedOrder, orderDetailLoading, onClose, updateOrderStatus }: { selectedOrder: any; orderDetailLoading: boolean; onClose: () => void; updateOrderStatus: (orderId: number, orderStatus: string) => void }) => (
-  <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4"><div className="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl"><div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between"><div><h2 className="text-2xl font-serif font-bold text-gray-900">Order Bill</h2><p className="text-xs font-bold uppercase tracking-widest text-gray-500 mt-1">{selectedOrder.order_no}</p></div><button type="button" onClick={onClose} className="p-3 bg-gray-100 hover:bg-black hover:text-white rounded-xl"><X size={18} /></button></div>{orderDetailLoading ? <div className="p-20 text-center text-sm font-bold text-gray-500">Loading bill...</div> : <div className="p-6 space-y-6"><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><InfoBox title="Customer"><p className="text-sm font-extrabold text-gray-900">{selectedOrder.shipping_name || "-"}</p><p className="text-xs font-bold text-gray-500 mt-1">{selectedOrder.shipping_phone || "-"}</p><p className="text-xs font-bold text-gray-500">{selectedOrder.shipping_email || "-"}</p></InfoBox><InfoBox title="Payment"><p className="text-sm font-extrabold text-gray-900">{selectedOrder.payment_status || "-"}</p><p className="text-xs font-bold text-gray-500 mt-1 break-all">{selectedOrder.razorpay_payment_id || "-"}</p></InfoBox><InfoBox title="Delivery"><select value={selectedOrder.order_status || "PENDING"} onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)} className={`border px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-widest outline-none ${getStatusClass(selectedOrder.order_status)}`}><option value="PENDING">Pending</option><option value="PLACED">Placed</option><option value="PROCESSING">Processing</option><option value="SHIPPED">Shipped</option><option value="DELIVERED">Delivered</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option></select><p className="text-xs font-bold text-gray-500 mt-2">{selectedOrder.shipping_city || "-"}, {selectedOrder.shipping_state || "-"}</p></InfoBox></div><div className="border border-gray-200 rounded-2xl overflow-hidden"><table className="w-full text-left min-w-[700px]"><thead className="bg-gray-100"><tr><th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest">Product</th><th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest text-center">Qty</th><th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest text-right">Price</th><th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest text-right">Total</th></tr></thead><tbody className="divide-y divide-gray-100">{(selectedOrder.items || []).length === 0 ? <tr><td colSpan={4} className="p-10 text-center text-sm font-bold text-gray-500">No items found.</td></tr> : selectedOrder.items.map((item: any) => <tr key={item.id}><td className="px-5 py-5"><div className="flex items-center gap-4"><div className="w-14 h-16 bg-gray-100 rounded-xl overflow-hidden"><img src={getFullImageUrl(item.image_url)} alt={item.title} className="w-full h-full object-contain" /></div><span className="text-sm font-extrabold text-gray-900">{item.title}</span></div></td><td className="px-5 py-5 text-center font-bold">{item.qty}</td><td className="px-5 py-5 text-right font-bold">{formatPrice(item.price)}</td><td className="px-5 py-5 text-right font-extrabold">{formatPrice(item.line_total)}</td></tr>)}</tbody></table></div><div className="flex justify-end"><div className="w-full max-w-sm bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-3"><div className="flex justify-between text-sm font-bold"><span className="text-gray-500">Cart Total</span><span>{formatPrice(selectedOrder.subtotal)}</span></div><div className="flex justify-between text-lg font-extrabold border-t border-gray-200 pt-3"><span>Paid Amount</span><span>{formatPrice(selectedOrder.total_amount)}</span></div></div></div></div>}</div></div>
+              {subText ? (
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  {subText}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100">
+              <button
+                type="button"
+                onClick={() => onEdit(item)}
+                className="p-2 bg-gray-200 hover:bg-black hover:text-white rounded-md"
+              >
+                <Edit size={14} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onDelete(Number(id))}
+                className="p-2 bg-gray-200 hover:bg-red-500 hover:text-white rounded-md"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {form}
+  </div>
 );
 
-const InfoBox = ({ title, children }: { title: string; children: React.ReactNode }) => <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200"><p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">{title}</p>{children}</div>;
+const CategoryForm = ({
+  editing,
+  value,
+  setValue,
+  onSubmit,
+  onCancel,
+}: any) => (
+  <form
+    onSubmit={onSubmit}
+    className="flex flex-col gap-3 mt-auto shrink-0 border-t border-gray-200 pt-6"
+  >
+    <input
+      required
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      placeholder={editing ? "Update category" : "New category"}
+      className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900"
+    />
+
+    <div className="flex gap-2">
+      <button
+        type="submit"
+        className="flex-1 bg-black text-white py-4 rounded-xl text-[11px] tracking-[0.2em] uppercase font-extrabold"
+      >
+        {editing ? "Update" : "Add"}
+      </button>
+
+      {editing && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 bg-red-50 text-red-600 rounded-xl text-[11px] font-extrabold uppercase tracking-widest"
+        >
+          Cancel
+        </button>
+      )}
+    </div>
+  </form>
+);
+
+const SubcategoryForm = ({
+  editing,
+  categories,
+  selectedCatIdForSub,
+  setSelectedCatIdForSub,
+  value,
+  setValue,
+  onSubmit,
+  onCancel,
+}: any) => (
+  <form
+    onSubmit={onSubmit}
+    className="space-y-3 mt-auto shrink-0 border-t border-gray-200 pt-6"
+  >
+    <select
+      required
+      value={selectedCatIdForSub}
+      onChange={(e) => setSelectedCatIdForSub(e.target.value)}
+      className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold cursor-pointer outline-none text-gray-900"
+    >
+      <option value="">Select Parent Category</option>
+      {categories.map((c: any) => (
+        <option key={getCategoryId(c)} value={getCategoryId(c)}>
+          {c.name}
+        </option>
+      ))}
+    </select>
+
+    <input
+      required
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      placeholder={editing ? "Update subcategory" : "New subcategory"}
+      className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900"
+    />
+
+    <div className="flex gap-2">
+      <button
+        type="submit"
+        className="flex-1 bg-black text-white py-4 rounded-xl text-[11px] tracking-[0.2em] uppercase font-extrabold"
+      >
+        {editing ? "Update" : "Add"}
+      </button>
+
+      {editing && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 bg-red-50 text-red-600 rounded-xl text-[11px] font-extrabold uppercase tracking-widest"
+        >
+          Cancel
+        </button>
+      )}
+    </div>
+  </form>
+);
+
+const SizeForm = ({
+  editing,
+  value,
+  setValue,
+  onSubmit,
+  onCancel,
+}: any) => (
+  <form
+    onSubmit={onSubmit}
+    className="space-y-3 mt-auto shrink-0 border-t border-gray-200 pt-6"
+  >
+    <input
+      required
+      value={value.name}
+      onChange={(e) => setValue({ ...value, name: e.target.value })}
+      placeholder="Size"
+      className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900"
+    />
+
+    <input
+      required
+      type="number"
+      value={value.price}
+      onChange={(e) => setValue({ ...value, price: e.target.value })}
+      placeholder="Price"
+      className="w-full bg-white border border-gray-300 p-4 rounded-xl text-xs font-extrabold outline-none focus:border-black text-gray-900"
+    />
+
+    <div className="flex gap-2">
+      <button
+        type="submit"
+        className="flex-1 bg-black text-white py-4 rounded-xl text-[11px] tracking-[0.2em] uppercase font-extrabold"
+      >
+        {editing ? "Update" : "Add"}
+      </button>
+
+      {editing && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 bg-red-50 text-red-600 rounded-xl text-[11px] font-extrabold uppercase tracking-widest"
+        >
+          Cancel
+        </button>
+      )}
+    </div>
+  </form>
+);
+
+const OrderDetailModal = ({
+  selectedOrder,
+  orderDetailLoading,
+  onClose,
+  updateOrderStatus,
+}: {
+  selectedOrder: any;
+  orderDetailLoading: boolean;
+  onClose: () => void;
+  updateOrderStatus: (orderId: number, orderStatus: string) => void;
+}) => (
+  <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl">
+      <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-serif font-bold text-gray-900">
+            Order Bill
+          </h2>
+
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mt-1">
+            {selectedOrder.order_no}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-3 bg-gray-100 hover:bg-black hover:text-white rounded-xl"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {orderDetailLoading ? (
+        <div className="p-20 text-center text-sm font-bold text-gray-500">
+          Loading bill...
+        </div>
+      ) : (
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <InfoBox title="Customer">
+              <p className="text-sm font-extrabold text-gray-900">
+                {selectedOrder.shipping_name || "-"}
+              </p>
+
+              <p className="text-xs font-bold text-gray-500 mt-1">
+                {selectedOrder.shipping_phone || "-"}
+              </p>
+
+              <p className="text-xs font-bold text-gray-500">
+                {selectedOrder.shipping_email || "-"}
+              </p>
+            </InfoBox>
+
+            <InfoBox title="Payment">
+              <p className="text-sm font-extrabold text-gray-900">
+                {selectedOrder.payment_status || "-"}
+              </p>
+
+              <p className="text-xs font-bold text-gray-500 mt-1 break-all">
+                {selectedOrder.razorpay_payment_id || "-"}
+              </p>
+            </InfoBox>
+
+            <InfoBox title="Delivery">
+              <select
+                value={selectedOrder.order_status || "PENDING"}
+                onChange={(e) =>
+                  updateOrderStatus(selectedOrder.id, e.target.value)
+                }
+                className={`border px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-widest outline-none ${getStatusClass(
+                  selectedOrder.order_status
+                )}`}
+              >
+                <option value="PENDING">Pending</option>
+                <option value="PLACED">Placed</option>
+                <option value="PROCESSING">Processing</option>
+                <option value="SHIPPED">Shipped</option>
+                <option value="DELIVERED">Delivered</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+
+              <p className="text-xs font-bold text-gray-500 mt-2">
+                {selectedOrder.shipping_city || "-"},{" "}
+                {selectedOrder.shipping_state || "-"}
+              </p>
+            </InfoBox>
+          </div>
+
+          <div className="border border-gray-200 rounded-2xl overflow-hidden">
+            <table className="w-full text-left min-w-[760px]">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest">
+                    Product
+                  </th>
+                  <th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest">
+                    Size
+                  </th>
+                  <th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest text-center">
+                    Qty
+                  </th>
+                  <th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest text-right">
+                    Price
+                  </th>
+                  <th className="px-5 py-4 text-xs font-extrabold uppercase tracking-widest text-right">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100">
+                {(selectedOrder.items || []).length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="p-10 text-center text-sm font-bold text-gray-500"
+                    >
+                      No items found.
+                    </td>
+                  </tr>
+                ) : (
+                  selectedOrder.items.map((item: any) => (
+                    <tr key={item.id}>
+                      <td className="px-5 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-16 bg-gray-100 rounded-xl overflow-hidden">
+                            <img
+                              src={getFullImageUrl(item.image_url)}
+                              alt={item.title}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+
+                          <span className="text-sm font-extrabold text-gray-900">
+                            {item.title}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-5 text-xs font-bold text-gray-500 uppercase">
+                        {item.size_name || item.size_code || "-"}
+                      </td>
+
+                      <td className="px-5 py-5 text-center font-bold">
+                        {item.qty}
+                      </td>
+
+                      <td className="px-5 py-5 text-right font-bold">
+                        {formatPrice(item.price)}
+                      </td>
+
+                      <td className="px-5 py-5 text-right font-extrabold">
+                        {formatPrice(item.line_total)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end">
+            <div className="w-full max-w-sm bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-3">
+              <div className="flex justify-between text-sm font-bold">
+                <span className="text-gray-500">Cart Total</span>
+                <span>{formatPrice(selectedOrder.subtotal)}</span>
+              </div>
+
+              {Number(selectedOrder.sgst_amount || 0) > 0 && (
+                <div className="flex justify-between text-sm font-bold">
+                  <span className="text-gray-500">SGST</span>
+                  <span>{formatPrice(selectedOrder.sgst_amount)}</span>
+                </div>
+              )}
+
+              {Number(selectedOrder.cgst_amount || 0) > 0 && (
+                <div className="flex justify-between text-sm font-bold">
+                  <span className="text-gray-500">CGST</span>
+                  <span>{formatPrice(selectedOrder.cgst_amount)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-lg font-extrabold border-t border-gray-200 pt-3">
+                <span>Paid Amount</span>
+                <span>{formatPrice(selectedOrder.total_amount)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const InfoBox = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200">
+    <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
+      {title}
+    </p>
+
+    {children}
+  </div>
+);
 
 export default AdminDashboard;

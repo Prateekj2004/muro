@@ -6,49 +6,216 @@ import {
   Search,
   User,
   ChevronDown,
+  ChevronRight,
   Heart,
 } from "lucide-react";
-import { useCart } from "@/lib/cart";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink } from "@/components/NavLink";
 import { API } from "@/services/api";
+import { cartApi } from "@/services/cartApi";
 import logoImg from "@/assets/logo.png";
+
+type CategoryItem = {
+  id?: string | number;
+  category_id?: string | number;
+  name: string;
+  subcategories?: SubcategoryItem[];
+};
+
+type SubcategoryItem = {
+  id?: string | number;
+  subcategory_id?: string | number;
+  category_id?: string | number;
+  name: string;
+};
+
+type CategoryTreeItem = {
+  key: string;
+  id: string;
+  name: string;
+  subcategories: SubcategoryItem[];
+};
+
+const defaultCategoryTree: CategoryTreeItem[] = [
+  {
+    key: "motivational-and-mindset",
+    id: "motivational-and-mindset",
+    name: "Motivational & Mindset",
+    subcategories: [],
+  },
+  {
+    key: "aesthetic-and-vibe",
+    id: "aesthetic-and-vibe",
+    name: "Aesthetic & Vibe",
+    subcategories: [],
+  },
+  {
+    key: "love-and-connection",
+    id: "love-and-connection",
+    name: "Love & Connection",
+    subcategories: [],
+  },
+  {
+    key: "kids-learning-and-confidence",
+    id: "kids-learning-and-confidence",
+    name: "Kids – Learning & Confidence",
+    subcategories: [],
+  },
+];
+
+const getCategoryId = (category: CategoryItem) => {
+  return String(category.id ?? category.category_id ?? category.name);
+};
+
+const getSubcategoryId = (subcategory: SubcategoryItem) => {
+  return String(
+    subcategory.id ?? subcategory.subcategory_id ?? subcategory.name
+  );
+};
+
+const normalizeCategoryTree = (
+  categories: CategoryItem[],
+  subcategories: SubcategoryItem[]
+): CategoryTreeItem[] => {
+  const seenCategories = new Set<string>();
+
+  return categories
+    .filter((category) => {
+      const name = String(category.name || "").trim();
+      const key = name.toUpperCase();
+
+      if (!name || seenCategories.has(key)) return false;
+
+      seenCategories.add(key);
+      return true;
+    })
+    .map((category) => {
+      const categoryId = getCategoryId(category);
+
+      const nestedSubcategories = Array.isArray(category.subcategories)
+        ? category.subcategories
+        : [];
+
+      const externalSubcategories = subcategories.filter((subcategory) => {
+        return String(subcategory.category_id) === categoryId;
+      });
+
+      const sourceSubcategories =
+        nestedSubcategories.length > 0
+          ? nestedSubcategories
+          : externalSubcategories;
+
+      const seenSubcategories = new Set<string>();
+
+      const mergedSubcategories = sourceSubcategories.filter((subcategory) => {
+        const name = String(subcategory.name || "").trim();
+        const key = name.toUpperCase();
+
+        if (!name || key === String(category.name || "").trim().toUpperCase()) {
+          return false;
+        }
+
+        if (seenSubcategories.has(key)) return false;
+
+        seenSubcategories.add(key);
+        return true;
+      });
+
+      return {
+        key: categoryId,
+        id: categoryId,
+        name: category.name,
+        subcategories: mergedSubcategories,
+      };
+    });
+};
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { itemCount } = useCart();
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [hoveredCategoryKey, setHoveredCategoryKey] = useState("");
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const [cartCount, setCartCount] = useState(0);
+
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-  const [userData, setUserData] = useState<any>(() =>
-    JSON.parse(localStorage.getItem("user") || "null")
-  );
+  const [userData, setUserData] = useState<any>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
 
-  const defaultCategories = [
-    "Motivational & Mindset",
-    "Aesthetic & Vibe",
-    "Love & Connection",
-    "Kids – Learning & Confidence",
-    "Calm & Inner Balance",
-    "Fandom & Passion",
-    "Kitchen & Dining",
-    "Customization",
-  ];
+  const [categoryTree, setCategoryTree] =
+    useState<CategoryTreeItem[]>(defaultCategoryTree);
 
-  const [categories, setCategories] = useState<string[]>(defaultCategories);
+  const activeHoveredCategory = useMemo(() => {
+    if (!hoveredCategoryKey) return null;
+
+    return categoryTree.find((category) => category.key === hoveredCategoryKey) || null;
+  }, [categoryTree, hoveredCategoryKey]);
+
+  const getSavedUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  };
+
+  const fetchCartCount = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setCartCount(0);
+      return;
+    }
+
+    try {
+      const res = await cartApi.getCart();
+
+      const count = Number(
+        res?.data?.summary?.item_count ??
+          res?.summary?.item_count ??
+          res?.data?.item_count ??
+          0
+      );
+
+      setCartCount(Number.isFinite(count) && count > 0 ? count : 0);
+    } catch (error) {
+      console.error("Failed to fetch cart count:", error);
+      setCartCount(0);
+    }
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await API.adminGetCategories();
-        const catData = Array.isArray(res) ? res : res?.data || [];
-        if (catData.length > 0) setCategories(catData.map((c: any) => c.name));
+        const [catRes, subcatRes] = await Promise.all([
+          API.adminGetCategories().catch(() => []),
+          API.adminGetSubcategories().catch(() => []),
+        ]);
+
+        const catData: CategoryItem[] = Array.isArray(catRes)
+          ? catRes
+          : catRes?.data || [];
+
+        const subcatData: SubcategoryItem[] = Array.isArray(subcatRes)
+          ? subcatRes
+          : subcatRes?.data || [];
+
+        if (catData.length > 0) {
+          const tree = normalizeCategoryTree(catData, subcatData);
+          setCategoryTree(tree);
+          setHoveredCategoryKey("");
+        }
       } catch (error) {
-        console.log("API error, using default categories.", error);
+        console.log("Category API error, using default categories.", error);
       }
     };
 
@@ -56,13 +223,59 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    fetchCartCount();
+
+    const handleCartUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ item_count?: number }>;
+      const incomingCount = customEvent?.detail?.item_count;
+
+      if (typeof incomingCount === "number") {
+        setCartCount(incomingCount > 0 ? incomingCount : 0);
+      } else {
+        fetchCartCount();
+      }
+    };
+
+    window.addEventListener("muro_cart_updated", handleCartUpdated);
+
+    return () => {
+      window.removeEventListener("muro_cart_updated", handleCartUpdated);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleStorageChange = () => {
-      setIsLoggedIn(!!localStorage.getItem("token"));
-      setUserData(JSON.parse(localStorage.getItem("user") || "null"));
+      const token = localStorage.getItem("token");
+
+      setIsLoggedIn(!!token);
+      setUserData(getSavedUser());
+
+      if (token) {
+        fetchCartCount();
+      } else {
+        setCartCount(0);
+      }
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("muro_auth_updated", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("muro_auth_updated", handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchCartCount();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   useEffect(() => {
@@ -82,10 +295,22 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     setIsLoggedIn(false);
     setUserData(null);
+    setCartCount(0);
     setProfileOpen(false);
+
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("muro_auth_updated"));
+    window.dispatchEvent(
+      new CustomEvent("muro_cart_updated", {
+        detail: {
+          item_count: 0,
+        },
+      })
+    );
+
     navigate("/login");
   };
 
@@ -94,9 +319,10 @@ const Navbar = () => {
 
   const navActive = "text-[#006039]";
 
+  const displayCartCount = cartCount > 99 ? "99+" : cartCount;
+
   return (
     <header className="sticky top-0 z-50 w-full">
-      {/* ANNOUNCEMENT BAR */}
       <div className="hidden sm:block w-full bg-[#1C1C1C] border-b border-white/10">
         <div className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-between h-9">
           <div className="flex items-center gap-2 font-montserrat text-[11px] text-white font-semibold">
@@ -151,10 +377,8 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* MAIN NAVBAR */}
       <div className="w-full bg-[#F0EEE9] border-b border-[#1C1C1C]/10">
         <div className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-between h-[80px]">
-          {/* LEFT */}
           <div className="flex items-center gap-4 shrink-0 lg:w-[280px]">
             <button
               type="button"
@@ -174,13 +398,16 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* CENTER */}
           <nav className="hidden lg:flex flex-1 justify-center items-center gap-5 xl:gap-8">
             <NavLink to="/" className={navBase} activeClassName={navActive}>
               Home
             </NavLink>
 
-            <div className="relative group h-[80px] flex items-center">
+            <div
+              className="relative group h-[80px] flex items-center"
+              onMouseEnter={() => setHoveredCategoryKey("")}
+              onMouseLeave={() => setHoveredCategoryKey("")}
+            >
               <NavLink
                 to="/products"
                 className={`${navBase} flex items-center gap-1`}
@@ -194,17 +421,57 @@ const Navbar = () => {
                 />
               </NavLink>
 
-              <div className="absolute top-[80px] left-1/2 -translate-x-1/2 w-[260px] bg-white border border-[#E5E5E5] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col py-3 z-50 text-black rounded-b-[18px] overflow-hidden">
-                {categories.map((cat) => (
-                  <NavLink
-                    key={cat}
-                    to={`/products?cat=${encodeURIComponent(cat)}`}
-                    className="px-6 py-2.5 font-montserrat text-[11px] font-medium text-[#111] uppercase tracking-[0.07em] hover:bg-[#F0EEE9] hover:text-[#006039] transition-colors border-l-2 border-transparent"
-                    activeClassName="border-l-2 border-[#006039] bg-[#F0EEE9] text-[#006039]"
-                  >
-                    {cat}
-                  </NavLink>
-                ))}
+              <div className="absolute top-[80px] left-1/2 -translate-x-1/2 w-[310px] bg-white border border-[#E5E5E5] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col py-3 z-50 text-black rounded-b-[18px]">
+                {categoryTree.map((cat) => {
+                  const isActive = hoveredCategoryKey === cat.key;
+
+                  return (
+                    <div
+                      key={cat.key}
+                      className="relative"
+                      onMouseEnter={() => setHoveredCategoryKey(cat.key)}
+                    >
+                      <NavLink
+                        to={`/products?cat=${encodeURIComponent(cat.name)}`}
+                        className={`px-6 py-3 font-montserrat text-[11px] font-semibold text-[#111] uppercase tracking-[0.07em] hover:bg-[#F0EEE9] hover:text-[#006039] transition-colors border-l-2 flex items-center justify-between gap-3 ${
+                          isActive
+                            ? "border-[#006039] bg-[#F0EEE9] text-[#006039]"
+                            : "border-transparent"
+                        }`}
+                        activeClassName="border-[#006039] bg-[#F0EEE9] text-[#006039]"
+                      >
+                        <span>{cat.name}</span>
+
+                        {cat.subcategories.length > 0 && (
+                          <ChevronRight size={13} strokeWidth={2.4} />
+                        )}
+                      </NavLink>
+                    </div>
+                  );
+                })}
+
+                {activeHoveredCategory && activeHoveredCategory.subcategories.length > 0 && (
+                  <div className="absolute left-[calc(100%-1px)] top-0 w-[290px] bg-white border border-[#E5E5E5] shadow-xl rounded-br-[18px] overflow-hidden py-3">
+                    <div className="px-6 pb-2 mb-2 border-b border-[#F0F0F0]">
+                      <p className="font-montserrat text-[10px] uppercase tracking-[0.18em] text-[#1C1C1C]/45 font-bold">
+                        {activeHoveredCategory.name}
+                      </p>
+                    </div>
+
+                    {activeHoveredCategory.subcategories.map((subcat) => (
+                      <NavLink
+                        key={getSubcategoryId(subcat)}
+                        to={`/products?cat=${encodeURIComponent(
+                          activeHoveredCategory.name
+                        )}&subcat=${encodeURIComponent(subcat.name)}`}
+                        className="block px-6 py-2.5 font-montserrat text-[11px] font-medium text-[#111] uppercase tracking-[0.07em] hover:bg-[#F0EEE9] hover:text-[#006039] transition-colors border-l-2 border-transparent"
+                        activeClassName="border-l-2 border-[#006039] bg-[#F0EEE9] text-[#006039]"
+                      >
+                        {subcat.name}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -245,7 +512,6 @@ const Navbar = () => {
             </NavLink>
           </nav>
 
-          {/* RIGHT */}
           <div className="flex items-center justify-end gap-3 xl:gap-5 shrink-0 lg:w-[280px]">
             <div
               className="hidden md:flex items-center border border-[#1C1C1C]/10 rounded-full px-4 py-2 gap-2 bg-white/55 hover:border-[#006039]/40 transition-colors cursor-text w-[160px] xl:w-[200px]"
@@ -270,7 +536,10 @@ const Navbar = () => {
               className="md:hidden hover:opacity-60 transition-opacity"
               aria-label="Open search"
             >
-              <Search className="w-[18px] h-[18px] text-black" strokeWidth={1.3} />
+              <Search
+                className="w-[18px] h-[18px] text-black"
+                strokeWidth={1.3}
+              />
             </button>
 
             <button
@@ -278,7 +547,10 @@ const Navbar = () => {
               className="hidden md:flex hover:text-[#006039] transition-colors"
               aria-label="Wishlist"
             >
-              <Heart className="w-[18px] h-[18px] text-current" strokeWidth={1.3} />
+              <Heart
+                className="w-[18px] h-[18px] text-current"
+                strokeWidth={1.3}
+              />
             </button>
 
             <div className="relative flex items-center" ref={profileRef}>
@@ -363,14 +635,18 @@ const Navbar = () => {
               to="/cart"
               className="relative hover:text-[#006039] transition-colors"
               activeClassName="text-[#006039]"
+              aria-label={`Cart with ${cartCount} item${
+                cartCount === 1 ? "" : "s"
+              }`}
             >
               <ShoppingBag
                 className="w-[18px] h-[18px] text-current"
                 strokeWidth={1.3}
               />
-              {itemCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-[#006039] text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-sm">
-                  {itemCount}
+
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[17px] h-[17px] px-[4px] rounded-full bg-[#006039] text-white text-[9px] font-bold flex items-center justify-center leading-none shadow-sm">
+                  {displayCartCount}
                 </span>
               )}
             </NavLink>
@@ -378,7 +654,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* SEARCH OVERLAY */}
       <AnimatePresence>
         {isSearchOpen && (
           <motion.div
@@ -393,12 +668,14 @@ const Navbar = () => {
                 className="w-5 h-5 text-[#999] shrink-0"
                 strokeWidth={1.5}
               />
+
               <input
                 type="text"
                 placeholder="Search for posters, artists, styles..."
                 className="w-full font-montserrat text-[17px] text-black outline-none placeholder:text-[#CCCCCC] bg-transparent border-b border-[#E0E0E0] pb-2 focus:border-black transition-all"
                 autoFocus
               />
+
               <button type="button" onClick={() => setIsSearchOpen(false)}>
                 <X className="w-5 h-5 text-[#999] hover:text-black transition-colors" />
               </button>
@@ -407,7 +684,6 @@ const Navbar = () => {
         )}
       </AnimatePresence>
 
-      {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.nav
@@ -444,19 +720,41 @@ const Navbar = () => {
               </Link>
 
               <div className="flex flex-col gap-3">
-                <span className="text-[10px] text-[#AAAAAA] tracking-widest border-b border-[#F0F0F0] pb-2 font-medium">
+                <Link
+                  to="/products"
+                  onClick={() => setMobileOpen(false)}
+                  className="text-[10px] text-[#AAAAAA] tracking-widest border-b border-[#F0F0F0] pb-2 font-medium"
+                >
                   Products Categories
-                </span>
+                </Link>
 
-                {categories.map((cat) => (
-                  <Link
-                    key={cat}
-                    to={`/products?cat=${encodeURIComponent(cat)}`}
-                    onClick={() => setMobileOpen(false)}
-                    className="pl-2 font-semibold text-[12px]"
-                  >
-                    {cat}
-                  </Link>
+                {categoryTree.map((cat) => (
+                  <div key={cat.key} className="flex flex-col gap-2">
+                    <Link
+                      to={`/products?cat=${encodeURIComponent(cat.name)}`}
+                      onClick={() => setMobileOpen(false)}
+                      className="pl-2 font-semibold text-[12px]"
+                    >
+                      {cat.name}
+                    </Link>
+
+                    {cat.subcategories.length > 0 && (
+                      <div className="flex flex-col gap-2 pl-5">
+                        {cat.subcategories.map((subcat) => (
+                          <Link
+                            key={getSubcategoryId(subcat)}
+                            to={`/products?cat=${encodeURIComponent(
+                              cat.name
+                            )}&subcat=${encodeURIComponent(subcat.name)}`}
+                            onClick={() => setMobileOpen(false)}
+                            className="text-[10px] text-[#1C1C1C]/55 font-semibold tracking-widest"
+                          >
+                            {subcat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -478,6 +776,10 @@ const Navbar = () => {
 
               <Link to="/contact" onClick={() => setMobileOpen(false)}>
                 Contact
+              </Link>
+
+              <Link to="/cart" onClick={() => setMobileOpen(false)}>
+                Cart {cartCount > 0 ? `(${cartCount})` : ""}
               </Link>
 
               <div className="border-t border-[#F0F0F0] pt-6 flex flex-col gap-6 mt-2">

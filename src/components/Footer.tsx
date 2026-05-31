@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Instagram, Facebook, Mail, Phone, Clock } from "lucide-react";
-import footerLogoImg from "@/assets/footer-logo.png";
 
 const Footer = () => {
   return (
@@ -8,17 +7,24 @@ const Footer = () => {
       <div className="max-w-[1400px] mx-auto px-6 pt-16 pb-8">
         {/* Main Footer Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-20 mb-16">
-          {/* Column 1: Logo + About */}
+          {/* Column 1: Text Logo + About */}
           <div className="text-left">
             <Link
               to="/"
               className="block w-[360px] max-w-full h-[42px] mb-9 overflow-hidden"
+              aria-label="MURO POSTER"
             >
-              <img
-                src={footerLogoImg}
-                alt="MURO Poster"
-                className="w-full h-full object-fill object-left"
-              />
+              <div
+                className="h-full flex items-center text-white uppercase whitespace-nowrap leading-none"
+                style={{
+                  fontFamily: '"Coolvetica", "Coolvetica Regular", Arial, sans-serif',
+                  fontSize: "28px",
+                  fontWeight: 400,
+                  letterSpacing: "0.034em",
+                }}
+              >
+                MURO POSTER
+              </div>
             </Link>
 
             <p className="w-[360px] max-w-full leading-[1.75] text-[13px] opacity-70 mb-10">

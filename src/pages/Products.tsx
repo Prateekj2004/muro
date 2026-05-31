@@ -9,35 +9,88 @@ const getFullImageUrl = (path?: string) => {
 
   if (path.startsWith("http")) return path;
 
-  let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
 
-  if (!cleanPath.includes("uploads/product")) {
-    cleanPath = `uploads/product/${cleanPath}`;
+  if (cleanPath.includes("api/public/uploads")) {
+    return `https://muroposter.com/${cleanPath}`;
   }
 
-  return `https://muroposter.com/${cleanPath}`;
+  if (cleanPath.includes("uploads/product")) {
+    return `https://muroposter.com/${cleanPath}`;
+  }
+
+  return `https://muroposter.com/uploads/product/${cleanPath}`;
 };
 
-const getProductImage = (product: any) => {
+const safeNumber = (value?: string | number) => {
+  const cleanValue = String(value ?? "")
+    .replace(/[₹,\s]/g, "")
+    .trim();
+
+  const num = Number(cleanValue);
+  return Number.isFinite(num) && num > 0 ? num : 0;
+};
+
+const getUploadedProductImage = (product: any) => {
+  const imageRows = Array.isArray(product?.product_images)
+    ? product.product_images
+    : Array.isArray(product?.images)
+    ? product.images
+    : [];
+
+  const firstUploaded = imageRows
+    .slice()
+    .sort(
+      (a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
+    )
+    .find((img: any) =>
+      Boolean(img.image_url || img.url || img.file_url || img.path)
+    );
+
   return (
-    product?.zoom_in_url 
+    firstUploaded?.image_url ||
+    firstUploaded?.url ||
+    firstUploaded?.file_url ||
+    firstUploaded?.path ||
+    product?.main_poster_url ||
+    product?.zoom_in_url ||
+    product?.image_url ||
+    product?.wall_poster_url ||
+    ""
   );
 };
 
-const getProductPrice = (price?: string | number) => {
-  const value = price || 500;
-  const numericValue = Number(value);
+const getLowestProductPrice = (product: any) => {
+  const sizeRows = Array.isArray(product?.size_prices)
+    ? product.size_prices
+    : Array.isArray(product?.sizes)
+    ? product.sizes
+    : [];
 
-  if (Number.isFinite(numericValue)) {
-    return `₹${numericValue.toLocaleString("en-IN")}`;
+  const prices = sizeRows
+    .map((size: any) => safeNumber(size.price))
+    .filter((price: number) => price > 0);
+
+  if (prices.length > 0) {
+    return Math.min(...prices);
   }
 
-  return `₹${value}`;
+  return safeNumber(product?.price || product?.base_price) || 500;
+};
+
+const getProductPrice = (price?: string | number) => {
+  const numericValue = safeNumber(price) || 500;
+  return `₹${numericValue.toLocaleString("en-IN")}`;
+};
+
+const getProductId = (product: any) => {
+  return product?.id || product?.product_id || product?.productId;
 };
 
 const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlCategory = searchParams.get("cat")?.toUpperCase() || "ALL";
+  const urlSubcategory = searchParams.get("subcat")?.toUpperCase() || "ALL";
 
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -45,18 +98,22 @@ const Products: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const [selectedCategory, setSelectedCategory] = useState<string>(urlCategory);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("ALL");
+  const [selectedSubCategory, setSelectedSubCategory] =
+    useState<string>(urlSubcategory);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 40;
 
   useEffect(() => {
-    if (urlCategory !== selectedCategory) {
+    if (
+      urlCategory !== selectedCategory ||
+      urlSubcategory !== selectedSubCategory
+    ) {
       setSelectedCategory(urlCategory);
-      setSelectedSubCategory("ALL");
+      setSelectedSubCategory(urlSubcategory);
       setCurrentPage(1);
     }
-  }, [urlCategory, selectedCategory]);
+  }, [urlCategory, urlSubcategory, selectedCategory, selectedSubCategory]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -94,23 +151,63 @@ const Products: React.FC = () => {
     setSelectedCategory(cat);
     setSelectedSubCategory("ALL");
     setCurrentPage(1);
-    setSearchParams({ cat: cat.toLowerCase() });
+
+    if (cat === "ALL") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ cat: cat.toLowerCase() });
+    }
   };
 
   const handleSubCategoryClick = (subCat: string) => {
     setSelectedSubCategory(subCat);
     setCurrentPage(1);
+
+    const params: Record<string, string> = {};
+
+    if (selectedCategory !== "ALL") {
+      params.cat = selectedCategory.toLowerCase();
+    }
+
+    if (subCat !== "ALL") {
+      params.subcat = subCat.toLowerCase();
+    }
+
+    setSearchParams(params);
   };
 
-  const currentCatObj = categories.find(
+  const uniqueCategories = useMemo(() => {
+    const seen = new Set<string>();
+
+    return categories.filter((cat) => {
+      const name = String(cat.name || "").trim();
+      const key = name.toUpperCase();
+
+      if (!name || seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    });
+  }, [categories]);
+
+  const currentCatObj = uniqueCategories.find(
     (cat) => cat.name?.toUpperCase() === selectedCategory
   );
 
   const availableSubcats = currentCatObj
-    ? subcategories.filter(
-        (sub) =>
-          sub.category_id === (currentCatObj.id || currentCatObj.category_id)
-      )
+    ? subcategories
+        .filter(
+          (sub) =>
+            String(sub.category_id) ===
+            String(currentCatObj.id || currentCatObj.category_id)
+        )
+        .filter((sub, index, arr) => {
+          const name = String(sub.name || "").trim().toUpperCase();
+
+          if (!name || name === selectedCategory) return false;
+
+          return arr.findIndex((item) => String(item.name || "").trim().toUpperCase() === name) === index;
+        })
     : [];
 
   const filteredProducts = useMemo(() => {
@@ -123,7 +220,7 @@ const Products: React.FC = () => {
         selectedSubCategory === "ALL" ||
         product.subcategory?.toUpperCase() === selectedSubCategory;
 
-      return matchCat && matchSubCat;
+      return matchCat && matchSubCat && Boolean(getUploadedProductImage(product));
     });
   }, [products, selectedCategory, selectedSubCategory]);
 
@@ -165,12 +262,14 @@ const Products: React.FC = () => {
     <main className="bg-[#F0EEE9] min-h-screen font-sans text-[#111111]">
       <div className="pt-16 pb-8 text-center px-4">
         <motion.h1
-          key={selectedCategory}
+          key={`${selectedCategory}-${selectedSubCategory}`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="font-montserrat font-light tracking-[1px] text-3xl md:text-4xl text-[#111] mb-8 uppercase"
         >
-          {selectedCategory === "ALL"
+          {selectedSubCategory !== "ALL"
+            ? selectedSubCategory.toLowerCase()
+            : selectedCategory === "ALL"
             ? "Posters & Art Prints"
             : selectedCategory.toLowerCase()}
         </motion.h1>
@@ -188,7 +287,7 @@ const Products: React.FC = () => {
               ALL
             </button>
 
-            {categories.map((cat) => (
+            {uniqueCategories.map((cat) => (
               <button
                 key={cat.id || cat.category_id}
                 onClick={() => handleCategoryClick(cat.name.toUpperCase())}
@@ -238,120 +337,104 @@ const Products: React.FC = () => {
 
       <div className="border-t border-b border-[#E0DED9] py-4 mb-6 sticky top-0 bg-[#F0EEE9] z-40">
         <div className="container mx-auto px-4 md:px-8 max-w-[1600px] flex items-center justify-between">
-          <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar">
-            {["SELECT SIZE", "THEME", "COLOR", "ARTISTS"].map((filter) => (
-              <button
-                key={filter}
-                className={`${navBase} flex items-center gap-1.5 text-black md:text-[12px] font-semibold tracking-[0.15em] hover:opacity-70`}
-              >
-                {filter}
-                <ChevronDown size={14} className="text-[#888]" />
-              </button>
-            ))}
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#111]/55">
+            <ChevronDown size={14} />
+            <span>{totalItems} Products</span>
+          </div>
+
+          <div className="text-[11px] uppercase tracking-[0.18em] text-[#111]/55">
+            Dynamic master size pricing
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 md:px-8 pb-24 max-w-[1600px]">
+      <section className="container mx-auto px-4 md:px-8 max-w-[1600px] pb-16">
         {loading ? (
-          <div className="h-[40vh] flex items-center justify-center">
+          <div className="min-h-[40vh] flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-[#111] border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : currentItems.length > 0 ? (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-12 sm:gap-x-7 sm:gap-y-16 mt-2">
-              {currentItems.map((product, idx) => {
-                const imageUrl = getFullImageUrl(getProductImage(product));
-
-                return (
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      delay: (idx % 8) * 0.05,
-                      duration: 0.4,
-                    }}
-                    key={product.id}
-                  >
-                    <Link
-                      to={`/product/${product.id}`}
-                      state={{ productData: product }}
-                      className="group block w-full"
-                    >
-                      <img
-                        src={imageUrl}
-                        className="block w-full h-auto object-contain"
-                        alt={product.title || "Poster"}
-                      />
-
-                      <div className="mt-4 flex flex-col items-start px-1">
-                        <h3
-                          className={`${navBase} text-[12px] sm:text-[14px] text-black font-bold tracking-wide line-clamp-1 group-hover:text-gray-500 transition-colors`}
-                        >
-                          {product.title}
-                        </h3>
-
-                        <p
-                          className={`${navBase} text-[12px] sm:text-[14px] text-black font-bold mt-1`}
-                        >
-                          {getProductPrice(product.price)}
-                        </p>
-                      </div>
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between mt-16 pt-8 w-full font-sans">
-                <div className="hidden sm:block flex-1" />
-
-                <div className="flex items-center justify-center gap-8 flex-1 mb-6 sm:mb-0">
-                  <div className="flex items-center gap-6">
-                    {getPageNumbers().map((pageNum) => (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`px-1 pb-1 text-[15px] transition-all duration-200 ${
-                          currentPage === pageNum
-                            ? "border-b-[2px] border-black text-black"
-                            : "text-black border-b-[2px] border-transparent hover:border-black/30"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    ))}
-                  </div>
-
-                  {currentPage < totalPages && (
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      className="flex items-center text-[15px] text-black hover:opacity-60 transition-opacity"
-                    >
-                      NEXT
-                      <span className="ml-2 text-[18px] leading-none mb-[2px]">
-                        →
-                      </span>
-                    </button>
-                  )}
-                </div>
-
-                <div className="text-[15px] text-black tracking-wide flex-1 text-center sm:text-right">
-                  Showing {indexOfFirstItem + 1}-
-                  {Math.min(indexOfLastItem, totalItems)} of {totalItems} items
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="h-[40vh] flex flex-col items-center justify-center text-gray-500">
-            <p className="text-sm tracking-widest uppercase">
+        ) : currentItems.length === 0 ? (
+          <div className="min-h-[40vh] flex items-center justify-center text-center">
+            <p className="text-sm uppercase tracking-widest text-[#111]/45">
               No products found
             </p>
           </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-start">
+            {currentItems.map((product, index) => {
+              const productImage = getUploadedProductImage(product);
+              const productId = getProductId(product);
+              const productPrice = getLowestProductPrice(product);
+
+              if (!productImage || !productId) return null;
+
+              return (
+                <Link
+                  key={productId || index}
+                  to={`/product/${productId}`}
+                  state={{ productData: product }}
+                  className="group block"
+                >
+                  <article>
+                    <img
+                      src={getFullImageUrl(productImage)}
+                      alt={product.title || product.name || "Product"}
+                      className="block w-full h-auto rounded-[14px] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+                    />
+
+                    <div className="mt-4">
+                      <h3 className="text-[14px] md:text-[15px] font-medium text-[#1C1C1C] leading-snug min-h-[42px]">
+                        {product.title || product.name || "Product"}
+                      </h3>
+
+                      <p className="mt-2 text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
+                        {getProductPrice(productPrice)}
+                      </p>
+                    </div>
+                  </article>
+                </Link>
+              );
+            })}
+          </div>
         )}
-      </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-12">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+              className="px-4 py-2 border border-black text-[11px] uppercase tracking-widest disabled:opacity-40"
+            >
+              Prev
+            </button>
+
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => handlePageChange(page)}
+                className={`w-9 h-9 border text-[12px] font-semibold ${
+                  currentPage === page
+                    ? "bg-black text-white border-black"
+                    : "border-black text-black"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+              className="px-4 py-2 border border-black text-[11px] uppercase tracking-widest disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </section>
     </main>
   );
 };

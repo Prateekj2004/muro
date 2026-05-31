@@ -12,6 +12,28 @@ import { toast } from "sonner";
 import { API } from "@/services/api";
 import { cartApi } from "@/services/cartApi";
 
+type SizePriceItem = {
+  id?: string | number;
+  size_id?: string | number;
+  size_name?: string;
+  name?: string;
+  size_code?: string;
+  code?: string;
+  price?: string | number;
+  is_active?: string | number;
+};
+
+type ProductImageItem = {
+  id?: string | number;
+  image_title?: string;
+  title?: string;
+  image_url?: string;
+  url?: string;
+  file_url?: string;
+  path?: string;
+  sort_order?: string | number;
+};
+
 type ProductItem = {
   id?: string | number;
   product_id?: string | number;
@@ -25,6 +47,8 @@ type ProductItem = {
   category?: string;
   subcategory?: string;
   description?: string;
+  short_description?: string;
+  full_description?: string;
   about_artwork?: string;
   quote?: string;
   main_poster_url?: string;
@@ -34,6 +58,10 @@ type ProductItem = {
   wall_poster_url?: string;
   hoverImg?: string;
   tags?: string[] | string;
+  size_prices?: SizePriceItem[];
+  sizes?: SizePriceItem[];
+  product_images?: ProductImageItem[];
+  images?: ProductImageItem[];
 };
 
 const COLORS = {
@@ -47,13 +75,17 @@ const getFullImageUrl = (path?: string) => {
 
   if (path.startsWith("http")) return path;
 
-  let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
 
-  if (!cleanPath.includes("uploads/product")) {
-    cleanPath = `uploads/product/${cleanPath}`;
+  if (cleanPath.includes("api/public/uploads")) {
+    return `https://muroposter.com/${cleanPath}`;
   }
 
-  return `https://muroposter.com/${cleanPath}`;
+  if (cleanPath.includes("uploads/product")) {
+    return `https://muroposter.com/${cleanPath}`;
+  }
+
+  return `https://muroposter.com/uploads/product/${cleanPath}`;
 };
 
 const safeNumber = (value?: string | number) => {
@@ -62,44 +94,52 @@ const safeNumber = (value?: string | number) => {
     .trim();
 
   const num = Number(cleanValue);
-  return Number.isFinite(num) && num > 0 ? num : 500;
+  return Number.isFinite(num) && num > 0 ? num : 0;
 };
 
 const formatPrice = (price?: string | number) => {
   const numericValue = safeNumber(price);
-  return `₹${numericValue.toLocaleString("en-IN")}`;
+  const finalValue = numericValue > 0 ? numericValue : 500;
+  return `₹${finalValue.toLocaleString("en-IN")}`;
+};
+
+const getFirstProductImageTitle = (product?: ProductItem | null) => {
+  const imageRows = Array.isArray(product?.product_images)
+    ? product?.product_images
+    : Array.isArray(product?.images)
+    ? product?.images
+    : [];
+
+  const firstImage = imageRows
+    .slice()
+    .sort(
+      (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
+    )
+    .find((img) => Boolean(img.image_title || img.title));
+
+  return String(firstImage?.image_title || firstImage?.title || "").trim();
+};
+
+const looksLikeUploadedFileName = (title?: string) => {
+  const value = String(title || "").trim();
+
+  return (
+    /^screenshot\s+\d{4}/i.test(value) ||
+    /^img[_\-\s]?\d+/i.test(value) ||
+    /^dsc[_\-\s]?\d+/i.test(value) ||
+    /\.(jpg|jpeg|png|webp|pdf)$/i.test(value)
+  );
 };
 
 const getProductTitle = (product?: ProductItem | null) => {
-  return product?.title || product?.name || "Product";
-};
+  const title = String(product?.title || product?.name || "").trim();
+  const imageTitle = getFirstProductImageTitle(product);
 
-const getProductPrice = (product?: ProductItem | null) => {
-  return product?.price || product?.base_price || 500;
-};
+  if (!title || looksLikeUploadedFileName(title)) {
+    return imageTitle || "Product";
+  }
 
-const getMainPosterImage = (product?: ProductItem | null) => {
-  return (
-    product?.zoom_in_url ||
-    product?.main_poster_url ||
-    product?.defaultImg ||
-    product?.image_url ||
-    product?.wall_poster_url ||
-    product?.hoverImg ||
-    ""
-  );
-};
-
-const getCardPosterImage = (product?: ProductItem | null) => {
-  return (
-    product?.zoom_in_url ||
-    product?.main_poster_url ||
-    product?.defaultImg ||
-    product?.image_url ||
-    product?.wall_poster_url ||
-    product?.hoverImg ||
-    ""
-  );
+  return title;
 };
 
 const resolveProductId = (
@@ -128,7 +168,82 @@ const resolveProductId = (
   return numericId;
 };
 
-const sizeOptions = ["A4", "A6", "12x18"];
+const getSizeId = (size?: SizePriceItem | null) => {
+  return String(size?.size_id ?? size?.id ?? "");
+};
+
+const getSizeName = (size?: SizePriceItem | null) => {
+  return String(size?.size_name ?? size?.name ?? size?.size_code ?? size?.code ?? "");
+};
+
+const normalizeSizePrices = (product?: ProductItem | null): SizePriceItem[] => {
+  const rawSizes = Array.isArray(product?.size_prices)
+    ? product?.size_prices
+    : Array.isArray(product?.sizes)
+    ? product?.sizes
+    : [];
+
+  return (rawSizes || [])
+    .filter((size) => {
+      const sizeId = getSizeId(size);
+      const sizeName = getSizeName(size);
+      const price = safeNumber(size?.price);
+      const isActive = Number(size?.is_active ?? 1) === 1;
+
+      return isActive && Boolean(sizeId || sizeName) && price > 0;
+    })
+    .map((size) => ({
+      ...size,
+      size_id: size.size_id ?? size.id,
+      size_name: size.size_name ?? size.name,
+      size_code: size.size_code ?? size.code,
+      price: safeNumber(size.price),
+    }));
+};
+
+const getSelectedProductPrice = (
+  product?: ProductItem | null,
+  selectedSize?: SizePriceItem | null
+) => {
+  const selectedPrice = safeNumber(selectedSize?.price);
+  if (selectedPrice > 0) return selectedPrice;
+
+  const firstSizePrice = safeNumber(normalizeSizePrices(product)[0]?.price);
+  if (firstSizePrice > 0) return firstSizePrice;
+
+  return safeNumber(product?.price || product?.base_price) || 500;
+};
+
+const getUploadedProductImage = (product?: ProductItem | null) => {
+  const imageRows = Array.isArray(product?.product_images)
+    ? product?.product_images
+    : Array.isArray(product?.images)
+    ? product?.images
+    : [];
+
+  const firstUploaded = imageRows
+    .slice()
+    .sort(
+      (a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
+    )
+    .find((img) =>
+      Boolean(img.image_url || img.url || img.file_url || img.path)
+    );
+
+  return (
+    firstUploaded?.image_url ||
+    firstUploaded?.url ||
+    firstUploaded?.file_url ||
+    firstUploaded?.path ||
+    product?.main_poster_url ||
+    product?.zoom_in_url ||
+    product?.image_url ||
+    product?.wall_poster_url ||
+    product?.defaultImg ||
+    product?.hoverImg ||
+    ""
+  );
+};
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams();
@@ -145,32 +260,44 @@ const ProductDetails: React.FC = () => {
 
   const [allProducts, setAllProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(!stateProduct);
-  const [selectedSize, setSelectedSize] = useState("A4");
+  const [selectedSizeId, setSelectedSizeId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [cartLoading, setCartLoading] = useState(false);
+  const [relatedSlideIndex, setRelatedSlideIndex] = useState(0);
 
   useEffect(() => {
     const fetchProductData = async () => {
       setLoading(true);
 
       try {
-        const res: any = await API.getProducts().catch(() => []);
+        const res: any =
+          typeof (API as any).adminGetProducts === "function"
+            ? await (API as any).adminGetProducts({ all: 1 }).catch(() => API.getProducts().catch(() => []))
+            : await API.getProducts().catch(() => []);
         const items: ProductItem[] = Array.isArray(res)
           ? res
           : res?.data?.items || res?.data || [];
 
         setAllProducts(items);
 
-        if (!stateProduct) {
-          const found = items.find((item) => {
-            const itemId = resolveProductId(item);
-            return String(itemId) === String(id);
-          });
+        const found = items.find((item) => {
+          const itemId = resolveProductId(item);
+          return String(itemId) === String(id);
+        });
 
-          setProduct(found || null);
+        if (found) {
+          setProduct(found);
+        } else if (stateProduct) {
+          setProduct(stateProduct);
+        } else {
+          setProduct(null);
         }
       } catch (error) {
         console.error("Failed to fetch product details:", error);
+
+        if (!stateProduct) {
+          setProduct(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -180,30 +307,52 @@ const ProductDetails: React.FC = () => {
   }, [id, stateProduct]);
 
   useEffect(() => {
-    if (stateProduct && allProducts.length === 0) {
-      const fetchRelatedOnly = async () => {
-        try {
-          const res: any = await API.getProducts().catch(() => []);
-          const items: ProductItem[] = Array.isArray(res)
-            ? res
-            : res?.data?.items || res?.data || [];
+    const sizePrices = normalizeSizePrices(product);
 
-          setAllProducts(items);
-        } catch (error) {
-          console.error("Failed to fetch related products:", error);
-        }
-      };
+    if (sizePrices.length > 0) {
+      const currentExists = sizePrices.some(
+        (size) => getSizeId(size) === selectedSizeId
+      );
 
-      fetchRelatedOnly();
+      if (!currentExists) {
+        setSelectedSizeId(getSizeId(sizePrices[0]));
+      }
+    } else {
+      setSelectedSizeId("");
     }
-  }, [stateProduct, allProducts.length]);
+  }, [product, selectedSizeId]);
+
+  const sizePrices = useMemo(() => normalizeSizePrices(product), [product]);
+
+  const selectedSize = useMemo(() => {
+    return (
+      sizePrices.find((size) => getSizeId(size) === selectedSizeId) ||
+      sizePrices[0] ||
+      null
+    );
+  }, [sizePrices, selectedSizeId]);
 
   const relatedProducts = useMemo(() => {
     if (!product) return [];
 
     const currentProductId = resolveProductId(product, id);
+    const seen = new Set<string>();
 
-    const sameCategory = allProducts.filter((item) => {
+    const allWithImages = allProducts.filter((item) => {
+      const itemId = resolveProductId(item);
+      const image = getUploadedProductImage(item);
+
+      if (!image || !itemId) return false;
+
+      const key = String(itemId);
+
+      if (seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    });
+
+    const sameCategory = allWithImages.filter((item) => {
       const itemId = resolveProductId(item);
       const notSame = String(itemId) !== String(currentProductId);
 
@@ -215,17 +364,45 @@ const ProductDetails: React.FC = () => {
       return notSame && categoryMatch;
     });
 
-    const fallback = allProducts.filter((item) => {
+    const fallbackWithoutCurrent = allWithImages.filter((item) => {
       const itemId = resolveProductId(item);
       return String(itemId) !== String(currentProductId);
     });
 
-    return (sameCategory.length > 0 ? sameCategory : fallback).slice(0, 5);
+    const source =
+      sameCategory.length > 0
+        ? sameCategory
+        : fallbackWithoutCurrent.length > 0
+        ? fallbackWithoutCurrent
+        : allWithImages;
+
+    return source.slice(0, 12);
   }, [allProducts, product, id]);
 
+  useEffect(() => {
+    if (relatedProducts.length <= 1) {
+      setRelatedSlideIndex(0);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setRelatedSlideIndex((prev) => (prev + 1) % relatedProducts.length);
+    }, 2600);
+
+    return () => window.clearInterval(timer);
+  }, [relatedProducts.length]);
+
+  const visibleRelatedProducts = useMemo(() => {
+    if (relatedProducts.length <= 5) return relatedProducts;
+
+    return Array.from({ length: 5 }, (_, index) => {
+      return relatedProducts[(relatedSlideIndex + index) % relatedProducts.length];
+    });
+  }, [relatedProducts, relatedSlideIndex]);
+
   const productTitle = getProductTitle(product);
-  const productPrice = getProductPrice(product);
-  const mainImage = getMainPosterImage(product);
+  const productPrice = getSelectedProductPrice(product, selectedSize);
+  const mainImage = getUploadedProductImage(product);
 
   const productTags = useMemo(() => {
     if (!product?.tags) {
@@ -268,11 +445,17 @@ const ProductDetails: React.FC = () => {
       return false;
     }
 
+    if (!selectedSize || !getSizeId(selectedSize)) {
+      toast.error("Please select size");
+      return false;
+    }
+
     setCartLoading(true);
 
     try {
       await cartApi.addItem({
         product_id: productId,
+        size_id: Number(getSizeId(selectedSize)),
         qty: quantity,
       });
 
@@ -380,87 +563,111 @@ const ProductDetails: React.FC = () => {
                 {productTitle}
               </h1>
 
-              <p className="text-[28px] md:text-[32px] font-semibold text-[#1C1C1C] mb-5">
+              <p className="text-[28px] md:text-[32px] font-semibold text-[#1C1C1C] mb-2">
                 {formatPrice(productPrice)}
               </p>
 
-              <p className="text-[15px] md:text-[16px] leading-relaxed text-[#1C1C1C]/60 mb-8 max-w-[620px]">
-                {product.quote ||
-                  product.description ||
-                  "Premium wall poster designed to bring focus, mood and personality into your space."}
+         
+
+              <p className="text-[15px] md:text-[16px] leading-relaxed text-[#1C1C1C]/65 mb-8 max-w-[650px]">
+                {product.description ||
+                  product.short_description ||
+                  product.quote ||
+                  "Premium poster print curated for beautiful living spaces."}
               </p>
 
-              <div className="h-px bg-[#1C1C1C]/12 mb-8" />
-
               <div className="mb-8">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[#1C1C1C]/45 font-semibold mb-4">
-                  Select Size
-                </p>
+                <div className="flex items-center justify-between gap-4 mb-3">
+                  <p className="text-[12px] uppercase tracking-[0.22em] font-semibold text-[#1C1C1C]">
+                    Choose Size
+                  </p>
+
+                  
+                </div>
 
                 <div className="flex flex-wrap gap-3">
-                  {sizeOptions.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => setSelectedSize(size)}
-                      className={`min-w-[76px] h-[42px] px-5 rounded-[12px] text-[13px] font-semibold uppercase tracking-[0.08em] transition-all ${
-                        selectedSize === size
-                          ? "bg-[#1C1C1C] text-white shadow-sm"
-                          : "bg-white border border-[#1C1C1C]/15 text-[#1C1C1C] hover:border-[#1C1C1C]"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {sizePrices.map((size) => {
+                    const sizeId = getSizeId(size);
+                    const active = sizeId === selectedSizeId;
+
+                    return (
+                      <button
+                        key={sizeId || getSizeName(size)}
+                        type="button"
+                        onClick={() => setSelectedSizeId(sizeId)}
+                        className={`h-[46px] rounded-full border px-5 inline-flex items-center justify-center gap-3 transition-all shadow-sm ${
+                          active
+                            ? "border-[#1C1C1C] bg-[#1C1C1C] text-white"
+                            : "border-[#1C1C1C]/15 bg-white/70 text-[#1C1C1C] hover:border-[#1C1C1C] hover:bg-white"
+                        }`}
+                      >
+                        <span className="text-[13px] font-semibold uppercase tracking-[0.14em] leading-none">
+                          {getSizeName(size)}
+                        </span>
+
+                      
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-[120px_1fr] gap-4 mb-5">
-                <div className="h-[56px] border border-[#1C1C1C]/15 bg-white flex items-center justify-between px-4">
+              <div className="mb-6">
+                <p className="text-[12px] uppercase tracking-[0.22em] font-semibold mb-3 text-[#1C1C1C]">
+                  Quantity
+                </p>
+
+                <div className="inline-flex items-center border border-[#1C1C1C]/15 bg-white/60 h-[52px]">
                   <button
                     type="button"
                     onClick={() => handleQuantityChange("minus")}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-[#F0EEE9] transition-colors"
-                    aria-label="Decrease quantity"
+                    className="w-[52px] h-full flex items-center justify-center hover:bg-white transition-colors"
                   >
                     <Minus size={16} />
                   </button>
 
-                  <span className="text-[16px] font-semibold">{quantity}</span>
+                  <span className="min-w-[54px] text-center text-[14px] font-semibold">
+                    {quantity}
+                  </span>
 
                   <button
                     type="button"
                     onClick={() => handleQuantityChange("plus")}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-[#F0EEE9] transition-colors"
-                    aria-label="Increase quantity"
+                    className="w-[52px] h-full flex items-center justify-center hover:bg-white transition-colors"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-3 mb-4">
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={cartLoading}
+                  disabled={cartLoading || sizePrices.length === 0}
                   className={`h-[56px] border border-[#1C1C1C] bg-transparent text-[#1C1C1C] hover:bg-[#1C1C1C] hover:text-white transition-all text-[12px] font-semibold uppercase tracking-[0.18em] flex items-center justify-center gap-3 ${
-                    cartLoading ? "opacity-60 cursor-not-allowed" : ""
+                    cartLoading || sizePrices.length === 0
+                      ? "opacity-60 cursor-not-allowed"
+                      : ""
                   }`}
                 >
                   <ShoppingBag size={17} />
                   {cartLoading ? "Adding..." : "Add To Cart"}
                 </button>
-              </div>
 
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={cartLoading}
-                className={`w-full h-[58px] bg-[#1C1C1C] text-white hover:bg-[#006039] transition-colors text-[12px] font-semibold uppercase tracking-[0.2em] mb-8 ${
-                  cartLoading ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-              >
-                {cartLoading ? "Processing..." : "Buy It Now"}
-              </button>
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={cartLoading || sizePrices.length === 0}
+                  className={`h-[56px] bg-[#1C1C1C] text-white hover:bg-[#006039] transition-colors text-[12px] font-semibold uppercase tracking-[0.2em] ${
+                    cartLoading || sizePrices.length === 0
+                      ? "opacity-60 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  {cartLoading ? "Processing..." : "Buy It Now"}
+                </button>
+              </div>
 
               <div className="rounded-[22px] bg-white/65 border border-[#1C1C1C]/8 p-6 md:p-7 mb-7">
                 <div className="flex items-center gap-2 mb-4">
@@ -473,6 +680,7 @@ const ProductDetails: React.FC = () => {
 
                 <p className="text-[14px] md:text-[15px] leading-relaxed text-[#1C1C1C]/65 mb-5">
                   {product.about_artwork ||
+                    product.full_description ||
                     product.description ||
                     "This artwork is designed to add meaning, mood and visual impact to your wall. It works well for bedrooms, workspaces, study corners and creative interiors."}
                 </p>
@@ -523,13 +731,17 @@ const ProductDetails: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5 md:gap-7 items-start">
-              {relatedProducts.map((item, index) => {
+              {visibleRelatedProducts.map((item, index) => {
                 const itemTitle = getProductTitle(item);
-                const posterImage = getCardPosterImage(item);
-                const itemPrice = getProductPrice(item);
+                const posterImage = getUploadedProductImage(item);
+                const itemSizePrices = normalizeSizePrices(item);
+                const itemPrice =
+                  safeNumber(itemSizePrices[0]?.price) ||
+                  safeNumber(item.price || item.base_price) ||
+                  500;
                 const relatedId = resolveProductId(item);
 
-                if (!relatedId) return null;
+                if (!relatedId || !posterImage) return null;
 
                 return (
                   <Link
@@ -552,19 +764,9 @@ const ProductDetails: React.FC = () => {
                           {itemTitle}
                         </h3>
 
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
-                            {formatPrice(itemPrice)}
-                          </span>
-
-                          {(item.original_price || item.originalPrice) && (
-                            <span className="text-[13px] md:text-[14px] text-[#1C1C1C]/40 line-through">
-                              {formatPrice(
-                                item.original_price || item.originalPrice
-                              )}
-                            </span>
-                          )}
-                        </div>
+                        <p className="text-[15px] font-semibold text-[#1C1C1C]">
+                          {formatPrice(itemPrice)}
+                        </p>
                       </div>
                     </div>
                   </Link>
