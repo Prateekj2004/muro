@@ -5,6 +5,7 @@ import {
   Edit,
   Eye,
   Filter,
+  Home,
   ImagePlus,
   LayoutDashboard,
   Menu,
@@ -21,7 +22,7 @@ import {
 import { toast } from "sonner";
 import { API } from "@/services/api";
 
-type AdminTab = "inventory" | "add" | "orders" | "attributes";
+type AdminTab = "home" | "inventory" | "add" | "orders" | "attributes" | "offers" | "coupons" | "cutouts" | "postcards";
 
 type ProductImageRow = {
   id?: number;
@@ -47,6 +48,35 @@ type SizeFormState = {
   price: string;
 };
 
+
+type HomeHeroForm = {
+  title: string;
+  subtitle: string;
+  button_text: string;
+  button_link: string;
+  image_url: string;
+  image_file: File | null;
+  preview_url: string;
+};
+
+type HomeTileForm = {
+  title: string;
+  subtitle: string;
+  button_text: string;
+  button_link: string;
+  image_url: string;
+  image_file: File | null;
+  preview_url: string;
+};
+
+type HomeContentForm = {
+  hero_slides: HomeHeroForm[];
+  category_tiles: HomeTileForm[];
+  featured_new_arrival_ids: number[];
+  featured_postcard_ids: number[];
+  featured_cutout_ids: number[];
+};
+
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
 
@@ -61,18 +91,27 @@ const emptyImageRow = (): ProductImageRow => ({
 const getCategoryId = (item: any) => item?.id || item?.category_id;
 const getSubcategoryId = (item: any) => item?.id || item?.subcategory_id;
 const getSizeId = (item: any) => item?.id || item?.size_id;
+const getProductId = (item: any) => item?.id || item?.product_id || item?.productId;
 
 const getFullImageUrl = (path?: string) => {
   if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
-  if (path.startsWith("http")) return path;
+  if (path.startsWith("http") || path.startsWith("blob:")) return path;
 
   let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+
+  if (cleanPath.startsWith("images/") || cleanPath.startsWith("assets/")) {
+    return `/${cleanPath}`;
+  }
 
   if (cleanPath.startsWith("api/public/uploads")) {
     return `https://muroposter.com/${cleanPath}`;
   }
 
-  if (!cleanPath.includes("uploads/product")) {
+  if (
+    !cleanPath.includes("uploads/product") &&
+    !cleanPath.includes("uploads/postcards") &&
+    !cleanPath.includes("uploads/home")
+  ) {
     cleanPath = `uploads/product/${cleanPath}`;
   }
 
@@ -97,6 +136,119 @@ const formatDate = (value: any) => {
     month: "short",
     year: "numeric",
   });
+};
+
+
+const homeHeroDefaults = (): HomeHeroForm[] => [
+  {
+    title: "Transform Your Walls.",
+    subtitle: "Premium poster prints curated for beautiful living.",
+    button_text: "Start Curating →",
+    button_link: "/products",
+    image_url: "",
+    image_file: null,
+    preview_url: "",
+  },
+  {
+    title: "Art For Every Space.",
+    subtitle: "Bring warmth, mood and personality into your room.",
+    button_text: "Explore Posters →",
+    button_link: "/products",
+    image_url: "",
+    image_file: null,
+    preview_url: "",
+  },
+  {
+    title: "Curated Wall Prints.",
+    subtitle: "Simple, premium and meaningful posters for modern homes.",
+    button_text: "Shop Now →",
+    button_link: "/products",
+    image_url: "",
+    image_file: null,
+    preview_url: "",
+  },
+];
+
+const homeTileDefaults = (): HomeTileForm[] => [
+  {
+    title: "New Arrivals",
+    subtitle: "New prints to refresh your walls",
+    button_text: "Discover",
+    button_link: "/new-arrivals",
+    image_url: "images/posters.webp",
+    image_file: null,
+    preview_url: "images/posters.webp",
+  },
+  {
+    title: "Kids Art Prints",
+    subtitle: "Playful prints to bring joy to their space",
+    button_text: "Explore",
+    button_link: "/products?cat=Kids%20Art%20Prints",
+    image_url: "images/cutouts.webp",
+    image_file: null,
+    preview_url: "images/cutouts.webp",
+  },
+  {
+    title: "Postcards",
+    subtitle: "Front and back postcard products with premium paper options",
+    button_text: "Explore",
+    button_link: "/postcards",
+    image_url: "images/postcards.webp",
+    image_file: null,
+    preview_url: "images/postcards.webp",
+  },
+];
+
+const defaultHomeContentForm = (): HomeContentForm => ({
+  hero_slides: homeHeroDefaults(),
+  category_tiles: homeTileDefaults(),
+  featured_new_arrival_ids: [],
+  featured_postcard_ids: [],
+  featured_cutout_ids: [],
+});
+
+const normalizeHomeRows = <T extends HomeHeroForm | HomeTileForm>(
+  rows: any,
+  defaults: T[]
+): T[] => {
+  const source = Array.isArray(rows) && rows.length > 0 ? rows : defaults;
+
+  return defaults.map((fallback, index) => {
+    const row = source[index] || fallback;
+    const imageUrl = String(row.image_url || row.image || row.img || fallback.image_url || "");
+
+    return {
+      ...fallback,
+      title: String(row.title || fallback.title || ""),
+      subtitle: String(row.subtitle || fallback.subtitle || ""),
+      button_text: String(row.button_text || row.buttonText || row.cta || fallback.button_text || "Explore"),
+      button_link: String(row.button_link || row.buttonLink || row.to || fallback.button_link || "/products"),
+      image_url: imageUrl,
+      image_file: null,
+      preview_url: imageUrl,
+    } as T;
+  });
+};
+
+const normalizeHomeContent = (data: any): HomeContentForm => {
+  const content = data?.content || data || {};
+  return {
+    hero_slides: normalizeHomeRows<HomeHeroForm>(content.hero_slides, homeHeroDefaults()),
+    category_tiles: normalizeHomeRows<HomeTileForm>(content.category_tiles, homeTileDefaults()),
+    featured_new_arrival_ids: Array.isArray(content.featured_new_arrival_ids)
+      ? content.featured_new_arrival_ids.map(Number).filter(Boolean)
+      : [],
+    featured_postcard_ids: Array.isArray(content.featured_postcard_ids)
+      ? content.featured_postcard_ids.map(Number).filter(Boolean)
+      : [],
+    featured_cutout_ids: Array.isArray(content.featured_cutout_ids)
+      ? content.featured_cutout_ids.map(Number).filter(Boolean)
+      : [],
+  };
+};
+
+const getPostcardDisplayImage = (item: any) => {
+  return item?.image_url || item?.front_image_url || item?.back_image_url || "";
 };
 
 const getStatusClass = (status: string) => {
@@ -177,7 +329,7 @@ const normalizeProductImages = (product: any): ProductImageRow[] => {
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<AdminTab>("inventory");
+  const [activeTab, setActiveTab] = useState<AdminTab>("home");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -246,6 +398,50 @@ const AdminDashboard: React.FC = () => {
     name: "",
     price: "",
   });
+
+  const [offers, setOffers] = useState<any[]>([]);
+  const [offerForm, setOfferForm] = useState({
+    id: "",
+    label: "",
+    discount_percent: "",
+    from_date: "",
+    to_date: "",
+    is_active: "1",
+  });
+
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [couponForm, setCouponForm] = useState({
+    quantity: "1",
+    discount_percent: "",
+  });
+
+  const [postcards, setPostcards] = useState<any[]>([]);
+  const [postcardForm, setPostcardForm] = useState<any>({
+    id: "",
+    product_type: "postcard",
+    product_name: "",
+    quality_of_paper: "",
+    size: "",
+    description: "",
+    short_description: "",
+    full_description: "",
+    price: "",
+    width: "",
+    height: "",
+    sqft_price: "",
+    front_image_file: null,
+    back_image_file: null,
+    image_file: null,
+    front_image_url: "",
+    back_image_url: "",
+    image_url: "",
+  });
+
+
+  const [homeContent, setHomeContent] = useState<HomeContentForm>(defaultHomeContentForm());
+  const [availableHomeProducts, setAvailableHomeProducts] = useState<any[]>([]);
+  const [availableHomePostcards, setAvailableHomePostcards] = useState<any[]>([]);
+  const [availableHomeCutouts, setAvailableHomeCutouts] = useState<any[]>([]);
 
   const visibleProductImages = formData.product_images.filter(
     (row) => !row.marked_delete
@@ -391,12 +587,63 @@ const AdminDashboard: React.FC = () => {
     setProducts(Array.isArray(res) ? res : res?.data?.items || res?.data || []);
   };
 
+  const fetchOffers = async () => {
+    const res = await adminRequest("/admin/offers", { method: "GET" });
+    setOffers(Array.isArray(res?.data) ? res.data : res?.data?.items || []);
+  };
+
+  const fetchCoupons = async () => {
+    const res = await adminRequest("/admin/coupons", { method: "GET" });
+    setCoupons(Array.isArray(res?.data) ? res.data : res?.data?.items || []);
+  };
+
+  const fetchPostcards = async () => {
+    const endpoint = activeTab === "cutouts" ? "/admin/cutouts" : "/admin/postcards";
+    const res = await adminRequest(endpoint, { method: "GET" });
+    setPostcards(Array.isArray(res?.data) ? res.data : res?.data?.items || []);
+  };
+
+
+  const fetchHomeContent = async () => {
+    const [contentRes, productRes, postcardRes, cutoutRes] = await Promise.all([
+      adminRequest("/admin/home-content", { method: "GET" }),
+      adminRequest("/admin/products?all=1&visibility=PUBLISH&is_active=1", { method: "GET" }).catch(() => ({ data: { items: [] } })),
+      adminRequest("/admin/postcards", { method: "GET" }).catch(() => ({ data: { items: [] } })),
+      adminRequest("/admin/cutouts", { method: "GET" }).catch(() => ({ data: { items: [] } })),
+    ]);
+
+    setHomeContent(normalizeHomeContent(contentRes?.data));
+    setAvailableHomeProducts(Array.isArray(productRes?.data) ? productRes.data : productRes?.data?.items || []);
+    setAvailableHomePostcards(Array.isArray(postcardRes?.data) ? postcardRes.data : postcardRes?.data?.items || []);
+    setAvailableHomeCutouts(Array.isArray(cutoutRes?.data) ? cutoutRes.data : cutoutRes?.data?.items || []);
+  };
+
   const fetchAllData = async () => {
     setLoading(true);
 
     try {
+      if (activeTab === "home") {
+        await fetchHomeContent();
+        return;
+      }
+
       if (activeTab === "orders") {
         await fetchOrders();
+        return;
+      }
+
+      if (activeTab === "offers") {
+        await fetchOffers();
+        return;
+      }
+
+      if (activeTab === "coupons") {
+        await fetchCoupons();
+        return;
+      }
+
+      if (activeTab === "postcards" || activeTab === "cutouts") {
+        await fetchPostcards();
         return;
       }
 
@@ -517,13 +764,15 @@ const AdminDashboard: React.FC = () => {
     });
   };
 
-  const buildProductFormData = () => {
+  const buildProductFormData = (imageRowsOverride?: ProductImageRow[]) => {
+    const imagesForRequest = imageRowsOverride || formData.product_images;
+
     const lowestMasterPrice =
       sizes.length > 0
         ? Math.min(...sizes.map((s) => Number(s.price || 0)).filter((p) => p > 0))
         : 500;
 
-    const firstUsableImage = formData.product_images.find(
+    const firstUsableImage = imagesForRequest.find(
       (img) => !img.marked_delete && (img.file || img.existing_url || img.image_title)
     );
 
@@ -571,7 +820,7 @@ const AdminDashboard: React.FC = () => {
     body.append("visibility", "PUBLISH");
     body.append("is_active", "1");
 
-    const formattedImages = formData.product_images.map((img, index) => ({
+    const formattedImages = imagesForRequest.map((img, index) => ({
       id: img.id || null,
       image_title: img.image_title || `Image ${index + 1}`,
       existing_url: img.existing_url || "",
@@ -581,7 +830,7 @@ const AdminDashboard: React.FC = () => {
 
     body.append("product_images", JSON.stringify(formattedImages));
 
-    formData.product_images.forEach((img, index) => {
+    imagesForRequest.forEach((img, index) => {
       body.append(`image_titles[${index}]`, img.image_title || `Image ${index + 1}`);
       body.append(`image_sort_orders[${index}]`, String(index + 1));
 
@@ -598,7 +847,7 @@ const AdminDashboard: React.FC = () => {
       }
     });
 
-    const activeImages = formData.product_images.filter(
+    const activeImages = imagesForRequest.filter(
       (img) => !img.marked_delete
     );
 
@@ -647,6 +896,42 @@ const AdminDashboard: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      const activeImageRows = formData.product_images.filter(
+        (img) => !img.marked_delete && (img.file || img.existing_url)
+      );
+
+      if (!editingProduct?.id && activeImageRows.length > 1) {
+        const results = [];
+
+        for (let index = 0; index < activeImageRows.length; index += 1) {
+          const imageRow = activeImageRows[index];
+          const form = buildProductFormData([
+            {
+              ...imageRow,
+              id: undefined,
+              existing_url: imageRow.existing_url || "",
+              sort_order: 1,
+              marked_delete: false,
+            },
+          ]);
+
+          const response = await createProductRequest(form);
+          results.push(response);
+        }
+
+        const failed = results.find((item) => item?.success === false);
+        if (failed) {
+          toast.error(failed?.message || "Failed to publish one or more products");
+          return;
+        }
+
+        toast.success(`${activeImageRows.length} product variations published successfully`);
+        resetProductForm();
+        setActiveTab("inventory");
+        fetchAllData();
+        return;
+      }
+
       const form = buildProductFormData();
 
       const res = editingProduct?.id
@@ -710,11 +995,23 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleDeleteProduct = async (id: number) => {
+  const handleDeleteProduct = async (product: any) => {
+    const productId = Number(getProductId(product));
+
+    if (!Number.isFinite(productId) || productId <= 0) {
+      console.error("Delete product failed: missing product id", product);
+      toast.error("Product ID missing. Please refresh and try again.");
+      return;
+    }
+
     if (!window.confirm("Delete this product?")) return;
 
     try {
-      await API.adminDeleteProduct({ product_id: id } as any);
+      await adminRequest("/admin/products/delete", {
+        method: "POST",
+        body: JSON.stringify({ product_id: productId }),
+      });
+
       toast.success("Deleted");
       fetchAllData();
     } catch (error: any) {
@@ -847,6 +1144,317 @@ const AdminDashboard: React.FC = () => {
     });
   };
 
+
+  const resetOfferForm = () => {
+    setOfferForm({
+      id: "",
+      label: "",
+      discount_percent: "",
+      from_date: "",
+      to_date: "",
+      is_active: "1",
+    });
+  };
+
+  const handleSaveOffer = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!offerForm.label.trim()) {
+      toast.error("Offer label is required");
+      return;
+    }
+
+    const percent = Number(offerForm.discount_percent || 0);
+    if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+      toast.error("Discount percentage must be between 1 and 100");
+      return;
+    }
+
+    try {
+      await adminRequest("/admin/offers/save", {
+        method: "POST",
+        body: JSON.stringify({
+          id: offerForm.id || undefined,
+          label: offerForm.label.trim(),
+          discount_percent: percent,
+          from_date: offerForm.from_date,
+          to_date: offerForm.to_date,
+          is_active: Number(offerForm.is_active || 1),
+        }),
+      });
+
+      toast.success("Offer saved");
+      resetOfferForm();
+      fetchOffers();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save offer");
+    }
+  };
+
+  const handleEditOffer = (offer: any) => {
+    setOfferForm({
+      id: String(offer.id || ""),
+      label: String(offer.label || ""),
+      discount_percent: String(offer.discount_percent || ""),
+      from_date: String(offer.from_date || ""),
+      to_date: String(offer.to_date || ""),
+      is_active: String(offer.is_active ?? 1),
+    });
+  };
+
+  const handleDeleteOffer = async (id: number) => {
+    if (!window.confirm("Delete this offer?")) return;
+
+    try {
+      await adminRequest("/admin/offers/delete", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      });
+      toast.success("Offer deleted");
+      fetchOffers();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete offer");
+    }
+  };
+
+  const handleGenerateCoupons = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const quantity = Number(couponForm.quantity || 0);
+    const percent = Number(couponForm.discount_percent || 0);
+
+    if (!Number.isFinite(quantity) || quantity < 1 || quantity > 60) {
+      toast.error("You can generate 1 to 60 coupons at a time");
+      return;
+    }
+
+    if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+      toast.error("Coupon discount percentage must be between 1 and 100");
+      return;
+    }
+
+    try {
+      await adminRequest("/admin/coupons/generate", {
+        method: "POST",
+        body: JSON.stringify({ quantity, discount_percent: percent }),
+      });
+
+      toast.success("Coupons generated");
+      fetchCoupons();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to generate coupons");
+    }
+  };
+
+
+  const updateHomeHeroField = (index: number, key: keyof HomeHeroForm, value: string | File | null) => {
+    const rows = [...homeContent.hero_slides];
+    const current = rows[index] || homeHeroDefaults()[index];
+
+    if (key === "image_file") {
+      const file = value as File | null;
+      rows[index] = {
+        ...current,
+        image_file: file,
+        preview_url: file ? URL.createObjectURL(file) : current.image_url,
+      };
+    } else {
+      rows[index] = { ...current, [key]: String(value ?? "") };
+    }
+
+    setHomeContent({ ...homeContent, hero_slides: rows });
+  };
+
+  const updateHomeTileField = (index: number, key: keyof HomeTileForm, value: string | File | null) => {
+    const rows = [...homeContent.category_tiles];
+    const current = rows[index] || homeTileDefaults()[index];
+
+    if (key === "image_file") {
+      const file = value as File | null;
+      rows[index] = {
+        ...current,
+        image_file: file,
+        preview_url: file ? URL.createObjectURL(file) : current.image_url,
+      };
+    } else {
+      rows[index] = { ...current, [key]: String(value ?? "") };
+    }
+
+    setHomeContent({ ...homeContent, category_tiles: rows });
+  };
+
+  const toggleHomeFeatured = (type: "new_arrival" | "postcard" | "cutout", id: number) => {
+    if (type === "new_arrival") {
+      const current = homeContent.featured_new_arrival_ids || [];
+      const exists = current.includes(id);
+      const next = exists ? current.filter((item) => item !== id) : [...current, id];
+      setHomeContent({ ...homeContent, featured_new_arrival_ids: next });
+      return;
+    }
+
+    if (type === "postcard") {
+      const current = homeContent.featured_postcard_ids || [];
+      const exists = current.includes(id);
+      const next = exists ? current.filter((item) => item !== id) : [...current, id];
+      setHomeContent({ ...homeContent, featured_postcard_ids: next });
+      return;
+    }
+
+    const current = homeContent.featured_cutout_ids || [];
+    const exists = current.includes(id);
+    const next = exists ? current.filter((item) => item !== id) : [...current, id];
+    setHomeContent({ ...homeContent, featured_cutout_ids: next });
+  };
+
+  const buildHomeContentForm = () => {
+    const body = new FormData();
+    const payload = {
+      hero_slides: (homeContent.hero_slides || homeHeroDefaults()).map((item) => ({
+        title: item.title,
+        subtitle: item.subtitle,
+        button_text: item.button_text,
+        button_link: item.button_link,
+        image_url: item.image_url,
+      })),
+      category_tiles: (homeContent.category_tiles || homeTileDefaults()).map((item) => ({
+        title: item.title,
+        subtitle: item.subtitle,
+        button_text: item.button_text,
+        button_link: item.button_link,
+        image_url: item.image_url,
+      })),
+      featured_new_arrival_ids: homeContent.featured_new_arrival_ids || [],
+      featured_postcard_ids: homeContent.featured_postcard_ids || [],
+      featured_cutout_ids: homeContent.featured_cutout_ids || [],
+    };
+
+    body.append("content", JSON.stringify(payload));
+
+    (homeContent.hero_slides || []).forEach((item, index) => {
+      if (item.image_file) {
+        body.append(`hero_image_${index}`, item.image_file);
+      }
+    });
+
+    (homeContent.category_tiles || []).forEach((item, index) => {
+      if (item.image_file) {
+        body.append(`category_image_${index}`, item.image_file);
+      }
+    });
+
+    return body;
+  };
+
+  const handleSaveHomeContent = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const res = await adminMultipartRequest("/admin/home-content/save", buildHomeContentForm());
+      setHomeContent(normalizeHomeContent(res?.data));
+      toast.success("Home page content saved");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save home page content");
+    }
+  };
+
+  const resetPostcardForm = () => {
+    setPostcardForm({
+      id: "",
+      product_type: "postcard",
+      product_name: "",
+      quality_of_paper: "",
+      size: "",
+      description: "",
+      short_description: "",
+      full_description: "",
+      price: "",
+      width: "",
+      height: "",
+      sqft_price: "",
+      front_image_file: null,
+      back_image_file: null,
+      image_file: null,
+      front_image_url: "",
+      back_image_url: "",
+      image_url: "",
+    });
+  };
+
+  const buildPostcardForm = () => {
+    const body = new FormData();
+    const productPayload = {
+      ...postcardForm,
+      description: postcardForm.short_description || postcardForm.description || "",
+    };
+
+    Object.entries(productPayload).forEach(([key, value]) => {
+      if (["front_image_file", "back_image_file", "image_file"].includes(key)) return;
+      body.append(key, String(value ?? ""));
+    });
+
+    if (postcardForm.front_image_file) body.append("front_image", postcardForm.front_image_file);
+    if (postcardForm.back_image_file) body.append("back_image", postcardForm.back_image_file);
+    if (postcardForm.image_file) body.append("image", postcardForm.image_file);
+
+    return body;
+  };
+
+  const handleSavePostcard = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!postcardForm.product_name.trim()) {
+      toast.error("Product name is required");
+      return;
+    }
+
+    try {
+      await adminMultipartRequest("/admin/postcards/save", buildPostcardForm());
+      toast.success("Postcard product saved");
+      resetPostcardForm();
+      fetchPostcards();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save postcard product");
+    }
+  };
+
+  const handleEditPostcard = (item: any) => {
+    setPostcardForm({
+      id: String(item.id || ""),
+      product_type: item.product_type || "postcard",
+      product_name: item.product_name || "",
+      quality_of_paper: item.quality_of_paper || "",
+      size: item.size || "",
+      description: item.description || item.short_description || "",
+      short_description: item.short_description || item.description || "",
+      full_description: item.full_description || "",
+      price: String(item.price || ""),
+      width: String(item.width || ""),
+      height: String(item.height || ""),
+      sqft_price: String(item.sqft_price || ""),
+      front_image_file: null,
+      back_image_file: null,
+      image_file: null,
+      front_image_url: item.front_image_url || "",
+      back_image_url: item.back_image_url || "",
+      image_url: item.image_url || "",
+    });
+  };
+
+  const handleDeletePostcard = async (id: number) => {
+    if (!window.confirm("Delete this postcard product?")) return;
+
+    try {
+      await adminRequest("/admin/postcards/delete", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      });
+      toast.success("Postcard product deleted");
+      fetchPostcards();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete postcard product");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] bg-[#F8F9FA] flex font-sans text-black overflow-hidden">
       <aside
@@ -877,6 +1485,13 @@ const AdminDashboard: React.FC = () => {
 
           <nav className="flex-1 space-y-2">
             <SideButton
+              active={activeTab === "home"}
+              onClick={() => setActiveTab("home")}
+              icon={<Home size={17} />}
+              label="Home Control"
+            />
+
+            <SideButton
               active={activeTab === "inventory"}
               onClick={() => setActiveTab("inventory")}
               icon={<LayoutDashboard size={17} />}
@@ -898,6 +1513,42 @@ const AdminDashboard: React.FC = () => {
               onClick={() => setActiveTab("attributes")}
               icon={<Tags size={17} />}
               label="Attributes"
+            />
+
+            <SideButton
+              active={activeTab === "offers"}
+              onClick={() => setActiveTab("offers")}
+              icon={<Tags size={17} />}
+              label="Offers"
+            />
+
+            <SideButton
+              active={activeTab === "coupons"}
+              onClick={() => setActiveTab("coupons")}
+              icon={<CreditCard size={17} />}
+              label="Coupons"
+            />
+
+            <SideButton
+              active={activeTab === "cutouts"}
+              onClick={() => {
+                resetPostcardForm();
+                setPostcardForm((prev: any) => ({ ...prev, product_type: "cutout" }));
+                setActiveTab("cutouts");
+              }}
+              icon={<ImagePlus size={17} />}
+              label="CutOuts"
+            />
+
+            <SideButton
+              active={activeTab === "postcards"}
+              onClick={() => {
+                resetPostcardForm();
+                setPostcardForm((prev: any) => ({ ...prev, product_type: "postcard" }));
+                setActiveTab("postcards");
+              }}
+              icon={<ImagePlus size={17} />}
+              label="Postcards"
             />
 
             <SideButton
@@ -926,14 +1577,303 @@ const AdminDashboard: React.FC = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-5 lg:p-8 pb-20">
+          {activeTab === "home" && renderHomeContent()}
           {activeTab === "inventory" && renderInventory()}
           {activeTab === "add" && renderAddProduct()}
           {activeTab === "orders" && renderOrders()}
           {activeTab === "attributes" && renderAttributes()}
+          {activeTab === "offers" && renderOffers()}
+          {activeTab === "coupons" && renderCoupons()}
+          {activeTab === "cutouts" && renderCutouts()}
+          {activeTab === "postcards" && renderPostcards()}
         </main>
       </div>
     </div>
   );
+
+
+  function renderHomeContent() {
+    return (
+      <section className="w-full max-w-none animate-in fade-in duration-500">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-gray-900 uppercase tracking-widest">
+              Home Page Control
+            </h1>
+
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+              Hero sliders, three image cards, new arrivals, postcards and cutouts
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchHomeContent}
+            className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 flex items-center gap-2"
+          >
+            <RefreshCw size={15} />
+            Refresh
+          </button>
+        </div>
+
+        <form onSubmit={handleSaveHomeContent} className="space-y-8">
+          <div className="bg-white p-6 lg:p-8 rounded-[2rem] border border-gray-200 shadow-sm">
+            <SectionTitle title="Hero Slider Images" />
+            <p className="text-xs font-bold text-gray-500 mb-5 uppercase tracking-widest">
+              Upload exactly three hero images. The same three slides will show on the website home page.
+            </p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {(homeContent.hero_slides || homeHeroDefaults()).map((slide, index) => (
+                <div key={`hero-${index}`} className="rounded-3xl border border-gray-200 bg-gray-50 p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-extrabold uppercase tracking-widest text-gray-800">
+                      Hero Slide {index + 1}
+                    </h3>
+                  </div>
+
+                  <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-white border border-gray-200">
+                    {slide.preview_url || slide.image_url ? (
+                      <img src={getFullImageUrl(slide.preview_url || slide.image_url)} alt={slide.title || `Hero ${index + 1}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        No Image
+                      </div>
+                    )}
+                  </div>
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => updateHomeHeroField(index, "image_file", e.target.files?.[0] || null)}
+                    className="w-full text-xs font-bold text-gray-700"
+                  />
+
+                  <FormGroup
+                    label="Title"
+                    value={slide.title}
+                    onChange={(e) => updateHomeHeroField(index, "title", e.target.value)}
+                    placeholder="Art For Every Space."
+                  />
+
+                  <FormGroup
+                    label="Subtitle"
+                    value={slide.subtitle}
+                    onChange={(e) => updateHomeHeroField(index, "subtitle", e.target.value)}
+                    placeholder="Bring warmth into your room"
+                  />
+
+                  <FormGroup
+                    label="Button Text"
+                    value={slide.button_text}
+                    onChange={(e) => updateHomeHeroField(index, "button_text", e.target.value)}
+                    placeholder="Explore Posters →"
+                  />
+
+                  <FormGroup
+                    label="Button Link"
+                    value={slide.button_link}
+                    onChange={(e) => updateHomeHeroField(index, "button_link", e.target.value)}
+                    placeholder="/products"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white p-6 lg:p-8 rounded-[2rem] border border-gray-200 shadow-sm">
+            <SectionTitle title="Three Home Image Cards" />
+            <p className="text-xs font-bold text-gray-500 mb-5 uppercase tracking-widest">
+              These three cards replace the static New Arrivals / Kids Art Prints / Postcards images. The home page shows the button in the center-lower area.
+            </p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {(homeContent.category_tiles || homeTileDefaults()).map((tile, index) => (
+                <div key={`tile-${index}`} className="rounded-3xl border border-gray-200 bg-gray-50 p-5 space-y-4">
+                  <h3 className="text-xs font-extrabold uppercase tracking-widest text-gray-800">
+                    Card {index + 1}
+                  </h3>
+
+                  <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-white border border-gray-200 relative">
+                    {tile.preview_url || tile.image_url ? (
+                      <img src={getFullImageUrl(tile.preview_url || tile.image_url)} alt={tile.title || `Card ${index + 1}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        No Image
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-[18%] flex justify-center px-5">
+                      <span className="bg-white text-gray-900 rounded-full px-6 py-3 text-[11px] font-extrabold uppercase tracking-widest shadow-lg">
+                        {tile.button_text || tile.title || "Explore"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => updateHomeTileField(index, "image_file", e.target.files?.[0] || null)}
+                    className="w-full text-xs font-bold text-gray-700"
+                  />
+
+                  <FormGroup
+                    label="Label / Title"
+                    value={tile.title}
+                    onChange={(e) => updateHomeTileField(index, "title", e.target.value)}
+                    placeholder="New Arrivals"
+                  />
+
+                  <FormGroup
+                    label="Subtitle"
+                    value={tile.subtitle}
+                    onChange={(e) => updateHomeTileField(index, "subtitle", e.target.value)}
+                    placeholder="New prints to refresh your walls"
+                  />
+
+                  <FormGroup
+                    label="Button Text"
+                    value={tile.button_text}
+                    onChange={(e) => updateHomeTileField(index, "button_text", e.target.value)}
+                    placeholder="Discover"
+                  />
+
+                  <FormGroup
+                    label="Button Link"
+                    value={tile.button_link}
+                    onChange={(e) => updateHomeTileField(index, "button_link", e.target.value)}
+                    placeholder="/postcards"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white p-6 lg:p-8 rounded-[2rem] border border-gray-200 shadow-sm">
+            <SectionTitle title="Show These New Arrivals On Home" />
+            <p className="text-xs font-bold text-gray-500 mb-5 uppercase tracking-widest">
+              Select the poster products that will appear in the New Arrivals section on the home page.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[520px] overflow-y-auto pr-2">
+              {availableHomeProducts.length === 0 ? (
+                <p className="text-sm font-bold text-gray-500">No poster products found.</p>
+              ) : (
+                availableHomeProducts.map((item) => {
+                  const id = Number(getProductId(item) || 0);
+                  const checked = (homeContent.featured_new_arrival_ids || []).includes(id);
+                  const images = Array.isArray(item.product_images) ? item.product_images : [];
+                  const firstUploaded = images.find((img: any) => img?.image_url)?.image_url || item.main_poster_url || item.image_url || "";
+                  const prices = Array.isArray(item.size_prices) ? item.size_prices.map((size: any) => Number(size.price || 0)).filter((price: number) => price > 0) : [];
+                  const price = prices.length > 0 ? Math.min(...prices) : Number(item.price || 0);
+
+                  return (
+                    <label key={`home-new-arrival-${id}`} className={`flex items-center gap-4 p-3 rounded-2xl border cursor-pointer ${checked ? "border-black bg-gray-50" : "border-gray-200 bg-white"}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleHomeFeatured("new_arrival", id)}
+                        className="h-5 w-5 accent-black"
+                      />
+
+                      <div className="h-16 w-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                        {firstUploaded ? <img src={getFullImageUrl(firstUploaded)} alt={item.title || "Product"} className="w-full h-full object-cover" /> : null}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-extrabold text-gray-900 truncate">{item.title || "Product"}</p>
+                        <p className="text-xs font-bold text-gray-500">{formatPrice(price)}</p>
+                      </div>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 lg:p-8 rounded-[2rem] border border-gray-200 shadow-sm">
+              <SectionTitle title="Show These Postcards On Home" />
+              <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2">
+                {availableHomePostcards.length === 0 ? (
+                  <p className="text-sm font-bold text-gray-500">No postcards found.</p>
+                ) : (
+                  availableHomePostcards.map((item) => {
+                    const id = Number(item.id || 0);
+                    const checked = (homeContent.featured_postcard_ids || []).includes(id);
+                    const img = getPostcardDisplayImage(item);
+
+                    return (
+                      <label key={`home-postcard-${id}`} className={`flex items-center gap-4 p-3 rounded-2xl border cursor-pointer ${checked ? "border-black bg-gray-50" : "border-gray-200 bg-white"}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleHomeFeatured("postcard", id)}
+                          className="h-5 w-5 accent-black"
+                        />
+
+                        <div className="h-16 w-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                          {img ? <img src={getFullImageUrl(img)} alt={item.product_name || "Postcard"} className="w-full h-full object-cover" /> : null}
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="text-sm font-extrabold text-gray-900 truncate">{item.product_name || "Postcard"}</p>
+                          <p className="text-xs font-bold text-gray-500">{formatPrice(item.price || item.total_price)}</p>
+                        </div>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white p-6 lg:p-8 rounded-[2rem] border border-gray-200 shadow-sm">
+              <SectionTitle title="Show These CutOuts On Home" />
+              <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2">
+                {availableHomeCutouts.length === 0 ? (
+                  <p className="text-sm font-bold text-gray-500">No cutouts found.</p>
+                ) : (
+                  availableHomeCutouts.map((item) => {
+                    const id = Number(item.id || 0);
+                    const checked = (homeContent.featured_cutout_ids || []).includes(id);
+                    const img = getPostcardDisplayImage(item);
+
+                    return (
+                      <label key={`home-cutout-${id}`} className={`flex items-center gap-4 p-3 rounded-2xl border cursor-pointer ${checked ? "border-black bg-gray-50" : "border-gray-200 bg-white"}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleHomeFeatured("cutout", id)}
+                          className="h-5 w-5 accent-black"
+                        />
+
+                        <div className="h-16 w-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                          {img ? <img src={getFullImageUrl(img)} alt={item.product_name || "CutOut"} className="w-full h-full object-cover" /> : null}
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="text-sm font-extrabold text-gray-900 truncate">{item.product_name || "CutOut"}</p>
+                          <p className="text-xs font-bold text-gray-500">{formatPrice(item.total_price || item.price)}</p>
+                        </div>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="sticky bottom-4 z-20 flex justify-end">
+            <button
+              type="submit"
+              className="bg-black text-white px-8 py-4 rounded-2xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 shadow-xl flex items-center gap-2"
+            >
+              <Save size={16} />
+              Save Home Page
+            </button>
+          </div>
+        </form>
+      </section>
+    );
+  }
 
   function renderInventory() {
     return (
@@ -1196,7 +2136,7 @@ const AdminDashboard: React.FC = () => {
 
                             <button
                               type="button"
-                              onClick={() => handleDeleteProduct(p.id)}
+                              onClick={() => handleDeleteProduct(p)}
                               className="p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all"
                               title="Delete"
                             >
@@ -1726,6 +2666,482 @@ const AdminDashboard: React.FC = () => {
             updateOrderStatus={updateOrderStatus}
           />
         )}
+      </section>
+    );
+  }
+
+
+  function renderOffers() {
+    return (
+      <section className="w-full max-w-none animate-in fade-in duration-500">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-gray-900">Festival Offers</h1>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+              Maximum 3 active offers are allowed for the website
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveOffer} className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm mb-7 grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+          <FormGroup
+            label="Offer Label"
+            value={offerForm.label}
+            onChange={(e) => setOfferForm({ ...offerForm, label: e.target.value })}
+            placeholder="Diwali Sale"
+          />
+
+          <FormGroup
+            label="Discount %"
+            type="number"
+            value={offerForm.discount_percent}
+            onChange={(e) => setOfferForm({ ...offerForm, discount_percent: e.target.value })}
+            placeholder="20"
+          />
+
+          <FormGroup
+            label="From Date"
+            type="date"
+            value={offerForm.from_date}
+            onChange={(e) => setOfferForm({ ...offerForm, from_date: e.target.value })}
+          />
+
+          <FormGroup
+            label="To Date"
+            type="date"
+            value={offerForm.to_date}
+            onChange={(e) => setOfferForm({ ...offerForm, to_date: e.target.value })}
+          />
+
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Status</label>
+            <select
+              value={offerForm.is_active}
+              onChange={(e) => setOfferForm({ ...offerForm, is_active: e.target.value })}
+              className="w-full border border-gray-300 p-3 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-black"
+            >
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
+            </select>
+          </div>
+
+          <button type="submit" className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800">
+            {offerForm.id ? "Update" : "Save"}
+          </button>
+        </form>
+
+        <div className="bg-white rounded-[1.5rem] border border-gray-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-100 border-b border-gray-200">
+                <tr>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">Label</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">Discount</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">From</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">To</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">Status</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {offers.map((offer) => (
+                  <tr key={offer.id}>
+                    <td className="px-5 py-4 text-sm font-bold text-gray-900">{offer.label}</td>
+                    <td className="px-5 py-4 text-sm text-gray-700">{offer.discount_percent}%</td>
+                    <td className="px-5 py-4 text-sm text-gray-700">{formatDate(offer.from_date)}</td>
+                    <td className="px-5 py-4 text-sm text-gray-700">{formatDate(offer.to_date)}</td>
+                    <td className="px-5 py-4"><span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase border ${Number(offer.is_active) === 1 ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}>{Number(offer.is_active) === 1 ? "Active" : "Inactive"}</span></td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button type="button" onClick={() => handleEditOffer(offer)} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50"><Edit size={15} /></button>
+                        <button type="button" onClick={() => handleDeleteOffer(Number(offer.id))} className="p-2 rounded-lg border border-red-100 text-red-600 hover:bg-red-50"><Trash2 size={15} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderCoupons() {
+    return (
+      <section className="w-full max-w-none animate-in fade-in duration-500">
+        <div className="mb-6">
+          <h1 className="text-3xl font-serif font-bold text-gray-900">Coupons</h1>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+            Generate coupon numbers, discount percentage and track used coupons
+          </p>
+        </div>
+
+        <form onSubmit={handleGenerateCoupons} className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm mb-7 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <FormGroup
+            label="Coupon Quantity (Max 60)"
+            type="number"
+            value={couponForm.quantity}
+            onChange={(e) => setCouponForm({ ...couponForm, quantity: e.target.value })}
+            placeholder="10"
+          />
+
+          <FormGroup
+            label="Discount %"
+            type="number"
+            value={couponForm.discount_percent}
+            onChange={(e) => setCouponForm({ ...couponForm, discount_percent: e.target.value })}
+            placeholder="15"
+          />
+
+          <button type="submit" className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800">
+            Generate Coupons
+          </button>
+        </form>
+
+        <div className="bg-white rounded-[1.5rem] border border-gray-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-100 border-b border-gray-200">
+                <tr>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">Coupon Code</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">Discount</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">Status</th>
+                  <th className="px-5 py-4 text-xs uppercase font-extrabold text-gray-800">Used At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {coupons.map((coupon) => (
+                  <tr key={coupon.id} className={Number(coupon.is_used) === 1 ? "bg-gray-950 text-white" : "bg-white"}>
+                    <td className="px-5 py-4 text-sm font-extrabold tracking-widest">{coupon.code}</td>
+                    <td className="px-5 py-4 text-sm">{coupon.discount_percent}%</td>
+                    <td className="px-5 py-4 text-sm font-bold uppercase">{Number(coupon.is_used) === 1 ? "Used" : "Available"}</td>
+                    <td className="px-5 py-4 text-sm">{coupon.used_at ? formatDate(coupon.used_at) : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function getPostcardItems(type: "postcard" | "cutout") {
+    return postcards.filter((item) => {
+      const productType = String(item.product_type || "postcard").toLowerCase();
+      if (type === "cutout") return productType === "cutout" || productType === "sqft";
+      return productType === "postcard";
+    });
+  }
+
+  function saveSeparatedProduct(e: React.FormEvent, type: "postcard" | "cutout") {
+    e.preventDefault();
+
+    if (!postcardForm.product_name.trim()) {
+      toast.error("Product name is required");
+      return;
+    }
+
+    const body = new FormData();
+    const productPayload = {
+      ...postcardForm,
+      product_type: type,
+      description: postcardForm.short_description || postcardForm.description || "",
+    };
+
+    Object.entries(productPayload).forEach(([key, value]) => {
+      if (["front_image_file", "back_image_file", "image_file"].includes(key)) return;
+      body.append(key, String(value ?? ""));
+    });
+
+    if (type === "postcard") {
+      if (postcardForm.front_image_file) body.append("front_image", postcardForm.front_image_file);
+      if (postcardForm.back_image_file) body.append("back_image", postcardForm.back_image_file);
+    } else {
+      if (postcardForm.image_file) body.append("image", postcardForm.image_file);
+    }
+
+    adminMultipartRequest(type === "cutout" ? "/admin/cutouts/save" : "/admin/postcards/save", body)
+      .then(() => {
+        toast.success(type === "cutout" ? "CutOut product saved" : "Postcard product saved");
+        resetPostcardForm();
+        setPostcardForm((prev: any) => ({ ...prev, product_type: type }));
+        fetchPostcards();
+      })
+      .catch((error: any) => {
+        toast.error(error?.message || "Failed to save product");
+      });
+  }
+
+  function renderCutouts() {
+    const cutoutItems = getPostcardItems("cutout");
+    const totalSqftPrice =
+      Number(postcardForm.width || 0) *
+      Number(postcardForm.height || 0) *
+      Number(postcardForm.sqft_price || 0);
+
+    return (
+      <section className="w-full max-w-none animate-in fade-in duration-500">
+        <div className="mb-6">
+          <h1 className="text-3xl font-serif font-bold text-gray-900">CutOut Products</h1>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+            Upload cutout images separately. These products show only in the CutOuts section.
+          </p>
+        </div>
+
+        <form
+          onSubmit={(e) => saveSeparatedProduct(e, "cutout")}
+          className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm mb-7 space-y-6"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <FormGroup
+              label="Product Name"
+              value={postcardForm.product_name}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "cutout", product_name: e.target.value })}
+            />
+            <FormGroup
+              label="Width(ft)"
+              type="number"
+              value={postcardForm.width}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "cutout", width: e.target.value })}
+            />
+            <FormGroup
+              label="length"
+              type="number"
+              value={postcardForm.height}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "cutout", height: e.target.value })}
+            />
+            <FormGroup
+              label="Sqft Price"
+              type="number"
+              value={postcardForm.sqft_price}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "cutout", sqft_price: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormGroup
+              label="Manual Price"
+              type="number"
+              value={postcardForm.price}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "cutout", price: e.target.value })}
+            />
+            <FormGroup
+              label="Size Label"
+              value={postcardForm.size}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "cutout", size: e.target.value })}
+            />
+            <FileInput
+              label="CutOut Image"
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "cutout", image_file: e.target.files?.[0] || null })}
+            />
+          </div>
+
+          <TextArea
+            label="Short Description"
+            value={postcardForm.short_description}
+            onChange={(value) =>
+              setPostcardForm({
+                ...postcardForm,
+                product_type: "cutout",
+                short_description: value,
+                description: value,
+              })
+            }
+            height="h-24"
+          />
+
+          <TextArea
+            label="Long Description"
+            value={postcardForm.full_description}
+            onChange={(value) =>
+              setPostcardForm({
+                ...postcardForm,
+                product_type: "cutout",
+                full_description: value,
+              })
+            }
+            height="h-36"
+          />
+
+          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-4 text-sm font-bold text-gray-900">
+            Calculated Price: {formatPrice(totalSqftPrice || postcardForm.price || 0)}
+          </div>
+
+          <div className="flex gap-3">
+            <button type="submit" className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800">
+              {postcardForm.id ? "Update CutOut" : "Save CutOut"}
+            </button>
+            {postcardForm.id && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetPostcardForm();
+                  setPostcardForm((prev: any) => ({ ...prev, product_type: "cutout" }));
+                }}
+                className="bg-white border border-gray-300 text-gray-900 px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-100"
+              >
+                Cancel Edit
+              </button>
+            )}
+          </div>
+        </form>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {cutoutItems.map((item) => (
+            <div key={item.id} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="p-4 bg-gray-50">
+                {(item.image_url || item.front_image_url) && (
+                  <img
+                    src={getFullImageUrl(item.image_url || item.front_image_url)}
+                    alt={item.product_name}
+                    className="w-full h-56 object-contain bg-white rounded-2xl"
+                  />
+                )}
+              </div>
+              <div className="p-5">
+                <div className="flex justify-between gap-4 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900">{item.product_name}</h3>
+                  <span className="text-xs uppercase font-extrabold text-gray-500">CutOut</span>
+                </div>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap mb-3">{item.short_description || item.description}</p>
+                <p className="text-sm font-bold text-gray-900">{formatPrice(item.total_price || item.price)}</p>
+                <div className="flex gap-2 mt-4">
+                  <button type="button" onClick={() => handleEditPostcard({ ...item, product_type: "cutout" })} className="px-4 py-2 rounded-xl border border-gray-300 text-xs font-extrabold uppercase">Edit</button>
+                  <button type="button" onClick={() => handleDeletePostcard(Number(item.id))} className="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-xs font-extrabold uppercase">Delete</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  function renderPostcards() {
+    const postcardItems = getPostcardItems("postcard");
+
+    return (
+      <section className="w-full max-w-none animate-in fade-in duration-500">
+        <div className="mb-6">
+          <h1 className="text-3xl font-serif font-bold text-gray-900">Postcard Products</h1>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+            Upload postcard products separately. These products show only in the Postcards section.
+          </p>
+        </div>
+
+        <form
+          onSubmit={(e) => saveSeparatedProduct(e, "postcard")}
+          className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm mb-7 space-y-6"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <FormGroup
+              label="Product Name"
+              value={postcardForm.product_name}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", product_name: e.target.value })}
+            />
+            <FormGroup
+              label="Price"
+              type="number"
+              value={postcardForm.price}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", price: e.target.value })}
+            />
+            <FormGroup
+              label="Size"
+              value={postcardForm.size}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", size: e.target.value })}
+            />
+            <FormGroup
+              label="Quality Of Paper"
+              value={postcardForm.quality_of_paper}
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", quality_of_paper: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FileInput
+              label="Front Image"
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", front_image_file: e.target.files?.[0] || null })}
+            />
+            <FileInput
+              label="Back Image"
+              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", back_image_file: e.target.files?.[0] || null })}
+            />
+          </div>
+
+          <TextArea
+            label="Short Description"
+            value={postcardForm.short_description}
+            onChange={(value) =>
+              setPostcardForm({
+                ...postcardForm,
+                product_type: "postcard",
+                short_description: value,
+                description: value,
+              })
+            }
+            height="h-24"
+          />
+
+          <TextArea
+            label="Long Description"
+            value={postcardForm.full_description}
+            onChange={(value) =>
+              setPostcardForm({
+                ...postcardForm,
+                product_type: "postcard",
+                full_description: value,
+              })
+            }
+            height="h-36"
+          />
+
+          <div className="flex gap-3">
+            <button type="submit" className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800">
+              {postcardForm.id ? "Update Postcard" : "Save Postcard"}
+            </button>
+            {postcardForm.id && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetPostcardForm();
+                  setPostcardForm((prev: any) => ({ ...prev, product_type: "postcard" }));
+                }}
+                className="bg-white border border-gray-300 text-gray-900 px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-100"
+              >
+                Cancel Edit
+              </button>
+            )}
+          </div>
+        </form>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {postcardItems.map((item) => (
+            <div key={item.id} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50">
+                {(item.front_image_url || item.image_url) && (
+                  <img src={getFullImageUrl(item.front_image_url || item.image_url)} alt={item.product_name} className="w-full h-40 object-contain bg-white rounded-2xl" />
+                )}
+                {item.back_image_url && (
+                  <img src={getFullImageUrl(item.back_image_url)} alt={`${item.product_name} back`} className="w-full h-40 object-contain bg-white rounded-2xl" />
+                )}
+              </div>
+              <div className="p-5">
+                <div className="flex justify-between gap-4 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900">{item.product_name}</h3>
+                  <span className="text-xs uppercase font-extrabold text-gray-500">Postcard</span>
+                </div>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap mb-3">{item.short_description || item.description}</p>
+                <p className="text-sm font-bold text-gray-900">{formatPrice(item.total_price || item.price)}</p>
+                <div className="flex gap-2 mt-4">
+                  <button type="button" onClick={() => handleEditPostcard({ ...item, product_type: "postcard" })} className="px-4 py-2 rounded-xl border border-gray-300 text-xs font-extrabold uppercase">Edit</button>
+                  <button type="button" onClick={() => handleDeletePostcard(Number(item.id))} className="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-xs font-extrabold uppercase">Delete</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
     );
   }

@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { API } from "@/services/api";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
+
+type ActiveOffer = { label: string; discount_percent: number };
+
 const getFullImageUrl = (path?: string) => {
   if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
 
@@ -83,6 +87,32 @@ const getProductPrice = (price?: string | number) => {
   return `₹${numericValue.toLocaleString("en-IN")}`;
 };
 
+const getOfferPrice = (price: number, offer?: ActiveOffer | null) => {
+  const discount = safeNumber(offer?.discount_percent);
+
+  if (!offer || discount <= 0 || price <= 0) {
+    return { originalPrice: price, finalPrice: price, hasOffer: false };
+  }
+
+  return {
+    originalPrice: price,
+    finalPrice: Math.max(0, Math.round((price - (price * discount) / 100) * 100) / 100),
+    hasOffer: true,
+  };
+};
+
+const fetchActiveOffer = async (): Promise<ActiveOffer | null> => {
+  try {
+    const response = await fetch(`${API_BASE}/offers/active`);
+    const json = await response.json().catch(() => null);
+    const rows = Array.isArray(json?.data) ? json.data : json?.data?.items || [];
+    return rows[0] || null;
+  } catch (error) {
+    console.error("Failed to fetch active offer:", error);
+    return null;
+  }
+};
+
 const getProductId = (product: any) => {
   return product?.id || product?.product_id || product?.productId;
 };
@@ -96,6 +126,7 @@ const Products: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [activeOffer, setActiveOffer] = useState<ActiveOffer | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState<string>(urlCategory);
   const [selectedSubCategory, setSelectedSubCategory] =
@@ -120,10 +151,11 @@ const Products: React.FC = () => {
       setLoading(true);
 
       try {
-        const [prodRes, catRes, subcatRes] = await Promise.all([
+        const [prodRes, catRes, subcatRes, offerRes] = await Promise.all([
           API.getProducts().catch(() => []),
           API.adminGetCategories().catch(() => []),
           API.adminGetSubcategories().catch(() => []),
+          fetchActiveOffer(),
         ]);
 
         setProducts(
@@ -137,6 +169,8 @@ const Products: React.FC = () => {
         setSubcategories(
           Array.isArray(subcatRes) ? subcatRes : subcatRes?.data || []
         );
+
+        setActiveOffer(offerRes);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -365,6 +399,7 @@ const Products: React.FC = () => {
               const productImage = getUploadedProductImage(product);
               const productId = getProductId(product);
               const productPrice = getLowestProductPrice(product);
+              const offerPrice = getOfferPrice(productPrice, product.active_offer || activeOffer);
 
               if (!productImage || !productId) return null;
 
@@ -387,9 +422,21 @@ const Products: React.FC = () => {
                         {product.title || product.name || "Product"}
                       </h3>
 
-                      <p className="mt-2 text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
-                        {getProductPrice(productPrice)}
-                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {offerPrice.hasOffer && (
+                          <span className="text-[12px] text-[#1C1C1C]/35 line-through">
+                            {getProductPrice(offerPrice.originalPrice)}
+                          </span>
+                        )}
+                        <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
+                          {getProductPrice(offerPrice.finalPrice)}
+                        </span>
+                        {(product.active_offer || activeOffer) && offerPrice.hasOffer && (
+                          <span className="text-[10px] font-bold text-[#006039] uppercase tracking-[0.12em]">
+                            {(product.active_offer || activeOffer)?.label}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </article>
                 </Link>

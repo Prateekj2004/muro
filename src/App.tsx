@@ -6,13 +6,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/lib/cart";
 import ScrollToHash from "./components/ScrollToHash";
 
-// Components
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-// Pages
 import Index from "./pages/Index";
-import Products from "./pages/Products"; 
+import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
@@ -25,22 +23,18 @@ import FAQ from "./pages/FAQ";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
-// Admin Dashboard
-import AdminDashboard from "./pages/AdminDashboard"; 
+import AdminDashboard from "./pages/AdminDashboard";
+import Postcards from "./pages/Postcards";
+import PostcardDetails from "./pages/PostcardDetails";
+import Cutouts from "./pages/Cutouts";
+import CutoutDetails from "./pages/CutoutDetails";
 
 const queryClient = new QueryClient();
 
-// ==========================================
-// 🔥 FIXED ADMIN ROUTE GUARD
-// ==========================================
 const IsAdmin = ({ children }: { children: JSX.Element }) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  
-  // ✅ Backend se "ADMIN" aa raha hai, isliye .toUpperCase() karke check karenge
   const isAdmin = user.role?.toUpperCase() === "ADMIN";
-  
-  console.log("Guard Check - User Role:", user.role, "Is Admin?", isAdmin);
-  
+
   return isAdmin ? children : <Navigate replace to="/login" />;
 };
 
@@ -51,33 +45,35 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-        <ScrollToHash />
+          <ScrollToHash />
           <Navbar />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/signup" element={<Auth />} />
             <Route path="/about" element={<About />} />
+            <Route path="/postcards" element={<Postcards />} />
+            <Route path="/postcards/:id" element={<PostcardDetails />} />
+            <Route path="/cutouts" element={<Cutouts />} />
+            <Route path="/cutouts/:id" element={<CutoutDetails />} />
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/cancellation-refund" element={<RefundPolicy />} />
             <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/faq" element={<FAQ />} />
-            <Route path="/contact" element={<Contact />} />            
+            <Route path="/contact" element={<Contact />} />
             <Route path="/products" element={<Products />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
-<Route path="/profile" element={<Profile />} />
-            {/* --- ADMIN ROUTE SECURED --- */}
-            <Route 
-              path="/admin/dashboard" 
+            <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/admin/dashboard"
               element={
                 <IsAdmin>
                   <AdminDashboard />
                 </IsAdmin>
-              } 
+              }
             />
-
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />

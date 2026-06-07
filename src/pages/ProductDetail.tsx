@@ -12,6 +12,23 @@ import { toast } from "sonner";
 import { API } from "@/services/api";
 import { cartApi } from "@/services/cartApi";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
+
+type ActiveOffer = {
+  id?: number;
+  label: string;
+  discount_percent: number;
+  from_date?: string;
+  to_date?: string;
+};
+
+type CouponResult = {
+  valid: boolean;
+  code?: string;
+  discount_percent?: number;
+  message?: string;
+};
+
 type SizePriceItem = {
   id?: string | number;
   size_id?: string | number;
@@ -62,6 +79,9 @@ type ProductItem = {
   sizes?: SizePriceItem[];
   product_images?: ProductImageItem[];
   images?: ProductImageItem[];
+  active_offer?: ActiveOffer | null;
+  offer_price?: string | number;
+  final_price?: string | number;
 };
 
 const COLORS = {
@@ -102,6 +122,86 @@ const formatPrice = (price?: string | number) => {
   const finalValue = numericValue > 0 ? numericValue : 500;
   return `₹${finalValue.toLocaleString("en-IN")}`;
 };
+
+const getActiveOfferPrice = (price: number, offer?: ActiveOffer | null) => {
+  const discountPercent = safeNumber(offer?.discount_percent);
+  if (!offer || discountPercent <= 0 || price <= 0) {
+    return {
+      originalPrice: price,
+      finalPrice: price,
+      discountAmount: 0,
+      hasOffer: false,
+    };
+  }
+
+  const discountAmount = Math.round(((price * discountPercent) / 100) * 100) / 100;
+  const finalPrice = Math.max(0, Math.round((price - discountAmount) * 100) / 100);
+
+  return {
+    originalPrice: price,
+    finalPrice,
+    discountAmount,
+    hasOffer: finalPrice < price,
+  };
+};
+
+const normalizeVariationTitle = (title?: string) => {
+  return String(title || "")
+    .trim()
+    .replace(/\s*[-–—:]\s*\d+\s*$/i, "")
+    .replace(/\s+\d+\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+};
+
+const fetchActiveOffers = async (): Promise<ActiveOffer[]> => {
+  try {
+    const response = await fetch(`${API_BASE}/offers/active`);
+    const json = await response.json().catch(() => null);
+    const rows = Array.isArray(json?.data) ? json.data : json?.data?.items || [];
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    console.error("Failed to fetch active offers:", error);
+    return [];
+  }
+};
+
+const validateCouponCode = async (code: string): Promise<CouponResult> => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return {
+      valid: false,
+      message: "Please login to apply coupon",
+    };
+  }
+
+  const response = await fetch(`${API_BASE}/coupons/validate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ code, use_now: true }),
+  });
+
+  const json = await response.json().catch(() => null);
+
+  if (!response.ok || json?.success === false) {
+    return {
+      valid: false,
+      message: json?.message || "Coupon is not valid or already used",
+    };
+  }
+
+  return {
+    valid: true,
+    code: json?.data?.code || code,
+    discount_percent: safeNumber(json?.data?.discount_percent),
+    message: json?.message || "Coupon applied successfully",
+  };
+};
+
 
 const getFirstProductImageTitle = (product?: ProductItem | null) => {
   const imageRows = Array.isArray(product?.product_images)
@@ -264,6 +364,10 @@ const ProductDetails: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [cartLoading, setCartLoading] = useState(false);
   const [relatedSlideIndex, setRelatedSlideIndex] = useState(0);
+  const [activeOffers, setActiveOffers] = useState<ActiveOffer[]>([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponResult, setCouponResult] = useState<CouponResult | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -307,6 +411,10 @@ const ProductDetails: React.FC = () => {
   }, [id, stateProduct]);
 
   useEffect(() => {
+    fetchActiveOffers().then(setActiveOffers);
+  }, []);
+
+  useEffect(() => {
     const sizePrices = normalizeSizePrices(product);
 
     if (sizePrices.length > 0) {
@@ -331,6 +439,33 @@ const ProductDetails: React.FC = () => {
       null
     );
   }, [sizePrices, selectedSizeId]);
+
+  const activeOffer = product?.active_offer || activeOffers[0] || null;
+
+  const variationProducts = useMemo(() => {
+    if (!product) return [];
+
+    const currentKey = normalizeVariationTitle(getProductTitle(product));
+    if (!currentKey) return [];
+
+    const seen = new Set<string>();
+
+    return allProducts
+      .filter((item) => {
+        const itemId = resolveProductId(item);
+        const image = getUploadedProductImage(item);
+        const itemKey = normalizeVariationTitle(getProductTitle(item));
+
+        if (!itemId || !image || !itemKey || itemKey !== currentKey) return false;
+
+        const dedupeKey = String(itemId);
+        if (seen.has(dedupeKey)) return false;
+
+        seen.add(dedupeKey);
+        return true;
+      })
+      .sort((a, b) => Number(resolveProductId(a) || 0) - Number(resolveProductId(b) || 0));
+  }, [allProducts, product]);
 
   const relatedProducts = useMemo(() => {
     if (!product) return [];
@@ -402,6 +537,13 @@ const ProductDetails: React.FC = () => {
 
   const productTitle = getProductTitle(product);
   const productPrice = getSelectedProductPrice(product, selectedSize);
+  const productOfferPrice = getActiveOfferPrice(productPrice, activeOffer);
+  const couponPreview = couponResult?.valid
+    ? getActiveOfferPrice(productOfferPrice.finalPrice, {
+        label: couponResult.code || "Coupon",
+        discount_percent: couponResult.discount_percent || 0,
+      })
+    : null;
   const mainImage = getUploadedProductImage(product);
 
   const productTags = useMemo(() => {
@@ -471,6 +613,34 @@ const ProductDetails: React.FC = () => {
     }
   };
 
+  const handleApplyCoupon = async () => {
+    const cleanCode = couponCode.trim().toUpperCase();
+
+    if (!cleanCode) {
+      toast.error("Enter coupon code");
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponResult(null);
+
+    try {
+      const result = await validateCouponCode(cleanCode);
+      setCouponResult(result);
+
+      if (result.valid) {
+        toast.success(result.message || "Coupon applied");
+      } else {
+        toast.error(result.message || "Coupon is not valid");
+      }
+    } catch (error: any) {
+      console.error("Coupon validation failed:", error);
+      toast.error(error?.message || "Coupon validation failed");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleBuyNow = async () => {
     const added = await handleAddToCart();
 
@@ -478,6 +648,7 @@ const ProductDetails: React.FC = () => {
       navigate("/cart", {
         state: {
           openCheckout: true,
+          couponCode: couponResult?.valid ? couponResult.code : "",
         },
       });
     }
@@ -563,11 +734,31 @@ const ProductDetails: React.FC = () => {
                 {productTitle}
               </h1>
 
-              <p className="text-[28px] md:text-[32px] font-semibold text-[#1C1C1C] mb-2">
-                {formatPrice(productPrice)}
-              </p>
+              <div className="mb-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  {productOfferPrice.hasOffer && (
+                    <span className="text-[18px] md:text-[20px] text-[#1C1C1C]/35 line-through font-medium">
+                      {formatPrice(productOfferPrice.originalPrice)}
+                    </span>
+                  )}
 
-         
+                  <span className="text-[28px] md:text-[32px] font-semibold text-[#1C1C1C]">
+                    {formatPrice(couponPreview?.finalPrice || productOfferPrice.finalPrice)}
+                  </span>
+                </div>
+
+                {activeOffer && productOfferPrice.hasOffer && (
+                  <div className="mt-2 inline-flex items-center rounded-full bg-[#006039]/10 border border-[#006039]/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#006039]">
+                    {activeOffer.label} - {activeOffer.discount_percent}% OFF
+                  </div>
+                )}
+
+                {couponPreview?.hasOffer && couponResult?.valid && (
+                  <div className="mt-2 text-[12px] font-semibold text-[#006039] uppercase tracking-[0.12em]">
+                    Coupon {couponResult.code} applied: {couponResult.discount_percent}% extra off
+                  </div>
+                )}
+              </div>
 
               <p className="text-[15px] md:text-[16px] leading-relaxed text-[#1C1C1C]/65 mb-8 max-w-[650px]">
                 {product.description ||
@@ -611,6 +802,47 @@ const ProductDetails: React.FC = () => {
                   })}
                 </div>
               </div>
+
+              {variationProducts.length > 1 && (
+                <div className="mb-8">
+                  <p className="text-[12px] uppercase tracking-[0.22em] font-semibold mb-3 text-[#1C1C1C]">
+                    Variations
+                  </p>
+
+                  <div className="flex flex-wrap gap-3">
+                    {variationProducts.map((item) => {
+                      const itemId = resolveProductId(item);
+                      const itemImage = getUploadedProductImage(item);
+                      const active = String(itemId) === String(resolveProductId(product, id));
+
+                      if (!itemId || !itemImage) return null;
+
+                      return (
+                        <button
+                          key={itemId}
+                          type="button"
+                          onClick={() => {
+                            setProduct(item);
+                            navigate(`/product/${itemId}`, { replace: false, state: { productData: item } });
+                          }}
+                          className={`w-[74px] h-[92px] rounded-xl border overflow-hidden bg-white transition-all ${
+                            active
+                              ? "border-[#1C1C1C] ring-2 ring-[#1C1C1C]/20"
+                              : "border-[#1C1C1C]/12 hover:border-[#1C1C1C]"
+                          }`}
+                          title={getProductTitle(item)}
+                        >
+                          <img
+                            src={getFullImageUrl(itemImage)}
+                            alt={getProductTitle(item)}
+                            className="w-full h-full object-contain"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="mb-6">
                 <p className="text-[12px] uppercase tracking-[0.22em] font-semibold mb-3 text-[#1C1C1C]">
@@ -669,6 +901,38 @@ const ProductDetails: React.FC = () => {
                 </button>
               </div>
 
+              <div className="rounded-[20px] bg-white/65 border border-[#1C1C1C]/8 p-4 md:p-5 mb-7">
+                <p className="text-[12px] uppercase tracking-[0.22em] font-semibold mb-3 text-[#1C1C1C]">
+                  Coupon Code
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      setCouponResult(null);
+                    }}
+                    placeholder="Enter coupon code"
+                    className="h-[48px] flex-1 border border-[#1C1C1C]/15 bg-white px-4 text-[13px] font-semibold uppercase tracking-[0.14em] outline-none focus:border-[#1C1C1C]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading}
+                    className="h-[48px] px-6 bg-[#1C1C1C] text-white text-[11px] font-semibold uppercase tracking-[0.18em] disabled:opacity-60"
+                  >
+                    {couponLoading ? "Checking..." : "Apply"}
+                  </button>
+                </div>
+
+                {couponResult && (
+                  <p className={`mt-3 text-[12px] font-semibold ${couponResult.valid ? "text-[#006039]" : "text-red-600"}`}>
+                    {couponResult.message || (couponResult.valid ? "Coupon applied" : "Coupon is not valid")}
+                  </p>
+                )}
+              </div>
+
               <div className="rounded-[22px] bg-white/65 border border-[#1C1C1C]/8 p-6 md:p-7 mb-7">
                 <div className="flex items-center gap-2 mb-4">
                   <Info size={17} className="text-[#1C1C1C]" />
@@ -678,7 +942,7 @@ const ProductDetails: React.FC = () => {
                   </h2>
                 </div>
 
-                <p className="text-[14px] md:text-[15px] leading-relaxed text-[#1C1C1C]/65 mb-5">
+                <p className="text-[14px] md:text-[15px] leading-relaxed text-[#1C1C1C]/65 mb-5 whitespace-pre-wrap">
                   {product.about_artwork ||
                     product.full_description ||
                     product.description ||
@@ -739,6 +1003,7 @@ const ProductDetails: React.FC = () => {
                   safeNumber(itemSizePrices[0]?.price) ||
                   safeNumber(item.price || item.base_price) ||
                   500;
+                const itemOfferPrice = getActiveOfferPrice(itemPrice, item.active_offer || activeOffer);
                 const relatedId = resolveProductId(item);
 
                 if (!relatedId || !posterImage) return null;
@@ -764,9 +1029,16 @@ const ProductDetails: React.FC = () => {
                           {itemTitle}
                         </h3>
 
-                        <p className="text-[15px] font-semibold text-[#1C1C1C]">
-                          {formatPrice(itemPrice)}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          {itemOfferPrice.hasOffer && (
+                            <span className="text-[12px] text-[#1C1C1C]/35 line-through">
+                              {formatPrice(itemOfferPrice.originalPrice)}
+                            </span>
+                          )}
+                          <span className="text-[15px] font-semibold text-[#1C1C1C]">
+                            {formatPrice(itemOfferPrice.finalPrice)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </Link>

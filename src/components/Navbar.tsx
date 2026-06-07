@@ -484,7 +484,7 @@ const Navbar = () => {
             </NavLink>
 
             <NavLink
-              to="/new-arrivals"
+              to="/cutouts"
               className={navBase}
               activeClassName={navActive}
             >
@@ -492,7 +492,7 @@ const Navbar = () => {
             </NavLink>
 
             <NavLink
-              to="/customisation"
+              to="/postcards"
               className={navBase}
               activeClassName={navActive}
             >
@@ -763,11 +763,11 @@ const Navbar = () => {
               </Link>
 
               <Link to="/new-arrivals" onClick={() => setMobileOpen(false)}>
-                New Arrivals
+                CutOuts
               </Link>
 
-              <Link to="/customisation" onClick={() => setMobileOpen(false)}>
-                Customisation
+              <Link to="/postcards" onClick={() => setMobileOpen(false)}>
+                Postcard
               </Link>
 
               <Link to="/about" onClick={() => setMobileOpen(false)}>
