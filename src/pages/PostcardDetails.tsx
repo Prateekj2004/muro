@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { ChevronRight, Tag } from "lucide-react";
 import { toast } from "sonner";
 
@@ -131,10 +131,35 @@ type PostcardProduct = {
   height?: string | number;
   sqft_price?: string | number;
   active_offer?: ActiveOffer | null;
+  variations?: PostcardProduct[];
+  variation_count?: number;
+  variation_ids?: number[];
+  current_variation_id?: number;
+  parent_id?: number;
+};
+
+const getProductImage = (item?: PostcardProduct | null) => {
+  return item?.front_image_url || item?.image_url || item?.back_image_url || "";
+};
+
+const getListPath = (product?: PostcardProduct | null, pathname = "") => {
+  const type = String(product?.product_type || "").toLowerCase();
+
+  if (pathname.includes("/cutouts") || type === "cutout" || type === "sqft") {
+    return "/cutouts";
+  }
+
+  return "/postcards";
+};
+
+const getDetailPath = (item: PostcardProduct, pathname = "") => {
+  const base = getListPath(item, pathname);
+  return `${base}/${item.id}`;
 };
 
 const PostcardDetails: React.FC = () => {
   const { id } = useParams();
+  const location = useLocation();
   const [product, setProduct] = useState<PostcardProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeOffers, setActiveOffers] = useState<ActiveOffer[]>([]);
@@ -142,15 +167,22 @@ const PostcardDetails: React.FC = () => {
   const [couponResult, setCouponResult] = useState<CouponResult | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
 
+  const listPath = getListPath(product, location.pathname);
+  const listLabel = listPath === "/cutouts" ? "CutOuts" : "Postcards";
+
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
+      setCouponCode("");
+      setCouponResult(null);
+
       try {
-        const response = await fetch(`${API_BASE}/postcards/${id}`);
+        const endpoint = location.pathname.includes("/cutouts") ? "cutouts" : "postcards";
+        const response = await fetch(`${API_BASE}/${endpoint}/${id}`);
         const json = await response.json().catch(() => null);
         setProduct(json?.data?.product || null);
       } catch (error) {
-        console.error("Failed to fetch postcard product:", error);
+        console.error("Failed to fetch postcard/cutout product:", error);
         setProduct(null);
       } finally {
         setLoading(false);
@@ -158,7 +190,7 @@ const PostcardDetails: React.FC = () => {
     };
 
     fetchProduct();
-  }, [id]);
+  }, [id, location.pathname]);
 
   useEffect(() => {
     fetchActiveOffers().then(setActiveOffers);
@@ -204,9 +236,9 @@ const PostcardDetails: React.FC = () => {
     return (
       <main className="min-h-screen bg-[#F0EEE9] flex items-center justify-center px-6">
         <div className="text-center">
-          <h1 className="text-[28px] font-semibold text-[#1C1C1C] mb-4">Postcard product not found</h1>
-          <Link to="/postcards" className="inline-flex items-center justify-center bg-[#1C1C1C] text-white px-8 py-3 text-[12px] uppercase tracking-[0.18em]">
-            Back to Postcards
+          <h1 className="text-[28px] font-semibold text-[#1C1C1C] mb-4">Product not found</h1>
+          <Link to={listPath} className="inline-flex items-center justify-center bg-[#1C1C1C] text-white px-8 py-3 text-[12px] uppercase tracking-[0.18em]">
+            Back to {listLabel}
           </Link>
         </div>
       </main>
@@ -222,8 +254,10 @@ const PostcardDetails: React.FC = () => {
         discount_percent: couponResult.discount_percent || 0,
       })
     : null;
-  const shortDescription = product.short_description || product.description || "Premium postcard product.";
+  const shortDescription = product.short_description || product.description || "Premium product.";
   const fullDescription = product.full_description || product.description || shortDescription;
+  const variations = Array.isArray(product.variations) ? product.variations : [];
+  const visibleVariations = variations.filter((item) => Number(item.id) > 0);
 
   return (
     <main className="bg-[#F0EEE9] min-h-screen font-sans text-[#1C1C1C]">
@@ -232,7 +266,7 @@ const PostcardDetails: React.FC = () => {
           <div className="mb-8 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[#1C1C1C]/45">
             <Link to="/" className="hover:text-[#1C1C1C] transition-colors">Home</Link>
             <ChevronRight size={13} />
-            <Link to="/postcards" className="hover:text-[#1C1C1C] transition-colors">Postcards</Link>
+            <Link to={listPath} className="hover:text-[#1C1C1C] transition-colors">{listLabel}</Link>
             <ChevronRight size={13} />
             <span className="text-[#1C1C1C] font-semibold">{product.product_name}</span>
           </div>
@@ -254,7 +288,7 @@ const PostcardDetails: React.FC = () => {
 
             <div className="w-full lg:pt-2">
               <p className="text-[11px] uppercase tracking-[0.24em] text-[#1C1C1C]/40 mb-5">
-                {product.product_type === "sqft" ? "Sqft Price Product" : "Postcard"}
+                {product.product_type === "sqft" || product.product_type === "cutout" ? "CutOut Product" : "Postcard"}
               </p>
 
               <h1 className="text-[34px] md:text-[42px] lg:text-[46px] leading-tight font-normal tracking-[-0.04em] mb-5">
@@ -290,6 +324,49 @@ const PostcardDetails: React.FC = () => {
               <p className="text-[15px] md:text-[16px] leading-relaxed text-[#1C1C1C]/65 mb-7 max-w-[650px] whitespace-pre-wrap">
                 {shortDescription}
               </p>
+
+              {visibleVariations.length > 1 && (
+                <div className="rounded-[22px] bg-white/65 border border-[#1C1C1C]/8 p-5 md:p-6 mb-7">
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <p className="text-[12px] uppercase tracking-[0.22em] font-semibold text-[#1C1C1C]">
+                      Variations
+                    </p>
+                    <span className="text-[11px] uppercase tracking-[0.18em] text-[#1C1C1C]/45 font-semibold">
+                      {visibleVariations.length} options
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {visibleVariations.map((variation) => {
+                      const isActive = Number(variation.id) === Number(product.id);
+                      const image = getProductImage(variation);
+
+                      return (
+                        <Link
+                          key={variation.id}
+                          to={getDetailPath(variation, location.pathname)}
+                          className={`group rounded-[14px] border p-2 bg-white transition-all ${
+                            isActive
+                              ? "border-[#006039] ring-2 ring-[#006039]/15"
+                              : "border-[#1C1C1C]/10 hover:border-[#006039]/45"
+                          }`}
+                        >
+                          <div className="aspect-[3/4] rounded-[10px] overflow-hidden bg-[#F0EEE9] flex items-center justify-center">
+                            <img
+                              src={getFullImageUrl(image)}
+                              alt={variation.product_name}
+                              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                            />
+                          </div>
+                          <p className="mt-2 text-[10px] uppercase tracking-[0.12em] font-semibold text-center text-[#1C1C1C]/65 truncate">
+                            {variation.size || variation.quality_of_paper || `Option ${variation.id}`}
+                          </p>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-[20px] bg-white/65 border border-[#1C1C1C]/8 p-4 md:p-5 mb-7">
                 <p className="text-[12px] uppercase tracking-[0.22em] font-semibold mb-3 text-[#1C1C1C]">
@@ -328,7 +405,7 @@ const PostcardDetails: React.FC = () => {
                   <InfoRow label="Quality Of Paper" value={product.quality_of_paper} />
                 )}
                 {product.size && <InfoRow label="Size" value={product.size} />}
-                {product.product_type === "sqft" && (
+                {(product.product_type === "sqft" || product.product_type === "cutout") && (
                   <>
                     <InfoRow label="Width" value={String(product.width || 0)} />
                     <InfoRow label="Height" value={String(product.height || 0)} />

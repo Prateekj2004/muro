@@ -432,6 +432,8 @@ const AdminDashboard: React.FC = () => {
     front_image_file: null,
     back_image_file: null,
     image_file: null,
+    front_image_files: [],
+    back_image_files: [],
     front_image_url: "",
     back_image_url: "",
     image_url: "",
@@ -1374,6 +1376,8 @@ const AdminDashboard: React.FC = () => {
       front_image_file: null,
       back_image_file: null,
       image_file: null,
+      front_image_files: [],
+      back_image_files: [],
       front_image_url: "",
       back_image_url: "",
       image_url: "",
@@ -1388,7 +1392,7 @@ const AdminDashboard: React.FC = () => {
     };
 
     Object.entries(productPayload).forEach(([key, value]) => {
-      if (["front_image_file", "back_image_file", "image_file"].includes(key)) return;
+      if (["front_image_file", "back_image_file", "image_file", "front_image_files", "back_image_files"].includes(key)) return;
       body.append(key, String(value ?? ""));
     });
 
@@ -1434,6 +1438,8 @@ const AdminDashboard: React.FC = () => {
       front_image_file: null,
       back_image_file: null,
       image_file: null,
+      front_image_files: [],
+      back_image_files: [],
       front_image_url: item.front_image_url || "",
       back_image_url: item.back_image_url || "",
       image_url: item.image_url || "",
@@ -2835,14 +2841,32 @@ const AdminDashboard: React.FC = () => {
     });
   }
 
-  function saveSeparatedProduct(e: React.FormEvent, type: "postcard" | "cutout") {
-    e.preventDefault();
+  const getPostcardFrontFiles = (): File[] => {
+    const files = Array.isArray(postcardForm.front_image_files)
+      ? postcardForm.front_image_files.filter(Boolean)
+      : [];
 
-    if (!postcardForm.product_name.trim()) {
-      toast.error("Product name is required");
-      return;
-    }
+    if (files.length > 0) return files;
+    return postcardForm.front_image_file ? [postcardForm.front_image_file] : [];
+  };
 
+  const getPostcardBackFiles = (): File[] => {
+    const files = Array.isArray(postcardForm.back_image_files)
+      ? postcardForm.back_image_files.filter(Boolean)
+      : [];
+
+    if (files.length > 0) return files;
+    return postcardForm.back_image_file ? [postcardForm.back_image_file] : [];
+  };
+
+  const buildSeparatedProductForm = (
+    type: "postcard" | "cutout",
+    files: {
+      frontFile?: File | null;
+      backFile?: File | null;
+      imageFile?: File | null;
+    } = {}
+  ) => {
     const body = new FormData();
     const productPayload = {
       ...postcardForm,
@@ -2851,27 +2875,69 @@ const AdminDashboard: React.FC = () => {
     };
 
     Object.entries(productPayload).forEach(([key, value]) => {
-      if (["front_image_file", "back_image_file", "image_file"].includes(key)) return;
+      if (["front_image_file", "back_image_file", "image_file", "front_image_files", "back_image_files"].includes(key)) return;
       body.append(key, String(value ?? ""));
     });
 
     if (type === "postcard") {
-      if (postcardForm.front_image_file) body.append("front_image", postcardForm.front_image_file);
-      if (postcardForm.back_image_file) body.append("back_image", postcardForm.back_image_file);
-    } else {
-      if (postcardForm.image_file) body.append("image", postcardForm.image_file);
+      if (files.frontFile) body.append("front_image", files.frontFile);
+      if (files.backFile) body.append("back_image", files.backFile);
+    } else if (files.imageFile) {
+      body.append("image", files.imageFile);
     }
 
-    adminMultipartRequest(type === "cutout" ? "/admin/cutouts/save" : "/admin/postcards/save", body)
-      .then(() => {
+    return body;
+  };
+
+  async function saveSeparatedProduct(e: React.FormEvent, type: "postcard" | "cutout") {
+    e.preventDefault();
+
+    if (!postcardForm.product_name.trim()) {
+      toast.error("Product name is required");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (type === "postcard" && !postcardForm.id) {
+        const frontFiles = getPostcardFrontFiles();
+        const backFiles = getPostcardBackFiles();
+        const uploadCount = Math.max(frontFiles.length, backFiles.length, 1);
+
+        const requests = Array.from({ length: uploadCount }, (_, index) => {
+          const frontFile = frontFiles[index] || (frontFiles.length === 1 ? frontFiles[0] : null);
+          const backFile = backFiles[index] || (backFiles.length === 1 ? backFiles[0] : null);
+
+          return adminMultipartRequest(
+            "/admin/postcards/save",
+            buildSeparatedProductForm("postcard", { frontFile, backFile })
+          );
+        });
+
+        await Promise.all(requests);
+        toast.success(uploadCount > 1 ? `${uploadCount} postcard products saved` : "Postcard product saved");
+      } else {
+        await adminMultipartRequest(
+          type === "cutout" ? "/admin/cutouts/save" : "/admin/postcards/save",
+          buildSeparatedProductForm(type, {
+            frontFile: postcardForm.front_image_file,
+            backFile: postcardForm.back_image_file,
+            imageFile: postcardForm.image_file,
+          })
+        );
+
         toast.success(type === "cutout" ? "CutOut product saved" : "Postcard product saved");
-        resetPostcardForm();
-        setPostcardForm((prev: any) => ({ ...prev, product_type: type }));
-        fetchPostcards();
-      })
-      .catch((error: any) => {
-        toast.error(error?.message || "Failed to save product");
-      });
+      }
+
+      resetPostcardForm();
+      setPostcardForm((prev: any) => ({ ...prev, product_type: type }));
+      fetchPostcards();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save product");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function renderCutouts() {
@@ -3021,6 +3087,10 @@ const AdminDashboard: React.FC = () => {
 
   function renderPostcards() {
     const postcardItems = getPostcardItems("postcard");
+    const selectedFrontCount = getPostcardFrontFiles().length;
+    const selectedBackCount = getPostcardBackFiles().length;
+    const bulkPostcardUploadCount = postcardForm.id ? 1 : Math.max(selectedFrontCount, selectedBackCount, 1);
+    const isBulkPostcardReady = !postcardForm.id && bulkPostcardUploadCount > 1;
 
     return (
       <section className="w-full max-w-none animate-in fade-in duration-500">
@@ -3061,14 +3131,40 @@ const AdminDashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FileInput
-              label="Front Image"
-              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", front_image_file: e.target.files?.[0] || null })}
+              label={postcardForm.id ? "Front Image" : "Front Images"}
+              multiple={!postcardForm.id}
+              helperText={!postcardForm.id ? "Select multiple front images to create postcard variations in one save." : undefined}
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setPostcardForm({
+                  ...postcardForm,
+                  product_type: "postcard",
+                  front_image_file: files[0] || null,
+                  front_image_files: files,
+                });
+              }}
             />
             <FileInput
-              label="Back Image"
-              onChange={(e) => setPostcardForm({ ...postcardForm, product_type: "postcard", back_image_file: e.target.files?.[0] || null })}
+              label={postcardForm.id ? "Back Image" : "Back Images"}
+              multiple={!postcardForm.id}
+              helperText={!postcardForm.id ? "If one back image is selected, it will be used with all selected front images. Multiple back images are paired by order." : undefined}
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setPostcardForm({
+                  ...postcardForm,
+                  product_type: "postcard",
+                  back_image_file: files[0] || null,
+                  back_image_files: files,
+                });
+              }}
             />
           </div>
+
+          {isBulkPostcardReady && (
+            <div className="rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-xs font-bold uppercase tracking-widest text-green-700">
+              Bulk Upload Ready: {bulkPostcardUploadCount} postcard variations will be created with the same product name.
+            </div>
+          )}
 
           <TextArea
             label="Short Description"
@@ -3098,8 +3194,18 @@ const AdminDashboard: React.FC = () => {
           />
 
           <div className="flex gap-3">
-            <button type="submit" className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800">
-              {postcardForm.id ? "Update Postcard" : "Save Postcard"}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-black text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting
+                ? "Saving..."
+                : postcardForm.id
+                ? "Update Postcard"
+                : bulkPostcardUploadCount > 1
+                ? `Save ${bulkPostcardUploadCount} Postcards`
+                : "Save Postcard"}
             </button>
             {postcardForm.id && (
               <button
@@ -3351,9 +3457,13 @@ const SelectBox = ({
 const FileInput = ({
   label,
   onChange,
+  multiple = false,
+  helperText = "",
 }: {
   label: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  multiple?: boolean;
+  helperText?: string;
 }) => (
   <div className="space-y-2">
     <label className="text-xs uppercase font-extrabold text-gray-800 tracking-widest">
@@ -3363,9 +3473,12 @@ const FileInput = ({
     <input
       type="file"
       accept="image/*"
+      multiple={multiple}
       onChange={onChange}
       className="w-full bg-white border border-gray-300 p-3.5 rounded-2xl text-xs font-semibold text-gray-900 cursor-pointer"
     />
+
+    {helperText && <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">{helperText}</p>}
   </div>
 );
 

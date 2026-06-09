@@ -8,6 +8,9 @@ import {
   ArrowRight,
   ShoppingBag,
   X,
+  ShieldCheck,
+  Truck,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cartApi } from "@/services/cartApi";
@@ -73,6 +76,19 @@ const emptySummary: CartSummary = {
   grand_total: 0,
   item_count: 0,
 };
+
+const COLORS = {
+  page: "#FFFFFF",
+  paper: "#F2F2F2",
+  paperDark: "#ECECEC",
+  ink: "#111111",
+  muted: "#8B8B8B",
+  line: "#E6E6E6",
+  accent: "#ECFF66",
+  green: "#006039",
+};
+
+const serifFont = "Georgia, 'Times New Roman', serif";
 
 const getFullImageUrl = (path?: string) => {
   if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
@@ -201,11 +217,23 @@ const Cart: React.FC = () => {
   }, [cartItems]);
 
   const subtotal = cartSummary.subtotal || fallbackSubtotal;
-  const payableAmount = cartSummary.grand_total || subtotal;
+  const sgstAmount = cartSummary.sgst_amount || 0;
+  const cgstAmount = cartSummary.cgst_amount || 0;
+  const gstAmount = cartSummary.gst_amount || sgstAmount + cgstAmount;
+  const payableAmount = cartSummary.grand_total || subtotal + gstAmount;
   const itemCount =
     cartSummary.item_count || cartItems.reduce((acc, item) => acc + item.qty, 0);
 
   const fetchCartData = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setCartItems([]);
+      setCartSummary(emptySummary);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -265,10 +293,14 @@ const Cart: React.FC = () => {
       emitCartUpdated(mappedSummary.item_count);
     } catch (error: any) {
       console.error("Failed to load cart:", error);
-      toast.error(error?.message || "Failed to load cart");
-      setCartItems([]);
-      setCartSummary(emptySummary);
-      emitCartUpdated(0);
+
+      if (error?.status === 401 || error?.response?.status === 401) {
+        setCartItems([]);
+        setCartSummary(emptySummary);
+        emitCartUpdated(0);
+      } else {
+        toast.error(error?.message || "Failed to load cart");
+      }
     } finally {
       setLoading(false);
     }
@@ -276,16 +308,6 @@ const Cart: React.FC = () => {
 
   useEffect(() => {
     fetchCartData();
-
-    const handleCartUpdate = () => {
-      fetchCartData();
-    };
-
-    window.addEventListener("muro_cart_updated", handleCartUpdate);
-
-    return () => {
-      window.removeEventListener("muro_cart_updated", handleCartUpdate);
-    };
   }, []);
 
   useEffect(() => {
@@ -302,6 +324,8 @@ const Cart: React.FC = () => {
   ) => {
     if (newQty < 1) return;
 
+    setActionLoading(true);
+
     try {
       const res = await cartApi.updateQty({
         product_id: productId,
@@ -315,10 +339,14 @@ const Cart: React.FC = () => {
     } catch (error: any) {
       console.error("Failed to update cart:", error);
       toast.error(error?.message || "Failed to update cart");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const removeItem = async (productId: number, sizeId?: number) => {
+    setActionLoading(true);
+
     try {
       const res = await cartApi.removeItem({
         product_id: productId,
@@ -333,20 +361,25 @@ const Cart: React.FC = () => {
     } catch (error: any) {
       console.error("Failed to remove item:", error);
       toast.error(error?.message || "Failed to remove item");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const clearCart = async () => {
+    setActionLoading(true);
+
     try {
       await cartApi.clearCart();
       toast.success("Cart cleared");
       setCartItems([]);
       setCartSummary(emptySummary);
       emitCartUpdated(0);
-      await fetchCartData();
     } catch (error: any) {
       console.error("Failed to clear cart:", error);
       toast.error(error?.message || "Failed to clear cart");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -404,7 +437,7 @@ const Cart: React.FC = () => {
           contact: checkoutData.shipping_phone,
         },
         theme: {
-          color: "#1C1C1C",
+          color: COLORS.ink,
         },
         handler: async function (response: any) {
           setActionLoading(true);
@@ -449,190 +482,318 @@ const Cart: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
-      </div>
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#111111] border-t-transparent" />
+      </main>
     );
   }
 
   return (
-    <main className="bg-white min-h-screen font-sans text-[#222222] pb-24 relative">
-      <div className="bg-[#F0EEE9]/30 py-16 text-center border-b border-[#E5E5E5]">
-        <h1 className="font-serif text-4xl font-light tracking-tight">
-          Shopping Cart
-        </h1>
-      </div>
+    <main
+      className="min-h-screen bg-white pb-24 font-sans text-[#111111]"
+      style={{ backgroundColor: COLORS.page, color: COLORS.ink }}
+    >
+      <section className="border-b border-[#E6E6E6] bg-white">
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-5 px-5 py-10 md:px-8 md:py-14 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8B8B8B]">
+              Shopping bag
+            </p>
+            <h1
+              className="text-[42px] font-normal leading-none tracking-[-0.06em] text-[#111111] md:text-[68px]"
+              style={{ fontFamily: serifFont }}
+            >
+              Your cart
+            </h1>
+          </div>
 
-      <div className="container mx-auto px-5 md:px-8 mt-12 max-w-6xl">
+          <div className="flex flex-wrap items-center gap-3 text-[12px] font-semibold text-[#111111]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#ECFF66] px-4 py-2">
+              <ShieldCheck size={15} strokeWidth={1.8} />
+              Secure checkout
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#F2F2F2] px-4 py-2">
+              <Truck size={15} strokeWidth={1.8} />
+              Tracked delivery
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#F2F2F2] px-4 py-2">
+              <RotateCcw size={15} strokeWidth={1.8} />
+              Easy support
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto mt-8 max-w-[1500px] px-5 md:px-8">
         {cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex min-h-[520px] flex-col items-center justify-center rounded-[22px] bg-[#F2F2F2] px-6 text-center">
             <ShoppingBag
-              className="w-16 h-16 text-gray-200 mb-6"
+              className="mb-6 h-16 w-16 text-[#CFCFCF]"
               strokeWidth={1}
             />
 
-            <p className="text-xl font-serif mb-6 text-gray-400">
-              Your cart is currently empty.
+            <h2
+              className="text-[32px] font-normal tracking-[-0.05em] text-[#111111] md:text-[44px]"
+              style={{ fontFamily: serifFont }}
+            >
+              Your cart is empty
+            </h2>
+
+            <p className="mt-4 max-w-[360px] text-[15px] leading-relaxed text-[#777777]">
+              Add posters to your bag and continue checkout from here.
             </p>
 
             <Link
               to="/products"
-              className="bg-[#222222] text-white px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[#2F4F4F]"
+              className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-[#111111] px-9 text-[12px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#006039]"
             >
-              Continue Shopping
+              Continue shopping
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
-            <div className="flex-1 space-y-6">
-              <AnimatePresence>
-                {cartItems.map((item) => (
-                  <motion.div
-                    key={`${item.product_id}-${item.size_id || "no-size"}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="flex flex-col md:grid md:grid-cols-12 items-center gap-4 pb-6 border-b border-gray-100"
-                  >
-                    <div className="col-span-6 flex items-center gap-6 w-full">
-                      <div className="w-20 md:w-24 aspect-[4/5] bg-[#F4F4F4] flex-shrink-0 overflow-hidden rounded-xl">
-                        <img
-                          src={getFullImageUrl(item.image_url)}
-                          alt={item.title}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-[15px] leading-snug mb-2">
-                          {item.title}
-                        </h3>
-
-                        {(item.size_name || item.size_code) && (
-                          <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500 font-semibold mb-2">
-                            Size: {item.size_name || item.size_code}
-                          </p>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.product_id, item.size_id)}
-                          className="text-[11px] uppercase tracking-widest text-red-500 flex items-center gap-1 hover:text-red-700"
-                        >
-                          <Trash2 size={13} />
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 text-center md:text-left">
-                      <p className="text-sm font-semibold">
-                        {formatPrice(item.price)}
-                      </p>
-                    </div>
-
-                    <div className="col-span-2 flex items-center justify-center">
-                      <div className="inline-flex items-center border border-gray-200 h-10">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQuantity(
-                              item.product_id,
-                              item.size_id,
-                              item.qty - 1
-                            )
-                          }
-                          className="w-10 h-full flex items-center justify-center hover:bg-gray-50"
-                        >
-                          <Minus size={14} />
-                        </button>
-
-                        <span className="w-10 text-center text-sm font-semibold">
-                          {item.qty}
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQuantity(
-                              item.product_id,
-                              item.size_id,
-                              item.qty + 1
-                            )
-                          }
-                          className="w-10 h-full flex items-center justify-center hover:bg-gray-50"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="col-span-2 text-right w-full">
-                      <p className="text-sm font-bold">
-                        {formatPrice(item.line_total)}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              <button
-                type="button"
-                onClick={clearCart}
-                className="text-[11px] uppercase tracking-[0.18em] text-gray-400 hover:text-red-500"
-              >
-                Clear Cart
-              </button>
-            </div>
-
-            <aside className="lg:w-[360px]">
-              <div className="bg-[#F8F8F8] border border-[#EAEAEA] p-7 sticky top-28">
-                <h2 className="text-xl font-serif mb-6">Order Summary</h2>
-
-                <div className="space-y-4 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">
-                      Subtotal ({itemCount} items)
-                    </span>
-                    <span className="font-semibold">{formatPrice(subtotal)}</span>
-                  </div>
-
-                  {cartSummary.sgst_amount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">
-                        SGST {cartSummary.sgst_percent}%
-                      </span>
-                      <span className="font-semibold">
-                        {formatPrice(cartSummary.sgst_amount)}
-                      </span>
-                    </div>
-                  )}
-
-                  {cartSummary.cgst_amount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">
-                        CGST {cartSummary.cgst_percent}%
-                      </span>
-                      <span className="font-semibold">
-                        {formatPrice(cartSummary.cgst_amount)}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="border-t border-gray-200 pt-4 flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span>{formatPrice(payableAmount)}</span>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_390px] xl:gap-12">
+            <section>
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <h2 className="text-[15px] font-bold uppercase tracking-[0.16em] text-[#111111]">
+                  Items ({itemCount})
+                </h2>
 
                 <button
                   type="button"
-                  onClick={() => setIsCheckoutOpen(true)}
-                  className="mt-7 w-full bg-[#222222] text-white h-14 text-[12px] font-bold uppercase tracking-[0.2em] hover:bg-[#006039] flex items-center justify-center gap-2"
+                  onClick={clearCart}
+                  disabled={actionLoading}
+                  className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8B8B8B] transition-colors hover:text-red-600 disabled:opacity-50"
                 >
-                  Checkout
-                  <ArrowRight size={15} />
+                  Clear cart
                 </button>
+              </div>
+
+              <div className="space-y-4">
+                <AnimatePresence>
+                  {cartItems.map((item) => {
+                    const itemTotal = item.line_total || item.price * item.qty;
+
+                    return (
+                      <motion.article
+                        key={`${item.product_id}-${item.size_id || "no-size"}`}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -16 }}
+                        className="group grid grid-cols-[96px_minmax(0,1fr)] gap-4 rounded-[16px] border border-[#E7E7E7] bg-white p-3 transition-shadow hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)] sm:grid-cols-[118px_minmax(0,1fr)_150px] md:gap-5 md:p-4 lg:grid-cols-[128px_minmax(0,1fr)_165px]"
+                      >
+                        <div className="relative flex h-[128px] w-[96px] items-center justify-center overflow-hidden rounded-[12px] bg-[#F2F2F2] p-3 sm:h-[154px] sm:w-[118px] lg:h-[164px] lg:w-[128px]">
+                          <img
+                            src={getFullImageUrl(item.image_url)}
+                            alt={item.title}
+                            className="max-h-full max-w-full object-contain drop-shadow-[0_10px_16px_rgba(0,0,0,0.10)] transition-transform duration-500 group-hover:scale-[1.025]"
+                          />
+                        </div>
+
+                        <div className="min-w-0 py-1 sm:py-2">
+                          <div className="flex items-start justify-between gap-3 sm:block">
+                            <div className="min-w-0">
+                              <p className="mb-1 text-[12px] text-[#A0A0A0] md:text-[13px]">
+                                Muro Poster
+                              </p>
+
+                              <h3
+                                className="line-clamp-2 text-[20px] font-normal leading-[1.08] tracking-[-0.04em] text-[#111111] md:text-[24px]"
+                                style={{ fontFamily: serifFont }}
+                              >
+                                {item.title}
+                              </h3>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => removeItem(item.product_id, item.size_id)}
+                              disabled={actionLoading}
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F2F2F2] text-[#777777] transition-colors hover:bg-white hover:text-red-600 disabled:opacity-50 sm:hidden"
+                              aria-label="Remove item"
+                            >
+                              <Trash2 size={15} strokeWidth={1.6} />
+                            </button>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#777777]">
+                            {(item.size_name || item.size_code) && (
+                              <span>
+                                Size: <span className="text-[#111111]">{item.size_name || item.size_code}</span>
+                              </span>
+                            )}
+                            <span>
+                              Price: <span className="text-[#111111]">{formatPrice(item.price)}</span>
+                            </span>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center gap-4">
+                            <div className="inline-flex h-9 items-center rounded-full border border-[#DDDDDD] bg-white">
+                              <button
+                                type="button"
+                                disabled={actionLoading || item.qty <= 1}
+                                onClick={() =>
+                                  updateQuantity(
+                                    item.product_id,
+                                    item.size_id,
+                                    item.qty - 1
+                                  )
+                                }
+                                className="flex h-full w-10 items-center justify-center rounded-l-full hover:bg-[#F2F2F2] disabled:opacity-40"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus size={14} strokeWidth={1.8} />
+                              </button>
+
+                              <span className="min-w-[34px] text-center text-[14px] font-bold">
+                                {item.qty}
+                              </span>
+
+                              <button
+                                type="button"
+                                disabled={actionLoading}
+                                onClick={() =>
+                                  updateQuantity(
+                                    item.product_id,
+                                    item.size_id,
+                                    item.qty + 1
+                                  )
+                                }
+                                className="flex h-full w-10 items-center justify-center rounded-r-full hover:bg-[#F2F2F2] disabled:opacity-40"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus size={14} strokeWidth={1.8} />
+                              </button>
+                            </div>
+
+                            <div className="sm:hidden">
+                              <p className="text-[11px] text-[#A0A0A0]">Item total</p>
+                              <p className="text-[15px] font-bold text-[#111111]">
+                                {formatPrice(itemTotal)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-span-2 flex items-center justify-between border-t border-[#EEEEEE] pt-3 sm:col-span-1 sm:flex-col sm:items-end sm:justify-between sm:border-t-0 sm:pt-2">
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.product_id, item.size_id)}
+                            disabled={actionLoading}
+                            className="hidden h-9 w-9 items-center justify-center rounded-full bg-[#F2F2F2] text-[#777777] transition-colors hover:bg-white hover:text-red-600 disabled:opacity-50 sm:flex"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 size={15} strokeWidth={1.6} />
+                          </button>
+
+                          <div className="text-left sm:text-right">
+                            <p className="text-[12px] text-[#A0A0A0]">Item total</p>
+                            <p className="text-[18px] font-bold text-[#111111] md:text-[20px]">
+                              {formatPrice(itemTotal)}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.article>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </section>
+
+            <aside className="lg:sticky lg:top-28 lg:self-start">
+              <div className="overflow-hidden rounded-[22px] border border-[#E7E7E7] bg-white">
+                <div className="bg-[#ECFF66] px-7 py-5">
+                  <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#111111]">
+                    Order summary
+                  </p>
+                </div>
+
+                <div className="p-7">
+                  <div className="space-y-4 text-[14px]">
+                    <div className="flex justify-between gap-5">
+                      <span className="text-[#777777]">
+                        Subtotal ({itemCount} item{itemCount === 1 ? "" : "s"})
+                      </span>
+                      <span className="font-bold text-[#111111]">
+                        {formatPrice(subtotal)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between gap-5">
+                      <span className="text-[#777777]">Shipping</span>
+                      <span className="text-right font-medium text-[#777777]">
+                        Calculated at checkout
+                      </span>
+                    </div>
+
+                    {cartSummary.sgst_amount > 0 && (
+                      <div className="flex justify-between gap-5">
+                        <span className="text-[#777777]">
+                          SGST {cartSummary.sgst_percent}%
+                        </span>
+                        <span className="font-semibold text-[#111111]">
+                          {formatPrice(cartSummary.sgst_amount)}
+                        </span>
+                      </div>
+                    )}
+
+                    {cartSummary.cgst_amount > 0 && (
+                      <div className="flex justify-between gap-5">
+                        <span className="text-[#777777]">
+                          CGST {cartSummary.cgst_percent}%
+                        </span>
+                        <span className="font-semibold text-[#111111]">
+                          {formatPrice(cartSummary.cgst_amount)}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="border-t border-[#E7E7E7] pt-5">
+                      <div className="flex justify-between gap-5 text-[21px] font-bold text-[#111111]">
+                        <span>Total</span>
+                        <span>{formatPrice(payableAmount)}</span>
+                      </div>
+
+                      {gstAmount > 0 && (
+                        <div className="mt-3 flex justify-between gap-5 text-[13px] text-[#777777]">
+                          <span>Total tax</span>
+                          <span>{formatPrice(gstAmount)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCheckoutOpen(true)}
+                    disabled={actionLoading || cartItems.length === 0}
+                    className="mt-7 flex h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#111111] text-[12px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#006039] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Checkout
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <Link
+                    to="/products"
+                    className="mt-4 flex h-[48px] w-full items-center justify-center rounded-full border border-[#D8D8D8] text-[12px] font-bold uppercase tracking-[0.18em] text-[#111111] transition-colors hover:border-[#111111]"
+                  >
+                    Continue shopping
+                  </Link>
+
+                  <div className="mt-6 grid grid-cols-2 gap-2 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-[#777777]">
+                    <span className="rounded-full bg-[#F2F2F2] px-3 py-2">
+                      GPay
+                    </span>
+                    <span className="rounded-full bg-[#F2F2F2] px-3 py-2">
+                      UPI
+                    </span>
+                    <span className="rounded-full bg-[#F2F2F2] px-3 py-2">
+                      Cards
+                    </span>
+                    <span className="rounded-full bg-[#F2F2F2] px-3 py-2">
+                      Razorpay
+                    </span>
+                  </div>
+                </div>
               </div>
             </aside>
           </div>
@@ -642,29 +803,40 @@ const Cart: React.FC = () => {
       <AnimatePresence>
         {isCheckoutOpen && (
           <motion.div
-            className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center px-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 relative"
-              initial={{ y: 20, opacity: 0 }}
+              className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[22px] bg-white p-6 shadow-2xl md:p-8"
+              initial={{ y: 24, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ duration: 0.22 }}
             >
               <button
                 type="button"
                 onClick={() => setIsCheckoutOpen(false)}
-                className="absolute right-5 top-5 p-2 hover:bg-gray-100"
+                className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full hover:bg-[#F2F2F2]"
+                aria-label="Close checkout"
               >
                 <X size={20} />
               </button>
 
-              <h2 className="font-serif text-3xl mb-6">Checkout Details</h2>
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#8B8B8B]">
+                Checkout
+              </p>
+
+              <h2
+                className="mb-7 text-[34px] font-normal tracking-[-0.05em] text-[#111111]"
+                style={{ fontFamily: serifFont }}
+              >
+                Delivery details
+              </h2>
 
               <form onSubmit={handleCheckoutSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <Input
                     label="Name"
                     value={checkoutData.shipping_name}
@@ -733,7 +905,7 @@ const Cart: React.FC = () => {
                   }
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <Input
                     label="City"
                     value={checkoutData.shipping_city}
@@ -757,7 +929,7 @@ const Cart: React.FC = () => {
                   />
                 </div>
 
-                <div className="bg-[#F8F8F8] p-4 flex justify-between text-sm font-semibold">
+                <div className="flex justify-between rounded-[16px] bg-[#ECFF66] p-4 text-[14px] font-bold text-[#111111]">
                   <span>Payable Amount</span>
                   <span>{formatPrice(payableAmount)}</span>
                 </div>
@@ -765,9 +937,9 @@ const Cart: React.FC = () => {
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="w-full bg-[#222222] text-white h-14 text-[12px] font-bold uppercase tracking-[0.2em] hover:bg-[#006039] disabled:opacity-50"
+                  className="h-14 w-full rounded-full bg-[#111111] text-[12px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#006039] disabled:opacity-50"
                 >
-                  {actionLoading ? "Processing..." : "Pay Now"}
+                  {actionLoading ? "Processing..." : "Pay now"}
                 </button>
               </form>
             </motion.div>
@@ -790,7 +962,7 @@ const Input = ({
   type?: string;
 }) => (
   <label className="block">
-    <span className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-gray-500 mb-2">
+    <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-[#777777]">
       {label}
     </span>
 
@@ -799,7 +971,7 @@ const Input = ({
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full border border-gray-200 h-12 px-4 outline-none focus:border-black text-sm"
+      className="h-12 w-full rounded-full border border-[#D8D8D8] px-5 text-[14px] text-[#111111] outline-none transition-colors focus:border-[#111111]"
     />
   </label>
 );

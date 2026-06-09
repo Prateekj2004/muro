@@ -68,10 +68,16 @@ type OrderData = {
 };
 
 const COLORS = {
-  cloud: "#F0EEE9",
-  blackboard: "#1C1C1C",
+  page: "#FFFFFF",
+  paper: "#F2F2F2",
+  ink: "#111111",
+  muted: "#777777",
+  line: "#E6E6E6",
+  accent: "#ECFF66",
   green: "#006039",
 };
+
+const serifFont = "Georgia, 'Times New Roman', serif";
 
 const getSavedUser = (): UserData => {
   try {
@@ -98,7 +104,9 @@ const getFullImageUrl = (path?: string) => {
 
 const formatPrice = (value?: number | string) => {
   const numeric = Number(value || 0);
-  return `₹${numeric.toLocaleString("en-IN")}`;
+  return `₹${numeric.toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  })}`;
 };
 
 const formatDate = (value?: string) => {
@@ -118,18 +126,18 @@ const statusClass = (status?: string) => {
   const s = String(status || "").toUpperCase();
 
   if (["PAID", "PLACED", "COMPLETED", "DELIVERED", "SUCCESS"].includes(s)) {
-    return "bg-[#006039]/10 text-[#006039] border-[#006039]/20";
+    return "border-[#006039]/25 bg-[#006039]/10 text-[#006039]";
   }
 
   if (["PENDING", "PROCESSING", "SHIPPED"].includes(s)) {
-    return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    return "border-[#ECFF66] bg-[#ECFF66] text-[#111111]";
   }
 
   if (["FAILED", "CANCELLED", "CANCELED", "REJECTED"].includes(s)) {
-    return "bg-red-50 text-red-600 border-red-200";
+    return "border-red-200 bg-red-50 text-red-600";
   }
 
-  return "bg-[#1C1C1C]/5 text-[#1C1C1C]/65 border-[#1C1C1C]/10";
+  return "border-[#E6E6E6] bg-[#F2F2F2] text-[#777777]";
 };
 
 const paymentIcon = (status?: string) => {
@@ -180,6 +188,15 @@ const Profile: React.FC = () => {
   const latestOrder = orders[0];
 
   const fetchProfile = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setUser(getSavedUser());
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -189,7 +206,12 @@ const Profile: React.FC = () => {
       setOrders(Array.isArray(res?.data?.orders) ? res.data.orders : []);
     } catch (error: any) {
       console.error("Profile fetch failed:", error);
-      toast.error(error?.message || "Failed to load profile");
+
+      if (error?.status === 401 || error?.response?.status === 401) {
+        setOrders([]);
+      } else {
+        toast.error(error?.message || "Failed to load profile");
+      }
     } finally {
       setLoading(false);
     }
@@ -230,50 +252,63 @@ const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F0EEE9] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#1C1C1C] border-t-transparent rounded-full animate-spin" />
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#111111] border-t-transparent" />
       </main>
     );
   }
 
   return (
     <main
-      className="min-h-screen font-sans text-[#1C1C1C] pb-20"
-      style={{ backgroundColor: COLORS.cloud }}
+      className="min-h-screen bg-white pb-20 font-sans text-[#111111] selection:bg-[#111111] selection:text-white"
+      style={{ backgroundColor: COLORS.page, color: COLORS.ink }}
     >
-      <section className="w-full border-b border-[#1C1C1C]/10 bg-[#F0EEE9]">
-        <div className="max-w-[1400px] mx-auto px-6 py-10 md:py-14">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-            <div>
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[#1C1C1C]/45 mb-5">
-                <Link to="/" className="hover:text-[#006039]">
+      <section className="border-b border-[#E6E6E6] bg-white">
+        <div className="mx-auto max-w-[1500px] px-5 py-8 md:px-8 md:py-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+            >
+              <div className="mb-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8B8B8B]">
+                <Link to="/" className="inline-flex items-center gap-2 rounded-full bg-[#F2F2F2] px-4 py-2 transition-colors hover:bg-[#ECFF66] hover:text-[#111111]">
+                  <Home size={13} strokeWidth={1.8} />
                   Home
                 </Link>
                 <span>/</span>
-                <span className="text-[#1C1C1C] font-semibold">Profile</span>
+                <span className="text-[#111111]">Profile</span>
               </div>
 
-            
-
-              <p className="mt-4 text-[15px] md:text-[17px] text-[#1C1C1C]/60 max-w-2xl leading-relaxed">
-                Track your orders, payment status, delivery progress and view
-                your complete bill details in one place.
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8B8B8B]">
+                Customer account
               </p>
-            </div>
+
+              <h1
+                className="text-[34px] font-normal leading-none tracking-[-0.05em] text-[#111111] md:text-[46px] lg:text-[54px]"
+                style={{ fontFamily: serifFont }}
+              >
+                Your profile
+              </h1>
+
+              <p className="mt-4 max-w-[650px] text-[14px] leading-relaxed text-[#555555] md:text-[16px]">
+                Track your orders, payment status, delivery progress and complete bill details in one place.
+              </p>
+            </motion.div>
 
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/products"
-                className="h-12 px-6 bg-[#1C1C1C] text-white text-[11px] font-semibold uppercase tracking-[0.18em] flex items-center justify-center gap-2 hover:bg-[#006039] transition-colors"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#111111] px-6 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#006039]"
               >
-                Continue Shopping
+                Continue shopping
                 <ArrowRight size={15} />
               </Link>
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="h-12 px-6 border border-[#1C1C1C]/20 bg-white/60 text-[#1C1C1C] text-[11px] font-semibold uppercase tracking-[0.18em] hover:bg-white transition-colors"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-[#D8D8D8] bg-white px-6 text-[11px] font-bold uppercase tracking-[0.18em] text-[#111111] transition-colors hover:border-[#111111] hover:bg-[#F2F2F2]"
               >
                 Logout
               </button>
@@ -282,146 +317,76 @@ const Profile: React.FC = () => {
         </div>
       </section>
 
-      <section className="max-w-[1400px] mx-auto px-6 pt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 lg:gap-8">
-          <aside className="space-y-5">
-            <div className="rounded-[26px] bg-white/70 border border-[#1C1C1C]/10 p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-[#006039]/10 flex items-center justify-center">
-                  <User className="w-7 h-7 text-[#006039]" strokeWidth={1.8} />
-                </div>
-
-                <div>
-                  <h2 className="text-[22px] font-semibold leading-tight">
-                    {user?.name || "Muro Customer"}
-                  </h2>
-                  <p className="text-[12px] uppercase tracking-[0.16em] text-[#1C1C1C]/45 mt-1">
-                    Customer Account
-                  </p>
-                </div>
+      <section className="mx-auto max-w-[1500px] px-5 pt-8 md:px-8">
+        <div className="grid grid-cols-1 gap-7 lg:grid-cols-[390px_minmax(0,1fr)] xl:gap-10">
+          <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
+            <div className="overflow-hidden rounded-[24px] border border-[#E6E6E6] bg-white">
+              <div className="bg-[#ECFF66] px-7 py-5">
+                <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#111111]">
+                  Account details
+                </p>
               </div>
 
-              <div className="space-y-4 text-[14px]">
-                <div className="flex items-start gap-3">
-                  <Mail className="w-4 h-4 mt-[2px] text-[#006039]" />
-                  <span className="text-[#1C1C1C]/70 break-all">
-                    {user?.email || "Email not available"}
-                  </span>
+              <div className="p-7">
+                <div className="mb-7 flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#111111] text-white">
+                    <User className="h-7 w-7" strokeWidth={1.8} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h2
+                      className="truncate text-[24px] font-normal leading-none tracking-[-0.04em] text-[#111111]"
+                      style={{ fontFamily: serifFont }}
+                    >
+                      {user?.name || "Muro Customer"}
+                    </h2>
+                    <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8B8B8B]">
+                      Customer account
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <Phone className="w-4 h-4 mt-[2px] text-[#006039]" />
-                  <span className="text-[#1C1C1C]/70">
-                    {user?.phone || user?.mobile || "Phone not available"}
-                  </span>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Clock className="w-4 h-4 mt-[2px] text-[#006039]" />
-                  <span className="text-[#1C1C1C]/70">
-                    Joined: {formatDate(user?.created_at)}
-                  </span>
+                <div className="space-y-4 text-[14px]">
+                  <InfoLine icon={Mail} value={user?.email || "Email not available"} />
+                  <InfoLine icon={Phone} value={user?.phone || user?.mobile || "Phone not available"} />
+                  <InfoLine icon={Clock} value={`Joined: ${formatDate(user?.created_at)}`} />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[26px] bg-[#1C1C1C] text-white p-6">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/45 mb-2">
-                Account Summary
+            <div className="rounded-[24px] bg-[#111111] p-7 text-white">
+              <p className="mb-5 text-[12px] font-bold uppercase tracking-[0.18em] text-[#ECFF66]">
+                Account summary
               </p>
 
               <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <p className="text-[28px] font-semibold">{orders.length}</p>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">
-                    Orders
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[28px] font-semibold">{paidOrders}</p>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">
-                    Paid
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[28px] font-semibold">{pendingOrders}</p>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">
-                    Pending
-                  </p>
-                </div>
+                <SummaryNumber value={orders.length} label="Orders" />
+                <SummaryNumber value={paidOrders} label="Paid" />
+                <SummaryNumber value={pendingOrders} label="Pending" />
               </div>
             </div>
+
+           
           </aside>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-[22px] bg-white/70 border border-[#1C1C1C]/10 p-5">
-                <div className="w-10 h-10 rounded-full bg-[#006039]/10 flex items-center justify-center mb-4">
-                  <ShoppingBag className="w-5 h-5 text-[#006039]" />
-                </div>
-                <p className="text-[13px] text-[#1C1C1C]/55 mb-1">
-                  Total Orders
-                </p>
-                <p className="text-[28px] font-semibold">{orders.length}</p>
-              </div>
-
-              <div className="rounded-[22px] bg-white/70 border border-[#1C1C1C]/10 p-5">
-                <div className="w-10 h-10 rounded-full bg-[#006039]/10 flex items-center justify-center mb-4">
-                  <CreditCard className="w-5 h-5 text-[#006039]" />
-                </div>
-                <p className="text-[13px] text-[#1C1C1C]/55 mb-1">
-                  Payment Success
-                </p>
-                <p className="text-[28px] font-semibold">{paidOrders}</p>
-              </div>
-
-              <div className="rounded-[22px] bg-white/70 border border-[#1C1C1C]/10 p-5">
-                <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mb-4">
-                  <Truck className="w-5 h-5 text-yellow-700" />
-                </div>
-                <p className="text-[13px] text-[#1C1C1C]/55 mb-1">
-                  Latest Status
-                </p>
-                <p className="text-[22px] font-semibold">
-                  {latestOrder?.order_status || "No Order"}
-                </p>
-              </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <DashboardCard icon={ShoppingBag} label="Total Orders" value={String(orders.length)} />
+              <DashboardCard icon={CreditCard} label="Payment Success" value={String(paidOrders)} />
+              <DashboardCard icon={Truck} label="Latest Status" value={latestOrder?.order_status || "No Order"} />
             </div>
 
-            <div className="rounded-[26px] bg-white/70 border border-[#1C1C1C]/10 overflow-hidden">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5 border-b border-[#1C1C1C]/10">
+            <div className="overflow-hidden rounded-[24px] border border-[#E6E6E6] bg-white">
+              <div className="flex flex-col gap-4 border-b border-[#E6E6E6] p-5 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("overview")}
-                    className={`px-5 h-10 rounded-full text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors ${
-                      activeTab === "overview"
-                        ? "bg-[#1C1C1C] text-white"
-                        : "bg-white text-[#1C1C1C] border border-[#1C1C1C]/10"
-                    }`}
-                  >
-                    Overview
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("orders")}
-                    className={`px-5 h-10 rounded-full text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors ${
-                      activeTab === "orders"
-                        ? "bg-[#1C1C1C] text-white"
-                        : "bg-white text-[#1C1C1C] border border-[#1C1C1C]/10"
-                    }`}
-                  >
-                    Orders
-                  </button>
+                  <TabButton label="Overview" active={activeTab === "overview"} onClick={() => setActiveTab("overview")} />
+                  <TabButton label="Orders" active={activeTab === "orders"} onClick={() => setActiveTab("orders")} />
                 </div>
 
                 <button
                   type="button"
                   onClick={fetchProfile}
-                  className="h-10 px-4 bg-white border border-[#1C1C1C]/10 rounded-full text-[11px] font-semibold uppercase tracking-[0.16em] flex items-center gap-2 hover:bg-[#F0EEE9]"
+                  className="inline-flex h-10 w-fit items-center gap-2 rounded-full border border-[#D8D8D8] bg-white px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[#111111] transition-colors hover:border-[#111111] hover:bg-[#F2F2F2]"
                 >
                   <RefreshCw size={14} />
                   Refresh
@@ -429,40 +394,30 @@ const Profile: React.FC = () => {
               </div>
 
               {activeTab === "overview" ? (
-                <div className="p-5 md:p-6">
+                <div className="p-5 md:p-7">
                   {latestOrder ? (
                     <div>
-                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                      <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                         <div>
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-[#1C1C1C]/45 mb-2">
-                            Latest Order
+                          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8B8B8B]">
+                            Latest order
                           </p>
 
-                          <h3 className="text-[28px] font-semibold tracking-[-0.03em]">
+                          <h3
+                            className="text-[28px] font-normal leading-none tracking-[-0.04em] text-[#111111]"
+                            style={{ fontFamily: serifFont }}
+                          >
                             {latestOrder.order_no}
                           </h3>
 
-                          <p className="text-[14px] text-[#1C1C1C]/55 mt-2">
+                          <p className="mt-3 text-[14px] text-[#777777]">
                             Placed on {formatDate(latestOrder.created_at)}
                           </p>
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          <span
-                            className={`px-3 py-2 rounded-full border text-[11px] font-semibold uppercase tracking-[0.14em] ${statusClass(
-                              latestOrder.payment_status
-                            )}`}
-                          >
-                            Payment: {latestOrder.payment_status || "PENDING"}
-                          </span>
-
-                          <span
-                            className={`px-3 py-2 rounded-full border text-[11px] font-semibold uppercase tracking-[0.14em] ${statusClass(
-                              latestOrder.order_status
-                            )}`}
-                          >
-                            Order: {latestOrder.order_status || "PENDING"}
-                          </span>
+                          <StatusPill label={`Payment: ${latestOrder.payment_status || "PENDING"}`} status={latestOrder.payment_status} />
+                          <StatusPill label={`Order: ${latestOrder.order_status || "PENDING"}`} status={latestOrder.order_status} />
                         </div>
                       </div>
 
@@ -471,9 +426,9 @@ const Profile: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openOrderDetail(latestOrder)}
-                        className="mt-6 h-12 px-6 bg-[#1C1C1C] text-white text-[11px] font-semibold uppercase tracking-[0.18em] flex items-center gap-2 hover:bg-[#006039] transition-colors"
+                        className="mt-7 inline-flex h-12 items-center gap-2 rounded-full bg-[#111111] px-6 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#006039]"
                       >
-                        View Bill
+                        View bill
                         <ReceiptText size={15} />
                       </button>
                     </div>
@@ -482,63 +437,57 @@ const Profile: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="p-0">
+                <div>
                   {orders.length === 0 ? (
                     <div className="p-6">
                       <EmptyOrders />
                     </div>
                   ) : (
-                    <div className="divide-y divide-[#1C1C1C]/10">
+                    <div className="divide-y divide-[#E6E6E6]">
                       {orders.map((order) => {
                         const PayIcon = paymentIcon(order.payment_status);
 
                         return (
-                          <div
-                            key={order.id}
-                            className="p-5 md:p-6 hover:bg-white/50 transition-colors"
-                          >
-                            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+                          <div key={order.id} className="p-5 transition-colors hover:bg-[#F8F8F8] md:p-7">
+                            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
                               <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-full bg-[#006039]/10 flex items-center justify-center shrink-0">
-                                  <Package className="w-5 h-5 text-[#006039]" />
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#ECFF66] text-[#111111]">
+                                  <Package className="h-5 w-5" strokeWidth={1.8} />
                                 </div>
 
                                 <div>
-                                  <h3 className="text-[20px] font-semibold tracking-[-0.02em]">
+                                  <h3
+                                    className="text-[22px] font-normal leading-none tracking-[-0.04em] text-[#111111]"
+                                    style={{ fontFamily: serifFont }}
+                                  >
                                     {order.order_no}
                                   </h3>
 
-                                  <p className="text-[13px] text-[#1C1C1C]/50 mt-1">
+                                  <p className="mt-2 text-[13px] text-[#777777]">
                                     Ordered on {formatDate(order.created_at)}
                                   </p>
 
-                                  <div className="mt-3 flex flex-wrap gap-2">
+                                  <div className="mt-4 flex flex-wrap gap-2">
                                     <span
-                                      className={`px-3 py-1.5 rounded-full border text-[10px] font-semibold uppercase tracking-[0.13em] ${statusClass(
+                                      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] ${statusClass(
                                         order.payment_status
                                       )}`}
                                     >
-                                      <PayIcon className="inline w-3 h-3 mr-1" />
+                                      <PayIcon className="mr-1 h-3 w-3" />
                                       {order.payment_status || "PENDING"}
                                     </span>
 
-                                    <span
-                                      className={`px-3 py-1.5 rounded-full border text-[10px] font-semibold uppercase tracking-[0.13em] ${statusClass(
-                                        order.order_status
-                                      )}`}
-                                    >
-                                      {order.order_status || "PENDING"}
-                                    </span>
+                                    <StatusPill label={order.order_status || "PENDING"} status={order.order_status} small />
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+                              <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
                                 <div>
-                                  <p className="text-[11px] uppercase tracking-[0.16em] text-[#1C1C1C]/40">
-                                    Paid Amount
+                                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#8B8B8B]">
+                                    Paid amount
                                   </p>
-                                  <p className="text-[20px] font-semibold">
+                                  <p className="mt-1 text-[22px] font-bold text-[#111111]">
                                     {formatPrice(order.total_amount)}
                                   </p>
                                 </div>
@@ -546,15 +495,15 @@ const Profile: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => openOrderDetail(order)}
-                                  className="h-11 px-5 bg-[#1C1C1C] text-white text-[11px] font-semibold uppercase tracking-[0.16em] flex items-center justify-center gap-2 hover:bg-[#006039] transition-colors"
+                                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-[11px] font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#006039]"
                                 >
                                   <Eye size={15} />
-                                  View Bill
+                                  View bill
                                 </button>
                               </div>
                             </div>
 
-                            <div className="mt-5">
+                            <div className="mt-6">
                               <TrackingTimeline order={order} compact />
                             </div>
                           </div>
@@ -583,20 +532,118 @@ const Profile: React.FC = () => {
   );
 };
 
+const InfoLine = ({
+  icon: Icon,
+  value,
+}: {
+  icon: React.ElementType;
+  value: string;
+}) => (
+  <div className="flex items-start gap-3">
+    <span className="mt-[1px] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F2F2F2] text-[#111111]">
+      <Icon className="h-4 w-4" strokeWidth={1.8} />
+    </span>
+    <span className="break-all pt-[5px] text-[#555555]">{value}</span>
+  </div>
+);
+
+const SummaryNumber = ({ value, label }: { value: number; label: string }) => (
+  <div>
+    <p
+      className="text-[30px] font-normal leading-none tracking-[-0.04em]"
+      style={{ fontFamily: serifFont }}
+    >
+      {value}
+    </p>
+    <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/50">
+      {label}
+    </p>
+  </div>
+);
+
+const DashboardCard = ({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+}) => (
+  <div className="rounded-[24px] border border-[#E6E6E6] bg-white p-6">
+    <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-full bg-[#ECFF66] text-[#111111]">
+      <Icon className="h-5 w-5" strokeWidth={1.8} />
+    </div>
+    <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[#8B8B8B]">
+      {label}
+    </p>
+    <p
+      className="line-clamp-1 text-[26px] font-normal leading-none tracking-[-0.04em] text-[#111111]"
+      style={{ fontFamily: serifFont }}
+    >
+      {value}
+    </p>
+  </div>
+);
+
+const TabButton = ({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`h-10 rounded-full px-5 text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
+      active
+        ? "bg-[#111111] text-white"
+        : "border border-[#D8D8D8] bg-white text-[#111111] hover:bg-[#F2F2F2]"
+    }`}
+  >
+    {label}
+  </button>
+);
+
+const StatusPill = ({
+  label,
+  status,
+  small = false,
+}: {
+  label: string;
+  status?: string;
+  small?: boolean;
+}) => (
+  <span
+    className={`rounded-full border font-bold uppercase tracking-[0.14em] ${statusClass(status)} ${
+      small ? "px-3 py-1.5 text-[10px]" : "px-4 py-2 text-[11px]"
+    }`}
+  >
+    {label}
+  </span>
+);
+
 const EmptyOrders = () => {
   return (
-    <div className="min-h-[260px] flex flex-col items-center justify-center text-center">
-      <ShoppingBag className="w-14 h-14 text-[#1C1C1C]/15 mb-5" />
-      <h3 className="text-[24px] font-semibold mb-2">No orders found</h3>
-      <p className="text-[14px] text-[#1C1C1C]/55 mb-6 max-w-md">
-        You have not placed any order yet. Start shopping and your orders will
-        appear here.
+    <div className="flex min-h-[310px] flex-col items-center justify-center rounded-[22px] bg-[#F2F2F2] px-6 text-center">
+      <ShoppingBag className="mb-5 h-14 w-14 text-[#CFCFCF]" strokeWidth={1.15} />
+      <h3
+        className="text-[26px] font-normal tracking-[-0.04em] text-[#111111]"
+        style={{ fontFamily: serifFont }}
+      >
+        No orders found
+      </h3>
+      <p className="mt-3 mb-7 max-w-md text-[14px] leading-relaxed text-[#777777]">
+        You have not placed any order yet. Start shopping and your orders will appear here.
       </p>
       <Link
         to="/products"
-        className="h-12 px-6 bg-[#1C1C1C] text-white text-[11px] font-semibold uppercase tracking-[0.18em] flex items-center justify-center gap-2 hover:bg-[#006039]"
+        className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#111111] px-7 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#006039]"
       >
-        Shop Posters
+        Shop posters
         <ArrowRight size={15} />
       </Link>
     </div>
@@ -621,17 +668,17 @@ const TrackingTimeline = ({
           return (
             <div key={step} className="relative">
               <div
-                className={`h-1.5 rounded-full mb-3 ${
-                  active ? "bg-[#006039]" : "bg-[#1C1C1C]/10"
+                className={`mb-3 h-1.5 rounded-full ${
+                  active ? "bg-[#ECFF66]" : "bg-[#E6E6E6]"
                 }`}
               />
 
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
                     active
-                      ? "bg-[#006039] text-white"
-                      : "bg-white text-[#1C1C1C]/35 border border-[#1C1C1C]/10"
+                      ? "bg-[#111111] text-[#ECFF66]"
+                      : "border border-[#E6E6E6] bg-white text-[#B0B0B0]"
                   }`}
                 >
                   {active ? <CheckCircle2 size={14} /> : <Clock size={13} />}
@@ -639,8 +686,8 @@ const TrackingTimeline = ({
 
                 {!compact && (
                   <span
-                    className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${
-                      active ? "text-[#006039]" : "text-[#1C1C1C]/35"
+                    className={`text-[11px] font-bold uppercase tracking-[0.12em] ${
+                      active ? "text-[#111111]" : "text-[#B0B0B0]"
                     }`}
                   >
                     {step}
@@ -650,8 +697,8 @@ const TrackingTimeline = ({
 
               {compact && (
                 <p
-                  className={`mt-2 text-[10px] font-semibold uppercase tracking-[0.1em] ${
-                    active ? "text-[#006039]" : "text-[#1C1C1C]/35"
+                  className={`mt-2 text-[10px] font-bold uppercase tracking-[0.1em] ${
+                    active ? "text-[#111111]" : "text-[#B0B0B0]"
                   }`}
                 >
                   {step}
@@ -702,23 +749,26 @@ const OrderBillModal = ({
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 18, scale: 0.98 }}
-        className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[28px] bg-[#F0EEE9] shadow-2xl border border-white/30"
+        className="relative max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/30 bg-white shadow-2xl"
       >
-        <div className="flex items-center justify-between p-5 md:p-6 border-b border-[#1C1C1C]/10 bg-white/70">
+        <div className="flex items-center justify-between border-b border-[#E6E6E6] bg-[#ECFF66] p-5 md:p-6">
           <div>
-            <h2 className="text-[24px] md:text-[30px] font-semibold tracking-[-0.03em]">
-              Order Bill
-            </h2>
-            <p className="text-[13px] text-[#1C1C1C]/50 mt-1">
-              {order.order_no}
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#111111]/70">
+              Order bill
             </p>
+            <h2
+              className="text-[26px] font-normal leading-none tracking-[-0.04em] text-[#111111] md:text-[32px]"
+              style={{ fontFamily: serifFont }}
+            >
+              {order.order_no}
+            </h2>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onPrint}
-              className="h-10 px-4 bg-[#1C1C1C] text-white text-[11px] font-semibold uppercase tracking-[0.14em] flex items-center gap-2 hover:bg-[#006039]"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-[#111111] px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-[#006039]"
             >
               <Download size={14} />
               Print
@@ -727,83 +777,81 @@ const OrderBillModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-10 h-10 rounded-full bg-white border border-[#1C1C1C]/10 flex items-center justify-center hover:bg-[#F0EEE9]"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#111111] transition-colors hover:bg-[#F2F2F2]"
+              aria-label="Close bill"
             >
               <X size={19} />
             </button>
           </div>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-90px)] p-5 md:p-6">
+        <div className="max-h-[calc(90vh-110px)] overflow-y-auto bg-white p-5 md:p-6">
           {loading ? (
-            <div className="h-[300px] flex items-center justify-center">
-              <div className="w-7 h-7 border-2 border-[#1C1C1C] border-t-transparent rounded-full animate-spin" />
+            <div className="flex h-[300px] items-center justify-center">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#111111] border-t-transparent" />
             </div>
           ) : (
-            <div className="bg-white rounded-[22px] border border-[#1C1C1C]/10 p-5 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#1C1C1C]/40 mb-2">
+            <div className="rounded-[22px] border border-[#E6E6E6] bg-white p-5 md:p-6">
+              <div className="mb-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="rounded-[18px] bg-[#F2F2F2] p-5">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#777777]">
                     Customer
                   </p>
-                  <h3 className="text-[20px] font-semibold">
+                  <h3
+                    className="text-[24px] font-normal leading-none tracking-[-0.04em] text-[#111111]"
+                    style={{ fontFamily: serifFont }}
+                  >
                     {order.shipping_name || "-"}
                   </h3>
-                  <p className="text-[14px] text-[#1C1C1C]/60 mt-2">
+                  <p className="mt-3 text-[14px] text-[#555555]">
                     {order.shipping_email || "-"}
                   </p>
-                  <p className="text-[14px] text-[#1C1C1C]/60">
+                  <p className="text-[14px] text-[#555555]">
                     {order.shipping_phone || "-"}
                   </p>
                 </div>
 
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#1C1C1C]/40 mb-2">
-                    Shipping Address
+                <div className="rounded-[18px] bg-[#F2F2F2] p-5">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#777777]">
+                    Shipping address
                   </p>
-                  <div className="flex gap-2 text-[14px] text-[#1C1C1C]/65 leading-relaxed">
-                    <MapPin className="w-4 h-4 mt-1 text-[#006039] shrink-0" />
+                  <div className="flex gap-2 text-[14px] leading-relaxed text-[#555555]">
+                    <MapPin className="mt-1 h-4 w-4 shrink-0 text-[#111111]" />
                     <span>{address || "-"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-4">
                 <InfoBox label="Payment" value={order.payment_status || "-"} />
                 <InfoBox label="Order" value={order.order_status || "-"} />
                 <InfoBox label="Paid On" value={formatDate(order.paid_at)} />
-                <InfoBox
-                  label="Payment ID"
-                  value={order.razorpay_payment_id || "-"}
-                />
+                <InfoBox label="Payment ID" value={order.razorpay_payment_id || "-"} />
               </div>
 
-              <div className="overflow-x-auto border border-[#1C1C1C]/10 rounded-[18px]">
-                <table className="w-full text-left min-w-[720px]">
-                  <thead className="bg-[#F0EEE9]">
+              <div className="overflow-x-auto rounded-[18px] border border-[#E6E6E6]">
+                <table className="w-full min-w-[720px] text-left">
+                  <thead className="bg-[#F2F2F2]">
                     <tr>
-                      <th className="px-4 py-3 text-[11px] uppercase tracking-[0.16em]">
+                      <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.16em]">
                         Product
                       </th>
-                      <th className="px-4 py-3 text-[11px] uppercase tracking-[0.16em] text-center">
+                      <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-[0.16em]">
                         Qty
                       </th>
-                      <th className="px-4 py-3 text-[11px] uppercase tracking-[0.16em] text-right">
+                      <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-[0.16em]">
                         Price
                       </th>
-                      <th className="px-4 py-3 text-[11px] uppercase tracking-[0.16em] text-right">
+                      <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-[0.16em]">
                         Total
                       </th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-[#1C1C1C]/10">
+                  <tbody className="divide-y divide-[#E6E6E6]">
                     {items.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={4}
-                          className="px-4 py-8 text-center text-[#1C1C1C]/45"
-                        >
+                        <td colSpan={4} className="px-4 py-8 text-center text-[#777777]">
                           No bill items found
                         </td>
                       </tr>
@@ -812,25 +860,23 @@ const OrderBillModal = ({
                         <tr key={item.id || index}>
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-14 h-16 bg-[#F0EEE9] rounded-lg overflow-hidden shrink-0">
+                              <div className="flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[#F2F2F2] p-2">
                                 <img
                                   src={getFullImageUrl(item.image_url)}
                                   alt={item.title || "Product"}
-                                  className="w-full h-full object-contain"
+                                  className="h-full w-full object-contain"
                                 />
                               </div>
-                              <span className="font-medium">
+                              <span className="font-semibold text-[#111111]">
                                 {item.title || "Product"}
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-center">
-                            {item.qty || 1}
-                          </td>
+                          <td className="px-4 py-4 text-center">{item.qty || 1}</td>
                           <td className="px-4 py-4 text-right">
                             {formatPrice(item.price)}
                           </td>
-                          <td className="px-4 py-4 text-right font-semibold">
+                          <td className="px-4 py-4 text-right font-bold">
                             {formatPrice(item.line_total)}
                           </td>
                         </tr>
@@ -841,16 +887,16 @@ const OrderBillModal = ({
               </div>
 
               <div className="mt-6 flex justify-end">
-                <div className="w-full max-w-sm space-y-3">
+                <div className="w-full max-w-sm space-y-3 rounded-[18px] bg-[#F2F2F2] p-5">
                   <div className="flex justify-between text-[14px]">
-                    <span className="text-[#1C1C1C]/55">Actual Cart Total</span>
-                    <span className="font-semibold">
+                    <span className="text-[#777777]">Actual Cart Total</span>
+                    <span className="font-bold text-[#111111]">
                       {formatPrice(order.subtotal)}
                     </span>
                   </div>
 
-                  <div className="flex justify-between text-[18px] border-t border-[#1C1C1C]/10 pt-3">
-                    <span className="font-semibold">Paid Amount</span>
+                  <div className="flex justify-between border-t border-[#E0E0E0] pt-3 text-[20px]">
+                    <span className="font-bold text-[#111111]">Paid Amount</span>
                     <span className="font-bold text-[#006039]">
                       {formatPrice(order.total_amount)}
                     </span>
@@ -867,11 +913,11 @@ const OrderBillModal = ({
 
 const InfoBox = ({ label, value }: { label: string; value: string }) => {
   return (
-    <div className="rounded-[16px] bg-[#F0EEE9] border border-[#1C1C1C]/10 p-4">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-[#1C1C1C]/40 mb-2">
+    <div className="rounded-[16px] border border-[#E6E6E6] bg-white p-4">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#777777]">
         {label}
       </p>
-      <p className="text-[14px] font-semibold break-all">{value}</p>
+      <p className="break-all text-[14px] font-bold text-[#111111]">{value}</p>
     </div>
   );
 };

@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { Heart, SlidersHorizontal } from "lucide-react";
 import { API } from "@/services/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
+const SITE_ORIGIN = "https://muroposter.com";
 
 type ActiveOffer = { label: string; discount_percent: number };
+
+const serifFont = "Georgia, 'Times New Roman', serif";
 
 const getFullImageUrl = (path?: string) => {
   if (!path) return "https://via.placeholder.com/300x400?text=No+Image";
@@ -15,15 +18,19 @@ const getFullImageUrl = (path?: string) => {
 
   const cleanPath = path.startsWith("/") ? path.substring(1) : path;
 
+  if (cleanPath.startsWith("images/") || cleanPath.startsWith("assets/")) {
+    return `/${cleanPath}`;
+  }
+
   if (cleanPath.includes("api/public/uploads")) {
-    return `https://muroposter.com/${cleanPath}`;
+    return `${SITE_ORIGIN}/${cleanPath}`;
   }
 
   if (cleanPath.includes("uploads/product")) {
-    return `https://muroposter.com/${cleanPath}`;
+    return `${SITE_ORIGIN}/${cleanPath}`;
   }
 
-  return `https://muroposter.com/uploads/product/${cleanPath}`;
+  return `${SITE_ORIGIN}/uploads/product/${cleanPath}`;
 };
 
 const safeNumber = (value?: string | number) => {
@@ -35,6 +42,24 @@ const safeNumber = (value?: string | number) => {
   return Number.isFinite(num) && num > 0 ? num : 0;
 };
 
+const formatPrice = (value?: string | number) => {
+  const numericValue = safeNumber(value) || 500;
+  return `₹${numericValue.toLocaleString("en-IN")}`;
+};
+
+const toTitleCase = (value?: string) => {
+  const text = String(value || "").trim();
+
+  if (!text) return "";
+
+  return text
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const getUploadedProductImage = (product: any) => {
   const imageRows = Array.isArray(product?.product_images)
     ? product.product_images
@@ -44,12 +69,8 @@ const getUploadedProductImage = (product: any) => {
 
   const firstUploaded = imageRows
     .slice()
-    .sort(
-      (a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)
-    )
-    .find((img: any) =>
-      Boolean(img.image_url || img.url || img.file_url || img.path)
-    );
+    .sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+    .find((img: any) => Boolean(img.image_url || img.url || img.file_url || img.path));
 
   return (
     firstUploaded?.image_url ||
@@ -71,20 +92,13 @@ const getLowestProductPrice = (product: any) => {
     ? product.sizes
     : [];
 
-  const prices = sizeRows
-    .map((size: any) => safeNumber(size.price))
-    .filter((price: number) => price > 0);
+  const prices = sizeRows.map((size: any) => safeNumber(size.price)).filter((price: number) => price > 0);
 
   if (prices.length > 0) {
     return Math.min(...prices);
   }
 
   return safeNumber(product?.price || product?.base_price) || 500;
-};
-
-const getProductPrice = (price?: string | number) => {
-  const numericValue = safeNumber(price) || 500;
-  return `₹${numericValue.toLocaleString("en-IN")}`;
 };
 
 const getOfferPrice = (price: number, offer?: ActiveOffer | null) => {
@@ -117,6 +131,66 @@ const getProductId = (product: any) => {
   return product?.id || product?.product_id || product?.productId;
 };
 
+const ProductCard = ({ product, activeOffer, index }: { product: any; activeOffer: ActiveOffer | null; index: number }) => {
+  const productImage = getUploadedProductImage(product);
+  const productId = getProductId(product);
+  const productPrice = getLowestProductPrice(product);
+  const currentOffer = (product.active_offer || activeOffer) as ActiveOffer | null;
+  const offerPrice = getOfferPrice(productPrice, currentOffer);
+  const title = product.title || product.name || "Product";
+  const brand = product.category || product.subcategory || "Muro Poster";
+
+  if (!productImage || !productId) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.025, 0.25) }}
+    >
+      <Link to={`/product/${productId}`} state={{ productData: product }} className="group block w-full">
+        <article className="w-full">
+          <div className="relative flex aspect-[0.78] w-full items-center justify-center overflow-hidden rounded-[13px] bg-[#F3F3F1] px-8 py-9 md:px-10 md:py-11">
+            <button
+              type="button"
+              aria-label="Add to wishlist"
+              onClick={(event) => event.preventDefault()}
+              className="absolute right-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-[#111]/70 transition-colors hover:bg-white hover:text-[#006039]"
+            >
+              <Heart className="h-5 w-5" strokeWidth={1.45} />
+            </button>
+
+            <img
+              src={getFullImageUrl(productImage)}
+              alt={title}
+              className="max-h-full max-w-full object-contain drop-shadow-[0_14px_16px_rgba(0,0,0,0.10)] transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="mt-4 grid grid-cols-[1fr_auto] items-start gap-4 px-1">
+            <div className="min-w-0">
+              <p className="truncate text-[13px] leading-none text-[#A19D96]">{brand}</p>
+              <h3 className="mt-2 min-h-[38px] text-[14px] font-medium leading-snug text-[#101010] md:text-[15px]">{title}</h3>
+            </div>
+
+            <div className="text-right">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="text-[13px] font-semibold text-[#101010] md:text-[14px]">{formatPrice(offerPrice.finalPrice)}</span>
+                {offerPrice.hasOffer && <span className="text-[12px] text-[#A19D96] line-through">{formatPrice(offerPrice.originalPrice)}</span>}
+              </div>
+
+              {currentOffer && offerPrice.hasOffer && (
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#006039]">{currentOffer.label}</p>
+              )}
+            </div>
+          </div>
+        </article>
+      </Link>
+    </motion.div>
+  );
+};
+
 const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlCategory = searchParams.get("cat")?.toUpperCase() || "ALL";
@@ -129,17 +203,13 @@ const Products: React.FC = () => {
   const [activeOffer, setActiveOffer] = useState<ActiveOffer | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState<string>(urlCategory);
-  const [selectedSubCategory, setSelectedSubCategory] =
-    useState<string>(urlSubcategory);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>(urlSubcategory);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 40;
 
   useEffect(() => {
-    if (
-      urlCategory !== selectedCategory ||
-      urlSubcategory !== selectedSubCategory
-    ) {
+    if (urlCategory !== selectedCategory || urlSubcategory !== selectedSubCategory) {
       setSelectedCategory(urlCategory);
       setSelectedSubCategory(urlSubcategory);
       setCurrentPage(1);
@@ -158,18 +228,9 @@ const Products: React.FC = () => {
           fetchActiveOffer(),
         ]);
 
-        setProducts(
-          Array.isArray(prodRes)
-            ? prodRes
-            : prodRes?.data?.items || prodRes?.data || []
-        );
-
+        setProducts(Array.isArray(prodRes) ? prodRes : prodRes?.data?.items || prodRes?.data || []);
         setCategories(Array.isArray(catRes) ? catRes : catRes?.data || []);
-
-        setSubcategories(
-          Array.isArray(subcatRes) ? subcatRes : subcatRes?.data || []
-        );
-
+        setSubcategories(Array.isArray(subcatRes) ? subcatRes : subcatRes?.data || []);
         setActiveOffer(offerRes);
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -224,35 +285,26 @@ const Products: React.FC = () => {
     });
   }, [categories]);
 
-  const currentCatObj = uniqueCategories.find(
-    (cat) => cat.name?.toUpperCase() === selectedCategory
-  );
+  const currentCatObj = uniqueCategories.find((cat) => cat.name?.toUpperCase() === selectedCategory);
 
-  const availableSubcats = currentCatObj
-    ? subcategories
-        .filter(
-          (sub) =>
-            String(sub.category_id) ===
-            String(currentCatObj.id || currentCatObj.category_id)
-        )
-        .filter((sub, index, arr) => {
-          const name = String(sub.name || "").trim().toUpperCase();
+  const availableSubcats = useMemo(() => {
+    if (!currentCatObj) return [];
 
-          if (!name || name === selectedCategory) return false;
+    return subcategories
+      .filter((sub) => String(sub.category_id) === String(currentCatObj.id || currentCatObj.category_id))
+      .filter((sub, index, arr) => {
+        const name = String(sub.name || "").trim().toUpperCase();
 
-          return arr.findIndex((item) => String(item.name || "").trim().toUpperCase() === name) === index;
-        })
-    : [];
+        if (!name || name === selectedCategory) return false;
+
+        return arr.findIndex((item) => String(item.name || "").trim().toUpperCase() === name) === index;
+      });
+  }, [currentCatObj, selectedCategory, subcategories]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const matchCat =
-        selectedCategory === "ALL" ||
-        product.category?.toUpperCase() === selectedCategory;
-
-      const matchSubCat =
-        selectedSubCategory === "ALL" ||
-        product.subcategory?.toUpperCase() === selectedSubCategory;
+      const matchCat = selectedCategory === "ALL" || product.category?.toUpperCase() === selectedCategory;
+      const matchSubCat = selectedSubCategory === "ALL" || product.subcategory?.toUpperCase() === selectedSubCategory;
 
       return matchCat && matchSubCat && Boolean(getUploadedProductImage(product));
     });
@@ -262,8 +314,21 @@ const Products: React.FC = () => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
   const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+
+  const pageHeading =
+    selectedSubCategory !== "ALL"
+      ? toTitleCase(selectedSubCategory)
+      : selectedCategory === "ALL"
+      ? "Posters"
+      : toTitleCase(selectedCategory);
+
+  const pageDescription =
+    selectedSubCategory !== "ALL"
+      ? `Explore ${toTitleCase(selectedSubCategory)} posters from MURO Poster. Browse premium wall art prints with clean styling, dynamic size pricing and curated visual themes.`
+      : selectedCategory === "ALL"
+      ? "Discover a wide range of posters online, featuring popular motifs such as motivational quotes, mindset art, typography, lifestyle prints and more. Explore styles for every room and mood at MURO Poster."
+      : `Discover curated ${toTitleCase(selectedCategory)} posters for modern spaces. Choose from premium wall art prints designed for homes, offices, studios and creative rooms.`;
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -289,169 +354,58 @@ const Products: React.FC = () => {
     return pages;
   };
 
-  const navBase =
-    "font-montserrat text-[15px] font-medium uppercase tracking-[0.08em] whitespace-nowrap pb-1.5";
-
   return (
-    <main className="bg-[#F0EEE9] min-h-screen font-sans text-[#111111]">
-      <div className="pt-16 pb-8 text-center px-4">
-        <motion.h1
-          key={`${selectedCategory}-${selectedSubCategory}`}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="font-montserrat font-light tracking-[1px] text-3xl md:text-4xl text-[#111] mb-8 uppercase"
-        >
-          {selectedSubCategory !== "ALL"
-            ? selectedSubCategory.toLowerCase()
-            : selectedCategory === "ALL"
-            ? "Posters & Art Prints"
-            : selectedCategory.toLowerCase()}
-        </motion.h1>
+    <main className="min-h-screen bg-white text-[#101010] selection:bg-[#101010] selection:text-white">
+      <section className="mx-auto max-w-[1320px] px-5 pb-8 pt-12 md:px-7 md:pb-10 md:pt-16 lg:px-8">
+        <div className="grid gap-8 md:grid-cols-[0.9fr_1.1fr] md:items-start">
+          <motion.h1
+            key={`${selectedCategory}-${selectedSubCategory}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="text-[34px] leading-none tracking-[-0.04em] text-[#101010] md:text-[42px] lg:text-[48px]"
+            style={{ fontFamily: serifFont }}
+          >
+            {pageHeading}
+          </motion.h1>
 
-        <div className="container mx-auto max-w-[1600px]">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pb-2 px-2 sm:px-4">
-            <button
-              onClick={() => handleCategoryClick("ALL")}
-              className={`${navBase} px-4 py-2 sm:px-5 sm:py-2.5 text-[9px] sm:text-[12px] font-semibold tracking-[0.15em] transition-all duration-300 rounded-full ${
-                selectedCategory === "ALL"
-                  ? "bg-[#111] text-[#F0EEE9] shadow-md"
-                  : "bg-white/50 text-black border border-black hover:bg-white"
-              }`}
-            >
-              ALL
-            </button>
-
-            {uniqueCategories.map((cat) => (
-              <button
-                key={cat.id || cat.category_id}
-                onClick={() => handleCategoryClick(cat.name.toUpperCase())}
-                className={`${navBase} px-4 py-2 sm:px-5 sm:py-2.5 text-[12px] sm:text-[10px] font-semibold tracking-[0.15em] transition-all duration-300 rounded-full ${
-                  selectedCategory === cat.name.toUpperCase()
-                    ? "bg-[#111] text-[#F0EEE9] shadow-md"
-                    : "bg-white/50 text-black border border-black hover:bg-white"
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-
-          {availableSubcats.length > 0 && selectedCategory !== "ALL" && (
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-4 animate-in fade-in slide-in-from-top-2">
-              <button
-                onClick={() => handleSubCategoryClick("ALL")}
-                className={`${navBase} px-4 py-1.5 text-[12px] font-bold tracking-widest border transition-all rounded-full ${
-                  selectedSubCategory === "ALL"
-                    ? "border-black bg-black text-[#F0EEE9]"
-                    : "bg-white/50 text-black border-black hover:bg-white"
-                }`}
-              >
-                ALL
-              </button>
-
-              {availableSubcats.map((sub) => (
-                <button
-                  key={sub.id || sub.subcategory_id}
-                  onClick={() =>
-                    handleSubCategoryClick(sub.name.toUpperCase())
-                  }
-                  className={`px-4 py-1.5 text-[12px] font-bold uppercase tracking-widest border transition-all rounded-full ${
-                    selectedSubCategory === sub.name.toUpperCase()
-                      ? "border-black bg-black text-[#F0EEE9]"
-                      : "bg-white/50 text-black border-black hover:bg-white"
-                  }`}
-                >
-                  {sub.name}
-                </button>
-              ))}
-            </div>
-          )}
+          <p className="max-w-[670px] text-[14px] font-medium leading-relaxed text-[#101010] md:text-[15px]">{pageDescription}</p>
         </div>
-      </div>
 
-      <div className="border-t border-b border-[#E0DED9] py-4 mb-6 sticky top-0 bg-[#F0EEE9] z-40">
-        <div className="container mx-auto px-4 md:px-8 max-w-[1600px] flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#111]/55">
-            <ChevronDown size={14} />
-            <span>{totalItems} Products</span>
-          </div>
+      
 
-          <div className="text-[11px] uppercase tracking-[0.18em] text-[#111]/55">
-            Dynamic master size pricing
-          </div>
+      
+      </section>
+
+      <section className="mx-auto max-w-[1320px] px-5 pb-16 md:px-7 lg:px-8">
+        <div className="mb-6 flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-[#A19D96]">
+          <span>{totalItems} Products</span>
+          <span className="hidden sm:inline">Dynamic master size pricing</span>
         </div>
-      </div>
 
-      <section className="container mx-auto px-4 md:px-8 max-w-[1600px] pb-16">
         {loading ? (
-          <div className="min-h-[40vh] flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-[#111] border-t-transparent rounded-full animate-spin" />
+          <div className="flex min-h-[45vh] items-center justify-center">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#101010] border-t-transparent" />
           </div>
         ) : currentItems.length === 0 ? (
-          <div className="min-h-[40vh] flex items-center justify-center text-center">
-            <p className="text-sm uppercase tracking-widest text-[#111]/45">
-              No products found
-            </p>
+          <div className="flex min-h-[45vh] items-center justify-center rounded-[14px] bg-[#F3F3F1] px-6 text-center">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#77736B]">No products found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-start">
-            {currentItems.map((product, index) => {
-              const productImage = getUploadedProductImage(product);
-              const productId = getProductId(product);
-              const productPrice = getLowestProductPrice(product);
-              const offerPrice = getOfferPrice(productPrice, product.active_offer || activeOffer);
-
-              if (!productImage || !productId) return null;
-
-              return (
-                <Link
-                  key={productId || index}
-                  to={`/product/${productId}`}
-                  state={{ productData: product }}
-                  className="group block"
-                >
-                  <article>
-                    <img
-                      src={getFullImageUrl(productImage)}
-                      alt={product.title || product.name || "Product"}
-                      className="block w-full h-auto rounded-[14px] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.01]"
-                    />
-
-                    <div className="mt-4">
-                      <h3 className="text-[14px] md:text-[15px] font-medium text-[#1C1C1C] leading-snug min-h-[42px]">
-                        {product.title || product.name || "Product"}
-                      </h3>
-
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {offerPrice.hasOffer && (
-                          <span className="text-[12px] text-[#1C1C1C]/35 line-through">
-                            {getProductPrice(offerPrice.originalPrice)}
-                          </span>
-                        )}
-                        <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
-                          {getProductPrice(offerPrice.finalPrice)}
-                        </span>
-                        {(product.active_offer || activeOffer) && offerPrice.hasOffer && (
-                          <span className="text-[10px] font-bold text-[#006039] uppercase tracking-[0.12em]">
-                            {(product.active_offer || activeOffer)?.label}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-9 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4">
+            {currentItems.map((product, index) => (
+              <ProductCard key={String(getProductId(product) || index)} product={product} activeOffer={activeOffer} index={index} />
+            ))}
           </div>
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-12">
+          <div className="mt-14 flex items-center justify-center gap-2">
             <button
               type="button"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
-              className="px-4 py-2 border border-black text-[11px] uppercase tracking-widest disabled:opacity-40"
+              className="rounded-full border border-[#101010] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#101010] transition-colors hover:bg-[#101010] hover:text-white disabled:pointer-events-none disabled:opacity-35"
             >
               Prev
             </button>
@@ -461,10 +415,8 @@ const Products: React.FC = () => {
                 key={page}
                 type="button"
                 onClick={() => handlePageChange(page)}
-                className={`w-9 h-9 border text-[12px] font-semibold ${
-                  currentPage === page
-                    ? "bg-black text-white border-black"
-                    : "border-black text-black"
+                className={`h-9 w-9 rounded-full border text-[12px] font-semibold transition-colors ${
+                  currentPage === page ? "border-[#101010] bg-[#101010] text-white" : "border-[#101010] text-[#101010] hover:bg-[#101010] hover:text-white"
                 }`}
               >
                 {page}
@@ -475,7 +427,7 @@ const Products: React.FC = () => {
               type="button"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
-              className="px-4 py-2 border border-black text-[11px] uppercase tracking-widest disabled:opacity-40"
+              className="rounded-full border border-[#101010] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#101010] transition-colors hover:bg-[#101010] hover:text-white disabled:pointer-events-none disabled:opacity-35"
             >
               Next
             </button>

@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, Variants, AnimatePresence } from "framer-motion";
-import { Award, Heart, Package, Star } from "lucide-react";
+import { AnimatePresence, motion, Variants } from "framer-motion";
+import { Award, Heart, Package, Star, X } from "lucide-react";
 
-import FAQSection from "../components/FAQSection";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
@@ -107,9 +106,34 @@ type HomeContent = {
 };
 
 const COLORS = {
-  cloud: "#F0EEE9",
-  blackboard: "#1C1C1C",
+  page: "#FFFFFF",
+  paper: "#F4F4F2",
+  ink: "#101010",
+  muted: "#9A9A94",
+  line: "#E7E4DC",
+  accent: "#ECFF66",
   green: "#006039",
+};
+
+const serifFont = '"Coolvetica", "Coolvetica Regular", Arial, sans-serif';
+
+const pageContainerClass =
+  "mx-auto w-full max-w-[1400px] px-6 sm:px-8 md:px-10 lg:px-12 xl:px-14 2xl:px-16";
+
+const sectionSpacingClass = "w-full bg-white py-8 md:py-10";
+
+const headingStyle: React.CSSProperties = {
+  fontFamily: serifFont,
+  letterSpacing: "2px",
+};
+
+const NEWSLETTER_SUBMITTED_KEY = "muro_newsletter_popup_submitted";
+const NEWSLETTER_CLOSED_KEY = "muro_newsletter_popup_closed";
+
+type NewsletterPopupPayload = {
+  firstName: string;
+  lastName: string;
+  email: string;
 };
 
 const getFullImageUrl = (path?: string) => {
@@ -306,11 +330,11 @@ const getHomeProductLink = (item: HomeProduct, fallback: string) => {
 const smoothEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
 const fadeInUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 24 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.8, ease: smoothEase },
+    transition: { duration: 0.65, ease: smoothEase },
   },
 };
 
@@ -318,7 +342,7 @@ const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.07, delayChildren: 0.08 },
   },
 };
 
@@ -346,39 +370,6 @@ const defaultHeroSlides: HomeHeroSlide[] = [
   },
 ];
 
-const moods = [
-  {
-    label: "Motivational & Mindset",
-    cat: "Aesthetic & Vibe",
-    img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop",
-  },
-  {
-    label: "Aesthetic & Vibe",
-    cat: "Calm & Inner Balance",
-    img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop",
-  },
-  {
-    label: "Love & Connection",
-    cat: "Motivational & Mindset",
-    img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop",
-  },
-  {
-    label: "Kids – Learning & Confidence",
-    cat: "Aesthetic & Vibe",
-    img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop",
-  },
-  {
-    label: "Calm & Inner Balance",
-    cat: "Motivational & Mindset",
-    img: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&auto=format&fit=crop",
-  },
-  {
-    label: "Fandom & Passion",
-    cat: "Kitchen & Dining",
-    img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop",
-  },
-];
-
 const defaultCategoryTiles: HomeCategoryTile[] = [
   {
     title: "New Arrivals",
@@ -400,6 +391,23 @@ const defaultCategoryTiles: HomeCategoryTile[] = [
     button_text: "Explore",
     button_link: "/postcards",
     image_url: "images/postcards.webp",
+  },
+];
+
+const collectionHighlightTiles: HomeCategoryTile[] = [
+  {
+    title: "Muro Poster Collection",
+    subtitle: "A curated wall-art story for modern rooms.",
+    button_text: "Discover",
+    button_link: "/products",
+    image_url: "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=1400&auto=format&fit=crop",
+  },
+  {
+    title: "Bestsellers",
+    subtitle: "Our most-loved art prints",
+    button_text: "Explore",
+    button_link: "/products",
+    image_url: "https://images.unsplash.com/photo-1600210491369-e753d80a41f3?w=1400&auto=format&fit=crop",
   },
 ];
 
@@ -671,144 +679,664 @@ const resolveFeaturedHomeItems = async ({
   return cleanPool.slice(0, fallbackLimit);
 };
 
-const HomeProductSlider = ({
+const SectionHeading = ({
   title,
-  items,
-  linkTo,
+  subtitle,
+  center = false,
 }: {
-  title: string;
-  items: HomeProduct[];
-  linkTo: string;
+  title?: string;
+  subtitle?: string;
+  linkTo?: string;
+  linkLabel?: string;
+  center?: boolean;
 }) => {
-  const trackRef = React.useRef<HTMLDivElement | null>(null);
-  const visibleItems = uniqueHomeItems(items).slice(0, 12);
-
-  if (!visibleItems.length) return null;
-
-  const scroll = (direction: "left" | "right") => {
-    const track = trackRef.current;
-    if (!track) return;
-
-    const distance = Math.max(track.clientWidth * 0.78, 280);
-    track.scrollBy({ left: direction === "left" ? -distance : distance, behavior: "smooth" });
-  };
-
   return (
-    <section className="w-full py-9 md:py-10 bg-[#F0EEE9]">
-      <div className="max-w-[1400px] mx-auto px-6">
-        <div className="mb-7 md:mb-8 flex items-center justify-between gap-4">
-          <h2 className="font-normal tracking-[0.18em] text-[22px] md:text-[26px] text-[#1C1C1C] uppercase leading-none">
+    <div
+      className={`mb-7 md:mb-9 flex gap-5 ${
+        center ? "justify-center text-center" : "justify-start text-left"
+      }`}
+    >
+      <div className={center ? "mx-auto min-w-0" : "min-w-0"}>
+        {title && (
+          <h2
+            className="text-[24px] md:text-[34px] leading-none text-[#101010] tracking-[2px]"
+            style={headingStyle}
+          >
             {title}
           </h2>
+        )}
 
-          <div className="flex items-center gap-4 md:gap-5">
+        {subtitle && (
+          <p
+            className={`mt-2 text-[13px] md:text-[14px] leading-relaxed text-[#77736B] ${
+              center ? "mx-auto max-w-[620px]" : "max-w-[520px]"
+            }`}
+          >
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const HomeHeroSlider = ({ slides }: { slides: HomeHeroSlide[] }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const cleanSlides = slides.length > 0 ? slides : defaultHeroSlides;
+
+  useEffect(() => {
+    if (cleanSlides.length <= 1) return;
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % cleanSlides.length);
+    }, 4500);
+
+    return () => window.clearInterval(timer);
+  }, [cleanSlides.length]);
+
+  useEffect(() => {
+    if (activeIndex >= cleanSlides.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, cleanSlides.length]);
+
+  const activeSlide = cleanSlides[activeIndex] || defaultHeroSlides[0];
+
+  return (
+    <motion.section
+      variants={fadeInUp}
+      initial="hidden"
+      animate="show"
+      className="relative w-full overflow-hidden bg-[#F4F4F2]"
+    >
+      <div className="relative h-[calc(100svh-80px)] min-h-[540px] w-full sm:h-[calc(100svh-116px)] lg:min-h-[620px]">
+        <Link to={activeSlide.button_link || "/products"} className="group relative block h-full w-full">
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={`${activeSlide.image_url}-${activeIndex}`}
+              src={getFullImageUrl(activeSlide.image_url)}
+              alt={activeSlide.title}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.8, ease: smoothEase }}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-[1.035]"
+            />
+          </AnimatePresence>
+
+          <div className="absolute inset-0 bg-black/25" />
+          <div className="absolute inset-x-0 bottom-0 h-[74%] bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+
+          <div className="absolute inset-x-5 bottom-10 z-10 text-white md:inset-x-10 md:bottom-14 lg:bottom-16">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`hero-content-${activeIndex}`}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.42, ease: smoothEase }}
+                className={`${pageContainerClass} flex flex-col items-start`}
+              >
+                <h1 className="max-w-[920px] text-[44px] leading-[0.92] tracking-[2px] md:text-[76px] lg:text-[104px]" style={headingStyle}>
+                  {activeSlide.title}
+                </h1>
+
+                {activeSlide.subtitle && (
+                  <p className="mt-5 max-w-[620px] text-[14px] leading-relaxed text-white/90 md:text-[16px]">
+                    {activeSlide.subtitle}
+                  </p>
+                )}
+
+                <span className="mt-7 inline-flex rounded-full border border-white/70 bg-white px-8 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#101010] transition-colors group-hover:bg-[#ECFF66] group-hover:border-[#ECFF66] md:px-10 md:py-4">
+                  {activeSlide.button_text || "Explore"}
+                </span>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </Link>
+
+        {cleanSlides.length > 1 && (
+          <>
             <button
               type="button"
-              onClick={() => scroll("left")}
-              className="hidden lg:inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#1C1C1C]/15 bg-white/70 text-[#1C1C1C] hover:bg-[#006039] hover:text-white transition-colors"
-              aria-label={`Previous ${title}`}
+              onClick={() => setActiveIndex((prev) => (prev - 1 + cleanSlides.length) % cleanSlides.length)}
+              className="absolute left-5 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#101010] shadow-sm transition-colors hover:bg-white md:inline-flex"
+              aria-label="Previous slide"
             >
               ←
             </button>
 
             <button
               type="button"
-              onClick={() => scroll("right")}
-              className="hidden lg:inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#1C1C1C]/15 bg-white/70 text-[#1C1C1C] hover:bg-[#006039] hover:text-white transition-colors"
-              aria-label={`Next ${title}`}
+              onClick={() => setActiveIndex((prev) => (prev + 1) % cleanSlides.length)}
+              className="absolute right-5 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#101010] shadow-sm transition-colors hover:bg-white md:inline-flex"
+              aria-label="Next slide"
             >
               →
             </button>
 
-            <Link
-              to={linkTo}
-              className="shrink-0 text-[12px] md:text-[14px] font-semibold tracking-[0.24em] text-[#1C1C1C] uppercase hover:text-[#006039] transition-colors"
-            >
-              View All
-            </Link>
-          </div>
-        </div>
-
-        <div
-          ref={trackRef}
-          className="flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {visibleItems.map((item, index) => {
-            const image = getHomeProductImage(item);
-            const titleText = getHomeProductTitle(item);
-            const brandText = getHomeProductBrand(item);
-            const finalPrice = getHomeProductPrice(item);
-            const originalPrice = safeNumber(item.original_price) || safeNumber((item as any).originalPrice);
-            const hasOffer = originalPrice > 0 && originalPrice > finalPrice;
-            const offerLabel = String((item as any)?.active_offer?.label || (item as any)?.offer_label || "").trim();
-
-            if (!image) return null;
-
-            return (
-              <Link
-                key={`${item.product_type || "home"}-${item.id || index}`}
-                to={getHomeProductLink(item, linkTo)}
-                className="group block shrink-0 w-[68vw] max-w-[300px] sm:w-[250px] md:w-[270px] lg:w-[285px] xl:w-[300px] snap-start"
-              >
-                <article className="w-full">
-                  <div className="relative w-full rounded-[14px] overflow-hidden bg-white flex items-center justify-center">
-                    <button
-                      type="button"
-                      aria-label="Add to wishlist"
-                      className="absolute top-4 right-4 z-10 text-[#1C1C1C]/70 hover:text-[#006039] transition-colors"
-                      onClick={(e) => e.preventDefault()}
-                    >
-                      <Heart className="w-5 h-5" strokeWidth={1.6} />
-                    </button>
-
-                    <img
-                      src={getFullImageUrl(image)}
-                      alt={titleText}
-                      className="block w-full h-auto max-h-[360px] object-contain rounded-[14px] transition-transform duration-700 ease-out group-hover:scale-[1.01]"
-                    />
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
-                      <div className="min-w-0">
-                        <p className="text-[12px] md:text-[14px] text-[#1C1C1C]/45 font-medium truncate">
-                          {brandText}
-                        </p>
-                        <h3 className="mt-1 text-[14px] md:text-[15px] font-medium text-[#1C1C1C] leading-snug line-clamp-2 min-h-[40px]">
-                          {titleText}
-                        </h3>
-                      </div>
-
-                      <p className="text-[12px] md:text-[14px] text-[#1C1C1C]/45 font-medium shrink-0">
-                        New
-                      </p>
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {hasOffer && (
-                        <span className="text-[12px] md:text-[13px] text-[#1C1C1C]/35 line-through">
-                          {formatPrice(originalPrice)}
-                        </span>
-                      )}
-
-                      <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
-                        {formatPrice(finalPrice)}
-                      </span>
-
-                      {hasOffer && offerLabel && (
-                        <span className="text-[10px] md:text-[11px] font-bold text-[#006039] uppercase tracking-[0.16em]">
-                          {offerLabel}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              </Link>
-            );
-          })}
-        </div>
+            <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 md:bottom-7">
+              {cleanSlides.map((slide, index) => (
+                <button
+                  key={`${slide.title}-${index}`}
+                  type="button"
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                  className={`h-[7px] rounded-full transition-all duration-300 ${
+                    activeIndex === index ? "w-9 bg-white" : "w-[7px] bg-white/55 hover:bg-white"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
-    </section>
+    </motion.section>
+  );
+};
+
+const ProductSkeletonCard = ({ index }: { index: number }) => {
+  return (
+    <div className="animate-pulse" style={{ animationDelay: `${index * 70}ms` }}>
+      <div className="aspect-[0.78] rounded-[12px] bg-[#F4F4F2]" />
+      <div className="mt-4 h-3 w-2/3 rounded-full bg-[#F4F4F2]" />
+      <div className="mt-3 h-3 w-1/2 rounded-full bg-[#F4F4F2]" />
+    </div>
+  );
+};
+
+const PosterProductCard = ({ item, activeOffer, index = 0 }: { item: ProductItem; activeOffer: ActiveOffer | null; index?: number }) => {
+  const productTitle = getProductTitle(item);
+  const posterImage = getUploadedProductImage(item);
+  const productPrice = getLowestSizePrice(item);
+  const currentOffer = ((item as any).active_offer || activeOffer) as ActiveOffer | null;
+  const offerPrice = getOfferPrice(productPrice, currentOffer);
+  const productId = getProductId(item);
+  const brandText = item.category || item.subcategory || "Muro Poster";
+
+  if (!posterImage || !productId) return null;
+
+  return (
+    <motion.div variants={fadeInUp} custom={index}>
+      <Link to={`/product/${productId}`} state={{ productData: item }} className="group block w-full">
+        <article className="w-full">
+          <div className="relative flex aspect-[0.78] w-full items-center justify-center overflow-hidden rounded-[12px] bg-[#F4F4F2] px-8 py-9 md:px-10 md:py-11">
+            <button
+              type="button"
+              aria-label="Add to wishlist"
+              className="absolute right-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-[#101010]/70 transition-colors hover:bg-white hover:text-[#006039]"
+              onClick={(e) => e.preventDefault()}
+            >
+              <Heart className="h-5 w-5" strokeWidth={1.45} />
+            </button>
+
+            <img
+              src={getFullImageUrl(posterImage)}
+              alt={productTitle}
+              className="max-h-full max-w-full object-contain drop-shadow-[0_16px_18px_rgba(0,0,0,0.10)] transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="mt-4 grid grid-cols-[1fr_auto] items-start gap-4 px-1">
+            <div className="min-w-0">
+              <p className="truncate text-[13px] leading-none text-[#A19D96]">{brandText}</p>
+              <h3 className="mt-2 min-h-[38px] text-[14px] font-medium leading-snug text-[#101010] md:text-[14px]">{productTitle}</h3>
+            </div>
+
+            <div className="text-right">
+              <p className="mb-2 text-[13px] leading-none text-[#A19D96]">New</p>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="text-[13px] font-semibold text-[#101010] md:text-[14px]">{formatPrice(offerPrice.finalPrice)}</span>
+                {offerPrice.hasOffer && <span className="text-[12px] text-[#A19D96] line-through">{formatPrice(offerPrice.originalPrice)}</span>}
+              </div>
+
+              {currentOffer && offerPrice.hasOffer && (
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#006039]">{currentOffer.label}</p>
+              )}
+            </div>
+          </div>
+        </article>
+      </Link>
+    </motion.div>
+  );
+};
+
+const HomeProductCard = ({ item, index = 0 }: { item: HomeProduct; index?: number }) => {
+  const image = getHomeProductImage(item);
+  const titleText = getHomeProductTitle(item);
+  const brandText = getHomeProductBrand(item);
+  const finalPrice = getHomeProductPrice(item);
+  const originalPrice = safeNumber(item.original_price) || safeNumber((item as any).originalPrice);
+  const hasOffer = originalPrice > 0 && originalPrice > finalPrice;
+  const offerLabel = String((item as any)?.active_offer?.label || (item as any)?.offer_label || "").trim();
+
+  if (!image) return null;
+
+  return (
+    <motion.div variants={fadeInUp} custom={index}>
+      <Link to={getHomeProductLink(item, "/products")} className="group block w-full">
+        <article className="w-full">
+          <div className="relative flex aspect-[0.78] w-full items-center justify-center overflow-hidden rounded-[12px] bg-[#F4F4F2] px-8 py-9 md:px-10 md:py-11">
+            <button
+              type="button"
+              aria-label="Add to wishlist"
+              className="absolute right-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-[#101010]/70 transition-colors hover:bg-white hover:text-[#006039]"
+              onClick={(e) => e.preventDefault()}
+            >
+              <Heart className="h-5 w-5" strokeWidth={1.45} />
+            </button>
+
+            <img
+              src={getFullImageUrl(image)}
+              alt={titleText}
+              className="max-h-full max-w-full object-contain drop-shadow-[0_16px_18px_rgba(0,0,0,0.10)] transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="mt-4 grid grid-cols-[1fr_auto] items-start gap-4 px-1">
+            <div className="min-w-0">
+              <p className="truncate text-[13px] leading-none text-[#A19D96]">{brandText}</p>
+              <h3 className="mt-2 min-h-[38px] text-[14px] font-medium leading-snug text-[#101010] md:text-[14px]">{titleText}</h3>
+            </div>
+
+            <div className="text-right">
+              <p className="mb-2 text-[13px] leading-none text-[#A19D96]">New</p>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="text-[13px] font-semibold text-[#101010] md:text-[14px]">{formatPrice(finalPrice)}</span>
+                {hasOffer && <span className="text-[12px] text-[#A19D96] line-through">{formatPrice(originalPrice)}</span>}
+              </div>
+
+              {hasOffer && offerLabel && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#006039]">{offerLabel}</p>}
+            </div>
+          </div>
+        </article>
+      </Link>
+    </motion.div>
+  );
+};
+
+const HomeProductShowcase = ({
+  title,
+  items,
+  linkTo,
+  subtitle,
+}: {
+  title?: string;
+  items: HomeProduct[];
+  linkTo?: string;
+  subtitle?: string;
+}) => {
+  const visibleItems = uniqueHomeItems(items).slice(0, 8);
+
+  if (!visibleItems.length) return null;
+
+  return (
+    <motion.section
+      variants={fadeInUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-80px" }}
+      className={sectionSpacingClass}
+    >
+      <div className={pageContainerClass}>
+        {(title || subtitle) && <SectionHeading title={title} subtitle={subtitle} />}
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-80px" }}
+          className="grid grid-cols-2 gap-x-4 gap-y-9 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 xl:gap-x-6"
+        >
+          {visibleItems.map((item, index) => (
+            <HomeProductCard key={`${item.product_type || "home"}-${item.id || index}`} item={item} index={index} />
+          ))}
+        </motion.div>
+      </div>
+    </motion.section>
+  );
+};
+
+const EditorialTile = ({
+  title,
+  subtitle,
+  buttonText,
+  buttonLink,
+  imageUrl,
+  index,
+}: {
+  title: string;
+  subtitle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  imageUrl: string;
+  index: number;
+}) => {
+  return (
+    <motion.div variants={fadeInUp} custom={index}>
+      <Link to={buttonLink || "/products"} className="group relative block overflow-hidden rounded-[12px] bg-[#F4F4F2] aspect-[4/5]">
+        <img
+          src={getFullImageUrl(imageUrl)}
+          alt={title}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.045]"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-black/20" />
+        <div className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+        <div className="absolute inset-x-6 bottom-6 text-white md:inset-x-7 md:bottom-7">
+          <h3 className="text-[24px] leading-none tracking-[2px] md:text-[30px]" style={headingStyle}>
+            {title}
+          </h3>
+          {subtitle && <p className="mt-3 max-w-[360px] text-[13px] leading-relaxed text-white/90 md:text-[14px]">{subtitle}</p>}
+          <span className="mt-4 inline-flex text-[12px] font-semibold uppercase tracking-[0.12em] underline underline-offset-4">
+            {buttonText || "Explore"}
+          </span>
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
+
+const CollectionHighlightsSection = () => {
+  return (
+    <motion.section
+      variants={fadeInUp}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-80px" }}
+      className={sectionSpacingClass}
+    >
+      <div className={pageContainerClass}>
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-80px" }}
+          className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:gap-6"
+        >
+          {collectionHighlightTiles.map((item, index) => (
+            <motion.div key={`${item.title}-${index}`} variants={fadeInUp} custom={index}>
+              <Link
+                to={item.button_link || "/products"}
+                className="group relative block aspect-[16/13] overflow-hidden rounded-[12px] bg-[#F4F4F2]"
+              >
+                <img
+                  src={getFullImageUrl(item.image_url)}
+                  alt={item.title}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.045]"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-black/20" />
+                <div className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+                <div className="absolute inset-x-6 bottom-6 text-white md:inset-x-7 md:bottom-7">
+                  <h3 className="text-[24px] leading-none tracking-[2px] md:text-[30px]" style={headingStyle}>
+                    {item.title}
+                  </h3>
+
+                  {item.subtitle && <p className="mt-3 max-w-[520px] text-[13px] leading-relaxed text-white/90 md:text-[14px]">{item.subtitle}</p>}
+
+                  <span className="mt-4 inline-flex text-[12px] font-semibold uppercase tracking-[0.12em] underline underline-offset-4">
+                    {item.button_text || "Explore"}
+                  </span>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </motion.section>
+  );
+};
+
+type FAQItem = {
+  question: string;
+  answer: string;
+};
+
+const faqItems: FAQItem[] = [
+  {
+    question: "What paper quality do you use for posters?",
+    answer: "We use 300 GSM matte paper for rich colors and a premium feel.",
+  },
+  {
+    question: "Are your posters waterproof or laminated?",
+    answer: "Our posters are printed on premium matte paper. They are not waterproof unless lamination or a protected frame is added.",
+  },
+  {
+    question: "Do the posters come framed?",
+    answer: "Frames depend on the selected product option. If a frame is not selected, the poster will be shipped as a print.",
+  },
+  {
+    question: "What sizes are available?",
+    answer: "Available sizes are shown on each product page. You can select the size before adding the poster to cart.",
+  },
+  {
+    question: "Are the colors true to what I see online?",
+    answer: "We try to display colors accurately, but slight variation may happen because every screen has different brightness and color settings.",
+  },
+  {
+    question: "Is wall adhesive included?",
+    answer: "Wall adhesive is not included by default unless it is specifically mentioned on the product page or offer details.",
+  },
+  {
+    question: "How long does delivery take?",
+    answer: "Delivery usually takes 5–10 business days after dispatch, depending on your location and courier service.",
+  },
+  {
+    question: "Do you deliver across India?",
+    answer: "Yes, we deliver across India through our shipping partners.",
+  },
+  {
+    question: "Can I track my order after it is shipped?",
+    answer: "Yes, once your order is shipped, tracking details will be shared with you.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer: "We accept secure online payments including UPI, cards, wallets and other supported payment options through our payment gateway.",
+  },
+];
+
+const HomeFAQSection = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  return (
+    <div className="w-full">
+      {faqItems.map((item, index) => {
+        const isOpen = openIndex === index;
+
+        return (
+          <div key={item.question} className="border-b border-[#D7D7D7]">
+            <button
+              type="button"
+              onClick={() => setOpenIndex(isOpen ? null : index)}
+              className="flex w-full items-center justify-between gap-8 py-6 text-left"
+              aria-expanded={isOpen}
+            >
+              <span className="text-[16px] font-semibold leading-relaxed text-[#101010] md:text-[18px]">
+                {item.question}
+              </span>
+
+              <span className="shrink-0 text-[24px] font-light leading-none text-[#77736B]">
+                {isOpen ? "−" : "+"}
+              </span>
+            </button>
+
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.24, ease: smoothEase }}
+                  className="overflow-hidden"
+                >
+                  <p className="max-w-[760px] pb-7 text-[15px] leading-relaxed text-[#77736B] md:text-[16px]">
+                    {item.answer}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const NewsletterPopup = ({
+  open,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (payload: NewsletterPopupPayload) => void;
+}) => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const cleanFirstName = firstName.trim();
+    const cleanLastName = lastName.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanFirstName || !cleanLastName || !cleanEmail) {
+      setError("Please fill first name, last name and email address.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(cleanEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    setError("");
+    onSubmit({
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      email: cleanEmail,
+    });
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[140] flex items-center justify-center bg-white/75 px-4 py-6 backdrop-blur-[2px]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Newsletter signup"
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.98 }}
+            transition={{ duration: 0.28, ease: smoothEase }}
+            className="relative grid w-full max-w-[860px] overflow-hidden rounded-[16px] bg-white shadow-[0_24px_70px_rgba(0,0,0,0.18)] md:grid-cols-[1.04fr_0.96fr]"
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close newsletter popup"
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/85 text-[#111111] transition-colors hover:bg-[#F2F2F2]"
+            >
+              <X size={16} strokeWidth={1.8} />
+            </button>
+
+            <div className="hidden min-h-[520px] bg-[#F2F2F2] md:block">
+              <img
+                src="https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=1100&auto=format&fit=crop"
+                alt="Muro Poster room inspiration"
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+
+            <div className="flex min-h-[520px] flex-col justify-center px-6 py-10 text-center md:px-9 lg:px-10">
+              <h2
+                className="text-[24px] font-bold leading-tight tracking-[2px] text-[#111111] md:text-[28px]"
+                style={headingStyle}
+              >
+                Your walls deserve better.
+              </h2>
+
+              <p className="mx-auto mt-5 max-w-[360px] text-[13px] leading-relaxed text-[#333333]">
+                Join the Muro Poster community and get 10% off your first order.
+                Discover new artists and collections, interior inspiration, and
+                be the first to hear about offers.
+              </p>
+
+              <form onSubmit={handleSubmit} className="mt-7 space-y-3 text-left">
+                <input
+                  value={firstName}
+                  onChange={(event) => {
+                    setFirstName(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="First name"
+                  className="h-[47px] w-full rounded-[8px] border border-[#D7D7D7]/55 bg-white px-4 text-[13px] text-[#111111] outline-none transition-colors placeholder:text-[#777777] focus:border-[#D7D7D7]"
+                />
+
+                <input
+                  value={lastName}
+                  onChange={(event) => {
+                    setLastName(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="Last name"
+                  className="h-[47px] w-full rounded-[8px] border border-[#D7D7D7]/55 bg-white px-4 text-[13px] text-[#111111] outline-none transition-colors placeholder:text-[#777777] focus:border-[#D7D7D7]"
+                />
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="Email address"
+                  className="h-[47px] w-full rounded-[8px] border border-[#D7D7D7]/55 bg-white px-4 text-[13px] text-[#111111] outline-none transition-colors placeholder:text-[#777777] focus:border-[#D7D7D7]"
+                />
+
+                {error && (
+                  <p className="text-center text-[12px] font-semibold text-red-600">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="h-[48px] w-full rounded-full bg-[#000000] text-[13px] font-semibold text-white transition-colors hover:bg-[#006039]"
+                >
+                  Get my 10% off
+                </button>
+              </form>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="mx-auto mt-6 text-[12px] font-medium text-[#111111] transition-colors hover:text-[#006039]"
+              >
+                No thanks, maybe later
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -819,25 +1347,69 @@ const Index: React.FC = () => {
   const [homeNewArrivals, setHomeNewArrivals] = useState<HomeProduct[]>([]);
   const [homePostcards, setHomePostcards] = useState<HomeProduct[]>([]);
   const [homeCutouts, setHomeCutouts] = useState<HomeProduct[]>([]);
-  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [activeOffer, setActiveOffer] = useState<ActiveOffer | null>(null);
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
+  const newsletterTimerRef = useRef<number | null>(null);
 
-  const heroSlides = useMemo(() => homeContent.hero_slides.length > 0 ? homeContent.hero_slides : defaultHeroSlides, [homeContent.hero_slides]);
-  const categoryTiles = useMemo(() => homeContent.category_tiles.length > 0 ? homeContent.category_tiles : defaultCategoryTiles, [homeContent.category_tiles]);
+  const isNewsletterCompletedOrClosed = () => {
+    return (
+      window.localStorage.getItem(NEWSLETTER_SUBMITTED_KEY) === "1" ||
+      window.localStorage.getItem(NEWSLETTER_CLOSED_KEY) === "1"
+    );
+  };
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setActiveHeroIndex((prev) => (prev + 1) % Math.max(heroSlides.length, 1));
-    }, 4500);
-
-    return () => window.clearInterval(timer);
-  }, [heroSlides.length]);
-
-  useEffect(() => {
-    if (activeHeroIndex >= heroSlides.length) {
-      setActiveHeroIndex(0);
+  const clearNewsletterTimer = () => {
+    if (newsletterTimerRef.current) {
+      window.clearTimeout(newsletterTimerRef.current);
+      newsletterTimerRef.current = null;
     }
-  }, [activeHeroIndex, heroSlides.length]);
+  };
+
+  const scheduleNewsletterPopup = (delay = 10000) => {
+    clearNewsletterTimer();
+
+    if (isNewsletterCompletedOrClosed()) {
+      return;
+    }
+
+    newsletterTimerRef.current = window.setTimeout(() => {
+      if (!isNewsletterCompletedOrClosed()) {
+        setNewsletterOpen(true);
+      }
+    }, delay);
+  };
+
+  const handleNewsletterClose = () => {
+    window.localStorage.setItem(NEWSLETTER_CLOSED_KEY, "1");
+    clearNewsletterTimer();
+    setNewsletterOpen(false);
+  };
+
+  const handleNewsletterSubmit = (payload: NewsletterPopupPayload) => {
+    window.localStorage.setItem(NEWSLETTER_SUBMITTED_KEY, "1");
+    window.localStorage.setItem(NEWSLETTER_CLOSED_KEY, "1");
+    window.localStorage.setItem(
+      "muro_newsletter_popup_data",
+      JSON.stringify({
+        ...payload,
+        submitted_at: new Date().toISOString(),
+      })
+    );
+
+    clearNewsletterTimer();
+    setNewsletterOpen(false);
+  };
+
+  const heroSlides = useMemo(() => (homeContent.hero_slides.length > 0 ? homeContent.hero_slides : defaultHeroSlides), [homeContent.hero_slides]);
+  const categoryTiles = useMemo(() => (homeContent.category_tiles.length > 0 ? homeContent.category_tiles : defaultCategoryTiles), [homeContent.category_tiles]);
+
+  useEffect(() => {
+    scheduleNewsletterPopup(10000);
+
+    return () => {
+      clearNewsletterTimer();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -893,7 +1465,7 @@ const Index: React.FC = () => {
 
         setHomeContent(homeRes);
         setActiveOffer(offerRes);
-        setBestsellers(posterPool.slice(0, 5) as ProductItem[]);
+        setBestsellers(posterPool.slice(0, 8) as unknown as ProductItem[]);
         setHomeNewArrivals(newArrivalItems);
         setHomePostcards(postcardItems);
         setHomeCutouts(cutoutItems);
@@ -907,261 +1479,158 @@ const Index: React.FC = () => {
     fetchHomeData();
   }, []);
 
-  const activeHero = heroSlides[activeHeroIndex] || defaultHeroSlides[0];
-
   return (
     <main
-      className="min-h-screen overflow-x-hidden font-sans selection:text-white"
-      style={{
-        backgroundColor: COLORS.cloud,
-        color: COLORS.blackboard,
-      }}
+      className="min-h-screen overflow-x-hidden bg-white text-[#101010] selection:bg-[#101010] selection:text-white"
+      style={{ backgroundColor: COLORS.page, color: COLORS.ink }}
     >
-      <section className="relative h-[85vh] min-h-[600px] flex items-center overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeHeroIndex}
-            initial={{ opacity: 0, scale: 1.08 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.03 }}
-            transition={{ duration: 1.1, ease: smoothEase }}
-            className="absolute inset-0"
-          >
-            <img
-              src={getFullImageUrl(activeHero.image_url)}
-              alt={activeHero.title}
-              className="w-full h-full object-cover"
-            />
-          </motion.div>
-        </AnimatePresence>
+      <HomeHeroSlider slides={heroSlides} />
 
-        <div className="absolute inset-0 bg-black/35" />
-
-        <div className="relative w-full max-w-[1400px] mx-auto px-6 md:px-8 z-10">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`content-${activeHeroIndex}`}
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35 }}
-              className="max-w-2xl mx-auto md:mx-0 text-center md:text-left"
-            >
-              <motion.h1
-                variants={fadeInUp}
-                className="text-5xl md:text-8xl text-white mb-6 drop-shadow-md leading-[1.05] font-semibold tracking-[-0.04em]"
-              >
-                {activeHero.title}
-              </motion.h1>
-
-              <motion.p variants={fadeInUp} className="text-white text-lg md:text-2xl mb-8 font-normal">
-                {activeHero.subtitle}
-              </motion.p>
-
-              <motion.div variants={fadeInUp}>
-                <Link
-                  to={activeHero.button_link || "/products"}
-                  className="inline-flex items-center justify-center bg-white text-[#1C1C1C] px-10 py-4 text-xs font-semibold uppercase tracking-[0.18em] hover:bg-[#006039] hover:text-white transition-all"
-                >
-                  {activeHero.button_text || "Explore"}
-                </Link>
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        <div className="absolute left-0 right-0 bottom-8 z-20 flex items-center justify-center gap-2">
-          {heroSlides.map((slide, index) => (
-            <button
-              key={`${slide.title}-${index}`}
-              type="button"
-              onClick={() => setActiveHeroIndex(index)}
-              aria-label={`Go to slide ${index + 1}`}
-              className={`h-[8px] rounded-full transition-all duration-300 ${
-                activeHeroIndex === index ? "w-[34px] bg-white" : "w-[8px] bg-white/55 hover:bg-white"
-              }`}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="w-full py-12">
-        <div className="max-w-[1400px] mx-auto px-2 md:px-4">
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-2 items-start">
-            {moods.map(({ label, cat, img }) => (
-              <Link key={label} to={`/products?cat=${encodeURIComponent(cat)}`} className="group flex flex-col gap-2 text-center">
-                <div className="relative overflow-hidden rounded-xl aspect-square bg-white">
-                  <img
-                    src={img}
-                    alt={label}
-                    className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 rounded-xl" />
-                </div>
-
-                <p className="min-h-[38px] text-[14px] font-medium text-[#1C1C1C] tracking-tight flex items-center justify-center gap-1 group-hover:gap-2 transition-all duration-200 text-center flex-wrap leading-snug">
-                  {label}
-                  <span className="text-[#006039] transition-opacity">→</span>
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="w-full py-10 bg-[#F0EEE9]">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <h2 className="font-normal tracking-[0.18em] text-[22px] md:text-[26px] text-[#1C1C1C] uppercase leading-none">
-              Best Sellers
-            </h2>
-
-            <Link
-              to="/products"
-              className="shrink-0 text-[12px] md:text-[14px] font-medium tracking-[0.18em] text-[#1C1C1C] uppercase hover:text-[#006039] transition-colors"
-            >
-              View All
-            </Link>
-          </div>
-
+      <section className={sectionSpacingClass}>
+        <div className={pageContainerClass}>
           {loadingBestsellers ? (
-            <div className="h-[30vh] flex items-center justify-center">
-              <div className="w-6 h-6 border-2 border-[#1C1C1C] border-t-transparent rounded-full animate-spin" />
+            <div className="grid grid-cols-2 gap-x-4 gap-y-9 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 xl:gap-x-6">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <ProductSkeletonCard key={index} index={index} />
+              ))}
             </div>
           ) : bestsellers.length === 0 ? (
-            <div className="h-[20vh] flex items-center justify-center text-[#1C1C1C]/45">
-              <p className="text-sm tracking-widest uppercase">No products with uploaded images found</p>
+            <div className="flex min-h-[280px] items-center justify-center rounded-[12px] bg-[#F4F4F2] px-6 text-center">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#77736B]">No products with uploaded images found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-start">
-              {bestsellers.map((item, index) => {
-                const productTitle = getProductTitle(item);
-                const posterImage = getUploadedProductImage(item);
-                const productPrice = getLowestSizePrice(item);
-                const offerPrice = getOfferPrice(productPrice, (item as any).active_offer || activeOffer);
-                const productId = getProductId(item);
-
-                if (!posterImage || !productId) return null;
-
-                return (
-                  <Link key={productId || index} to={`/product/${productId}`} state={{ productData: item }} className="group cursor-pointer block w-full">
-                    <article className="w-full">
-                      <img
-                        src={getFullImageUrl(posterImage)}
-                        alt={productTitle}
-                        className="block w-full h-auto rounded-[14px] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.01]"
-                      />
-
-                      <div className="mt-4">
-                        <h3 className="text-[14px] md:text-[15px] font-medium text-[#1C1C1C] leading-snug min-h-[42px]">
-                          {productTitle}
-                        </h3>
-
-                        <div className="mt-2 flex items-center gap-2">
-                          {offerPrice.hasOffer && (
-                            <span className="text-[12px] text-[#1C1C1C]/35 line-through">
-                              {formatPrice(offerPrice.originalPrice)}
-                            </span>
-                          )}
-
-                          <span className="text-[15px] md:text-[16px] font-semibold text-[#1C1C1C]">
-                            {formatPrice(offerPrice.finalPrice)}
-                          </span>
-
-                          {((item as any).active_offer || activeOffer) && offerPrice.hasOffer && (
-                            <span className="text-[10px] font-bold text-[#006039] uppercase tracking-[0.12em]">
-                              {((item as any).active_offer || activeOffer)?.label}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </article>
-                  </Link>
-                );
-              })}
-            </div>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: "-80px" }}
+              className="grid grid-cols-2 gap-x-4 gap-y-9 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 xl:gap-x-6"
+            >
+              {bestsellers.map((item, index) => (
+                <PosterProductCard key={String(getProductId(item) || index)} item={item} activeOffer={activeOffer} index={index} />
+              ))}
+            </motion.div>
           )}
         </div>
       </section>
 
-      <section className="w-full py-12 md:py-14 bg-[#F0EEE9]">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+      <motion.section
+        variants={fadeInUp}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-80px" }}
+        className={sectionSpacingClass}
+      >
+        <div className={pageContainerClass}>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            className="grid grid-cols-1 gap-5 md:grid-cols-3 xl:gap-6"
+          >
             {categoryTiles.map((item, index) => (
-              <Link
+              <EditorialTile
                 key={`${item.title}-${index}`}
-                to={item.button_link || "/products"}
-                className="relative group overflow-hidden rounded-[26px] aspect-[4/5] block bg-white"
-              >
+                title={item.title}
+                subtitle={item.subtitle}
+                buttonText={item.button_text}
+                buttonLink={item.button_link}
+                imageUrl={item.image_url}
+                index={index}
+              />
+            ))}
+          </motion.div>
+        </div>
+      </motion.section>
+
+      <HomeProductShowcase
+        title="New Arrivals"
+        subtitle="Fresh wall prints selected for quick room refreshes."
+        items={homeNewArrivals}
+       
+      />
+
+      <HomeProductShowcase
+        title="Postcards"
+        subtitle="Compact artworks with front and back postcard options."
+        items={homePostcards}
+       
+      />
+
+      <HomeProductShowcase
+      
+        items={homeCutouts}
+       
+      />
+
+      <CollectionHighlightsSection />
+
+      <section className={sectionSpacingClass}>
+        <div className={pageContainerClass}>
+          <SectionHeading title="DESIGNED FOR EVERY WALL" subtitle="Browse by room and build a look that feels complete." center />
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:gap-6">
+            {wallRooms.slice(0, 2).map((item) => (
+              <Link key={item.name} to={`/products?cat=${encodeURIComponent(item.name)}`} className="group relative block aspect-[16/8] overflow-hidden rounded-[12px] bg-[#F4F4F2]">
                 <img
-                  src={getFullImageUrl(item.image_url)}
-                  alt={item.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+                  src={item.img}
+                  alt={item.name}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+                  loading="lazy"
                 />
-
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/25 transition-colors" />
-                <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
-
-                <div className="absolute inset-x-7 bottom-[18%] flex flex-col items-center text-center text-white">
-                  {item.subtitle && (
-                    <p className="text-[13px] md:text-[15px] font-medium leading-snug mb-4 text-white/95 drop-shadow">
-                      {item.subtitle}
-                    </p>
-                  )}
-
-                  <span className="inline-flex min-w-[170px] items-center justify-center rounded-full bg-white px-8 py-4 text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#1C1C1C] shadow-lg transition-all group-hover:bg-[#006039] group-hover:text-white">
-                    {item.button_text || item.title || "Explore"}
-                  </span>
+                <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
+                <div className="absolute inset-x-6 bottom-6 text-white">
+                  <h3 className="text-[26px] tracking-[2px] md:text-[34px]" style={headingStyle}>
+                    {item.name}
+                  </h3>
+                  <span className="mt-2 inline-flex text-[12px] font-semibold uppercase tracking-[0.12em] underline underline-offset-4">Explore</span>
                 </div>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-4 lg:grid-cols-8 xl:gap-6">
+            {wallRooms.slice(2, 10).map((item) => (
+              <Link key={item.name} to={`/products?cat=${encodeURIComponent(item.name)}`} className="group block">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-[#F4F4F2]">
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1000ms] ease-out group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                </div>
+                <h3 className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#101010] transition-colors group-hover:text-[#006039]">{item.name}</h3>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <HomeProductSlider title="New Arrivals" items={homeNewArrivals} linkTo="/products" />
-      <HomeProductSlider title="Postcards" items={homePostcards} linkTo="/postcards" />
-      <HomeProductSlider title="CutOuts" items={homeCutouts} linkTo="/cutouts" />
+      <section className={sectionSpacingClass}>
+        <div className={pageContainerClass}>
+          <SectionHeading
+            title="WHY MURO"
+            subtitle="Premium posters, safe delivery and easy support — everything kept clean, simple and reliable."
+            center
+          />
 
-      <section className="w-full py-12 md:py-14 bg-[#F0EEE9]">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <p className="text-[12px] uppercase tracking-[0.2em] text-[#006039] font-semibold mb-3">
-                Why Muro
-              </p>
-
-              <h2 className="font-normal tracking-[0.12em] text-[22px] md:text-[26px] text-[#1C1C1C] uppercase leading-snug">
-                Simple reasons to buy from us
-              </h2>
-            </div>
-
-            <p className="text-[14px] md:text-[15px] text-[#1C1C1C]/65 leading-relaxed max-w-[470px]">
-              Premium posters, safe delivery and easy support — everything kept clean, simple and reliable.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 xl:gap-6">
             {whyBuyItems.map((item) => {
               const Icon = item.icon;
 
               return (
-                <div
-                  key={item.title}
-                  className="rounded-[22px] bg-white/70 border border-[#1C1C1C]/10 p-6 md:p-7 min-h-[190px] flex flex-col justify-between hover:bg-white transition-colors"
-                >
-                  <div className="w-11 h-11 rounded-full bg-[#006039]/10 flex items-center justify-center mb-8">
-                    <Icon className="w-5 h-5 text-[#006039]" strokeWidth={1.8} />
+                <div key={item.title} className="rounded-[12px] border border-[#E7E4DC] bg-[#F8F8F6] p-6 text-center md:p-7">
+                  <div className="mx-auto mb-8 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#101010] shadow-sm">
+                    <Icon className="h-5 w-5" strokeWidth={1.7} />
                   </div>
 
-                  <div>
-                    <h3 className="text-[18px] md:text-[20px] text-[#1C1C1C] font-semibold mb-2 tracking-[-0.02em]">
-                      {item.title}
-                    </h3>
-
-                    <p className="text-[14px] leading-relaxed text-[#1C1C1C]/65">{item.text}</p>
-                  </div>
+                  <h3 className="text-[21px] leading-none tracking-[2px] text-[#101010]" style={headingStyle}>
+                    {item.title}
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-relaxed text-[#77736B]">{item.text}</p>
                 </div>
               );
             })}
@@ -1169,60 +1638,23 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      <section className="w-full py-10 bg-[#F0EEE9]">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <h2 className="font-normal tracking-[0.18em] text-[22px] text-[#1C1C1C] hover:text-[#006039] transition-colors uppercase leading-snug">
-              Designed For Every Wall
-            </h2>
+      <section className={sectionSpacingClass}>
+        <div className={pageContainerClass}>
+          <SectionHeading
+            title="FREQUENTLY ASKED QUESTIONS"
+            subtitle="Quick answers about posters, shipping, payments, support and order handling."
+            center
+          />
 
-            <Link
-              to="/categories"
-              className="shrink-0 text-[12px] md:text-[14px] font-medium tracking-[0.18em] text-[#1C1C1C] uppercase hover:text-[#006039] transition-colors"
-            >
-              View All
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-start">
-            {wallRooms.map((item) => (
-              <div key={item.name} className="group cursor-pointer flex flex-col">
-                <div className="relative aspect-[3/4] bg-white overflow-hidden mb-3 rounded-[18px]">
-                  <img
-                    src={item.img}
-                    alt={item.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 z-0"
-                  />
-
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition duration-500 z-10" />
-                </div>
-
-                <div className="flex flex-col items-start text-left w-full mt-1">
-                  <h3 className="text-[13px] font-medium text-[#1C1C1C] leading-snug mb-1 w-full uppercase tracking-[0.12em]">
-                    {item.name}
-                  </h3>
-                </div>
-              </div>
-            ))}
-          </div>
+          <HomeFAQSection />
         </div>
       </section>
 
-      <section className="w-full py-10 md:py-12 bg-[#F0EEE9]">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <h2 className="font-normal tracking-[0.18em] text-[22px] md:text-[26px] text-[#1C1C1C] uppercase leading-snug">
-              Frequently Asked Questions
-            </h2>
-
-            <p className="hidden md:block text-[14px] md:text-[15px] text-[#1C1C1C]/60 leading-relaxed max-w-[460px]">
-              Quick answers about posters, shipping, payments, support and order handling.
-            </p>
-          </div>
-
-          <FAQSection id="faqs" />
-        </div>
-      </section>
+      <NewsletterPopup
+        open={newsletterOpen}
+        onClose={handleNewsletterClose}
+        onSubmit={handleNewsletterSubmit}
+      />
     </main>
   );
 };

@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import {
   ShoppingBag,
-  Menu,
   X,
   Search,
   User,
@@ -15,6 +14,10 @@ import { NavLink } from "@/components/NavLink";
 import { API } from "@/services/api";
 import { cartApi } from "@/services/cartApi";
 import logoImg from "@/assets/logo.png";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://muroposter.com/api";
+
+type ActiveOffer = { label: string; discount_percent: number };
 
 type CategoryItem = {
   id?: string | number;
@@ -36,6 +39,8 @@ type CategoryTreeItem = {
   name: string;
   subcategories: SubcategoryItem[];
 };
+
+let navbarCartCountLoadedOnce = false;
 
 const defaultCategoryTree: CategoryTreeItem[] = [
   {
@@ -141,6 +146,7 @@ const Navbar = () => {
   const profileRef = useRef<HTMLDivElement>(null);
 
   const [cartCount, setCartCount] = useState(0);
+  const cartCountFetchingRef = useRef(false);
 
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [userData, setUserData] = useState<any>(() => {
@@ -153,6 +159,8 @@ const Navbar = () => {
 
   const [categoryTree, setCategoryTree] =
     useState<CategoryTreeItem[]>(defaultCategoryTree);
+
+  const [activeOffer, setActiveOffer] = useState<ActiveOffer | null>(null);
 
   const activeHoveredCategory = useMemo(() => {
     if (!hoveredCategoryKey) return null;
@@ -168,6 +176,7 @@ const Navbar = () => {
     }
   };
 
+
   const fetchCartCount = async () => {
     const token = localStorage.getItem("token");
 
@@ -175,6 +184,10 @@ const Navbar = () => {
       setCartCount(0);
       return;
     }
+
+    if (cartCountFetchingRef.current) return;
+
+    cartCountFetchingRef.current = true;
 
     try {
       const res = await cartApi.getCart();
@@ -190,8 +203,26 @@ const Navbar = () => {
     } catch (error) {
       console.error("Failed to fetch cart count:", error);
       setCartCount(0);
+    } finally {
+      cartCountFetchingRef.current = false;
     }
   };
+
+  useEffect(() => {
+    const fetchActiveOffer = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/offers/active`);
+        const json = await response.json().catch(() => null);
+        const rows = Array.isArray(json?.data) ? json.data : json?.data?.items || [];
+        setActiveOffer(rows[0] || null);
+      } catch (error) {
+        console.error("Failed to fetch active offer:", error);
+        setActiveOffer(null);
+      }
+    };
+
+    fetchActiveOffer();
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -223,16 +254,28 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    fetchCartCount();
+    if (!navbarCartCountLoadedOnce) {
+      navbarCartCountLoadedOnce = true;
+      fetchCartCount();
+    }
 
     const handleCartUpdated = (event: Event) => {
-      const customEvent = event as CustomEvent<{ item_count?: number }>;
+      const customEvent = event as CustomEvent<{
+        item_count?: number;
+        item_delta?: number;
+        redirect_to_cart?: boolean;
+      }>;
       const incomingCount = customEvent?.detail?.item_count;
+      const incomingDelta = customEvent?.detail?.item_delta;
 
       if (typeof incomingCount === "number") {
         setCartCount(incomingCount > 0 ? incomingCount : 0);
-      } else {
-        fetchCartCount();
+      } else if (typeof incomingDelta === "number") {
+        setCartCount((prev) => Math.max(0, prev + incomingDelta));
+      }
+
+      if (customEvent?.detail?.redirect_to_cart) {
+        navigate("/cart");
       }
     };
 
@@ -241,7 +284,19 @@ const Navbar = () => {
     return () => {
       window.removeEventListener("muro_cart_updated", handleCartUpdated);
     };
-  }, []);
+  }, [navigate]);
+
+  useEffect(() => {
+    const handleOpenCartPage = () => {
+      navigate("/cart");
+    };
+
+    window.addEventListener("muro_open_cart_drawer", handleOpenCartPage);
+
+    return () => {
+      window.removeEventListener("muro_open_cart_drawer", handleOpenCartPage);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -251,8 +306,12 @@ const Navbar = () => {
       setUserData(getSavedUser());
 
       if (token) {
-        fetchCartCount();
+        if (!navbarCartCountLoadedOnce) {
+          navbarCartCountLoadedOnce = true;
+          fetchCartCount();
+        }
       } else {
+        navbarCartCountLoadedOnce = false;
         setCartCount(0);
       }
     };
@@ -263,18 +322,6 @@ const Navbar = () => {
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("muro_auth_updated", handleStorageChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchCartCount();
-    };
-
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
     };
   }, []);
 
@@ -299,6 +346,7 @@ const Navbar = () => {
     setIsLoggedIn(false);
     setUserData(null);
     setCartCount(0);
+    navbarCartCountLoadedOnce = false;
     setProfileOpen(false);
 
     window.dispatchEvent(new Event("storage"));
@@ -315,242 +363,156 @@ const Navbar = () => {
   };
 
   const navBase =
-    "font-montserrat text-[11px] xl:text-[12px] font-medium text-black uppercase tracking-widest hover:text-[#006039] transition-colors whitespace-nowrap";
+    "font-montserrat text-[14px] font-medium text-[#101010] hover:text-[#006039] transition-colors whitespace-nowrap";
 
   const navActive = "text-[#006039]";
 
   const displayCartCount = cartCount > 99 ? "99+" : cartCount;
+  const discount = Number(activeOffer?.discount_percent || 0);
+  const announcementText =
+    activeOffer && discount > 0
+      ? `${activeOffer.label} – ${discount}% off all prints`
+      : "Summer Campaign – 30% off all prints";
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      <div className="hidden sm:block w-full bg-[#1C1C1C] border-b border-white/10">
-        <div className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-between h-9">
-          <div className="flex items-center gap-2 font-montserrat text-[11px] text-white font-semibold">
-            <svg
-              width="20"
-              height="14"
-              viewBox="0 0 20 14"
-              className="rounded-[2px] shrink-0"
-            >
-              <rect width="20" height="4.67" y="0" fill="#FF9933" />
-              <rect width="20" height="4.67" y="4.67" fill="#FFFFFF" />
-              <rect width="20" height="4.67" y="9.33" fill="#138808" />
-              <circle
-                cx="10"
-                cy="7"
-                r="1.8"
-                fill="none"
-                stroke="#000080"
-                strokeWidth="0.4"
-              />
-              <circle cx="10" cy="7" r="0.3" fill="#000080" />
-              {[...Array(24)].map((_, i) => {
-                const angle = (i * 15 * Math.PI) / 180;
-
-                return (
-                  <line
-                    key={i}
-                    x1={10 + 0.3 * Math.cos(angle)}
-                    y1={7 + 0.3 * Math.sin(angle)}
-                    x2={10 + 1.8 * Math.cos(angle)}
-                    y2={7 + 1.8 * Math.sin(angle)}
-                    stroke="#000080"
-                    strokeWidth="0.25"
-                  />
-                );
-              })}
-            </svg>
-
-            <span className="uppercase tracking-wider">India</span>
-            <span className="mx-0.5">|</span>
-            <span className="uppercase tracking-wider flex items-center gap-1">
-              English <ChevronDown size={10} strokeWidth={2.5} />
-            </span>
-          </div>
-
-          <p className="mx-auto text-center font-montserrat text-[11px] text-white tracking-wide font-medium">
-            Free shipping over ₹999 &nbsp;•&nbsp; Happiness Guarantee
-            &nbsp;•&nbsp; Delivery in 4–7 business days
-          </p>
-
-          <div className="w-[140px]" />
-        </div>
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-xl">
+      <div className="flex h-[30px] w-full items-center justify-center bg-[#ECFF66] px-4 text-center font-montserrat text-[14px] font-semibold text-black md:text-[16px]">
+        {announcementText}
       </div>
 
-      <div className="w-full bg-[#F0EEE9] border-b border-[#1C1C1C]/10">
-        <div className="w-full px-5 md:px-8 xl:px-12 flex items-center justify-between h-[80px]">
-          <div className="flex items-center gap-4 shrink-0 lg:w-[280px]">
-            <button
-              type="button"
-              className="lg:hidden hover:opacity-60 transition-opacity shrink-0"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
-            >
-              <Menu className="w-5 h-5 text-black" strokeWidth={1.5} />
-            </button>
-
-            <Link to="/" className="inline-flex items-center shrink-0">
-              <img
-                src={logoImg}
-                alt="MURO Poster"
-                className="h-11 md:h-12 w-auto max-w-[170px] object-contain"
-              />
-            </Link>
-          </div>
-
-          <nav className="hidden lg:flex flex-1 justify-center items-center gap-5 xl:gap-8">
-            <NavLink to="/" className={navBase} activeClassName={navActive}>
-              Home
-            </NavLink>
-
-            <div
-              className="relative group h-[80px] flex items-center"
-              onMouseEnter={() => setHoveredCategoryKey("")}
-              onMouseLeave={() => setHoveredCategoryKey("")}
-            >
-              <NavLink
-                to="/products"
-                className={`${navBase} flex items-center gap-1`}
-                activeClassName={navActive}
+      <div className="w-full border-b border-[#101010]/10 bg-white/95">
+        <div className="relative mx-auto flex h-[80px] w-full max-w-[1540px] items-center justify-between px-4 sm:px-5 lg:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-5 md:gap-7">
+           
+            <nav className="hidden items-center gap-5 text-[14px] lg:flex xl:gap-7">
+              <div
+                className="group relative flex h-[80px] items-center"
+                onMouseEnter={() => setHoveredCategoryKey("")}
+                onMouseLeave={() => setHoveredCategoryKey("")}
               >
-                Posters
-                <ChevronDown
-                  size={12}
-                  className="group-hover:rotate-180 transition-transform duration-300"
-                  strokeWidth={2.5}
-                />
+                <NavLink
+                  to="/products"
+                  className={`${navBase} flex items-center gap-1`}
+                  activeClassName={navActive}
+                >
+                  Posters
+                  <ChevronDown
+                    size={12}
+                    className="transition-transform duration-300 group-hover:rotate-180"
+                    strokeWidth={2.3}
+                  />
+                </NavLink>
+
+                <div className="invisible absolute left-0 top-[80px] z-50 flex w-[310px] flex-col rounded-b-[18px] border border-[#E5E5E5] bg-white py-3 text-black opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                  {categoryTree.map((cat) => {
+                    const isActive = hoveredCategoryKey === cat.key;
+
+                    return (
+                      <div
+                        key={cat.key}
+                        className="relative"
+                        onMouseEnter={() => setHoveredCategoryKey(cat.key)}
+                      >
+                        <NavLink
+                          to={`/products?cat=${encodeURIComponent(cat.name)}`}
+                          className={`flex items-center justify-between gap-3 border-l-2 px-6 py-3 font-montserrat text-[11px] font-semibold uppercase tracking-[0.07em] text-[#111] transition-colors hover:bg-[#F4F4F2] hover:text-[#006039] ${
+                            isActive
+                              ? "border-[#006039] bg-[#F4F4F2] text-[#006039]"
+                              : "border-transparent"
+                          }`}
+                          activeClassName="border-[#006039] bg-[#F4F4F2] text-[#006039]"
+                        >
+                          <span>{cat.name}</span>
+
+                          {cat.subcategories.length > 0 && (
+                            <ChevronRight size={13} strokeWidth={2.4} />
+                          )}
+                        </NavLink>
+                      </div>
+                    );
+                  })}
+
+                  {activeHoveredCategory && activeHoveredCategory.subcategories.length > 0 && (
+                    <div className="absolute left-[calc(100%-1px)] top-0 w-[290px] overflow-hidden rounded-br-[18px] border border-[#E5E5E5] bg-white py-3 shadow-xl">
+                      <div className="mb-2 border-b border-[#F0F0F0] px-6 pb-2">
+                        <p className="font-montserrat text-[10px] font-bold uppercase tracking-[0.18em] text-[#1C1C1C]/45">
+                          {activeHoveredCategory.name}
+                        </p>
+                      </div>
+
+                      {activeHoveredCategory.subcategories.map((subcat) => (
+                        <NavLink
+                          key={getSubcategoryId(subcat)}
+                          to={`/products?cat=${encodeURIComponent(
+                            activeHoveredCategory.name
+                          )}&subcat=${encodeURIComponent(subcat.name)}`}
+                          className="block border-l-2 border-transparent px-6 py-2.5 font-montserrat text-[11px] font-medium uppercase tracking-[0.07em] text-[#111] transition-colors hover:bg-[#F4F4F2] hover:text-[#006039]"
+                          activeClassName="border-l-2 border-[#006039] bg-[#F4F4F2] text-[#006039]"
+                        >
+                          {subcat.name}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <NavLink to="/bestsellers" className={navBase} activeClassName={navActive}>
+                Bestsellers
               </NavLink>
 
-              <div className="absolute top-[80px] left-1/2 -translate-x-1/2 w-[310px] bg-white border border-[#E5E5E5] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col py-3 z-50 text-black rounded-b-[18px]">
-                {categoryTree.map((cat) => {
-                  const isActive = hoveredCategoryKey === cat.key;
+              <NavLink to="/cutouts" className={navBase} activeClassName={navActive}>
+                CutOuts
+              </NavLink>
 
-                  return (
-                    <div
-                      key={cat.key}
-                      className="relative"
-                      onMouseEnter={() => setHoveredCategoryKey(cat.key)}
-                    >
-                      <NavLink
-                        to={`/products?cat=${encodeURIComponent(cat.name)}`}
-                        className={`px-6 py-3 font-montserrat text-[11px] font-semibold text-[#111] uppercase tracking-[0.07em] hover:bg-[#F0EEE9] hover:text-[#006039] transition-colors border-l-2 flex items-center justify-between gap-3 ${
-                          isActive
-                            ? "border-[#006039] bg-[#F0EEE9] text-[#006039]"
-                            : "border-transparent"
-                        }`}
-                        activeClassName="border-[#006039] bg-[#F0EEE9] text-[#006039]"
-                      >
-                        <span>{cat.name}</span>
+              <NavLink to="/postcards" className={navBase} activeClassName={navActive}>
+                Postcard
+              </NavLink>
 
-                        {cat.subcategories.length > 0 && (
-                          <ChevronRight size={13} strokeWidth={2.4} />
-                        )}
-                      </NavLink>
-                    </div>
-                  );
-                })}
+              <NavLink to="/about" className={navBase} activeClassName={navActive}>
+                About MURO
+              </NavLink>
+            </nav>
+          </div>
 
-                {activeHoveredCategory && activeHoveredCategory.subcategories.length > 0 && (
-                  <div className="absolute left-[calc(100%-1px)] top-0 w-[290px] bg-white border border-[#E5E5E5] shadow-xl rounded-br-[18px] overflow-hidden py-3">
-                    <div className="px-6 pb-2 mb-2 border-b border-[#F0F0F0]">
-                      <p className="font-montserrat text-[10px] uppercase tracking-[0.18em] text-[#1C1C1C]/45 font-bold">
-                        {activeHoveredCategory.name}
-                      </p>
-                    </div>
+          <Link
+            to="/"
+            className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+            aria-label="MURO Poster home"
+          >
+            <img
+              src={logoImg}
+              alt="MURO Poster"
+              className="h-10 w-auto max-w-[145px] object-contain md:h-9 md:max-w-[227px]"
+           style={{ height: '5.5rem' }} />
+          </Link>
 
-                    {activeHoveredCategory.subcategories.map((subcat) => (
-                      <NavLink
-                        key={getSubcategoryId(subcat)}
-                        to={`/products?cat=${encodeURIComponent(
-                          activeHoveredCategory.name
-                        )}&subcat=${encodeURIComponent(subcat.name)}`}
-                        className="block px-6 py-2.5 font-montserrat text-[11px] font-medium text-[#111] uppercase tracking-[0.07em] hover:bg-[#F0EEE9] hover:text-[#006039] transition-colors border-l-2 border-transparent"
-                        activeClassName="border-l-2 border-[#006039] bg-[#F0EEE9] text-[#006039]"
-                      >
-                        {subcat.name}
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <NavLink
-              to="/bestsellers"
-              className={navBase}
-              activeClassName={navActive}
-            >
-              Bestsellers
-            </NavLink>
-
-            <NavLink
-              to="/cutouts"
-              className={navBase}
-              activeClassName={navActive}
-            >
-              CutOuts
-            </NavLink>
-
-            <NavLink
-              to="/postcards"
-              className={navBase}
-              activeClassName={navActive}
-            >
-              Postcard
-            </NavLink>
-
-            <NavLink to="/about" className={navBase} activeClassName={navActive}>
-              About MURO
-            </NavLink>
-
-            <NavLink
-              to="/contact"
-              className={navBase}
-              activeClassName={navActive}
-            >
-              Contact
-            </NavLink>
-          </nav>
-
-          <div className="flex items-center justify-end gap-3 xl:gap-5 shrink-0 lg:w-[280px]">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-3 md:gap-5">
             <div
-              className="hidden md:flex items-center border border-[#1C1C1C]/10 rounded-full px-4 py-2 gap-2 bg-white/55 hover:border-[#006039]/40 transition-colors cursor-text w-[160px] xl:w-[200px]"
+              className="hidden h-[44px] w-[210px] cursor-text items-center justify-between rounded-full border border-[#101010]/20 bg-white px-5 text-[13px] text-[#77736B] transition-colors hover:border-[#101010]/45 md:flex xl:w-[250px]"
               onClick={() => setIsSearchOpen(true)}
             >
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full bg-transparent font-montserrat text-[11px] text-black outline-none placeholder:text-[#1C1C1C]/40 cursor-text"
-                onFocus={() => setIsSearchOpen(true)}
-                readOnly
-              />
-              <Search
-                className="w-3.5 h-3.5 text-[#1C1C1C]/55 shrink-0"
-                strokeWidth={1.8}
-              />
+              <span className="font-montserrat text-[13px] text-[#77736B]">
+                Search posters
+              </span>
+              <Search className="h-4 w-4 shrink-0 text-[#101010]" strokeWidth={1.7} />
             </div>
 
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="md:hidden hover:opacity-60 transition-opacity"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#F4F4F2] md:hidden"
               aria-label="Open search"
             >
-              <Search
-                className="w-[18px] h-[18px] text-black"
-                strokeWidth={1.3}
-              />
+              <Search className="h-5 w-5 text-[#101010]" strokeWidth={1.7} />
             </button>
 
             <button
               type="button"
-              className="hidden md:flex hover:text-[#006039] transition-colors"
+              className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#F4F4F2] hover:text-[#006039] md:inline-flex"
               aria-label="Wishlist"
             >
-              <Heart
-                className="w-[18px] h-[18px] text-current"
-                strokeWidth={1.3}
-              />
+              <Heart className="h-5 w-5 text-current" strokeWidth={1.7} />
             </button>
 
             <div className="relative flex items-center" ref={profileRef}>
@@ -559,13 +521,10 @@ const Navbar = () => {
                   <button
                     type="button"
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="hover:text-[#006039] transition-colors"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#F4F4F2] hover:text-[#006039]"
                     aria-label="Open profile"
                   >
-                    <User
-                      className="w-[18px] h-[18px] text-current"
-                      strokeWidth={1.3}
-                    />
+                    <User className="h-5 w-5 text-current" strokeWidth={1.7} />
                   </button>
 
                   <AnimatePresence>
@@ -575,14 +534,14 @@ const Navbar = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 8 }}
                         transition={{ duration: 0.18 }}
-                        className="absolute top-[calc(100%+18px)] right-0 w-[210px] bg-white border border-[#E5E5E5] shadow-xl flex flex-col py-2 text-black z-50 rounded-[18px] overflow-hidden"
+                        className="absolute right-0 top-[calc(100%+18px)] z-50 flex w-[220px] flex-col overflow-hidden rounded-[18px] border border-[#E5E5E5] bg-white py-2 text-black shadow-xl"
                       >
                         {userData?.name && (
-                          <div className="px-5 py-3 border-b border-gray-100 mb-1">
-                            <p className="font-montserrat text-[10px] text-gray-400 uppercase tracking-widest">
+                          <div className="mb-1 border-b border-gray-100 px-5 py-3">
+                            <p className="font-montserrat text-[10px] uppercase tracking-widest text-gray-400">
                               Logged in as
                             </p>
-                            <p className="font-montserrat text-[13px] font-bold truncate">
+                            <p className="truncate font-montserrat text-[13px] font-bold">
                               {userData.name}
                             </p>
                           </div>
@@ -592,7 +551,7 @@ const Navbar = () => {
                           <Link
                             to="/admin/dashboard"
                             onClick={() => setProfileOpen(false)}
-                            className="px-5 py-3 font-montserrat text-[11px] font-bold uppercase tracking-[0.08em] bg-[#F0EEE9] text-[#006039] hover:bg-[#E9E4DA] transition-colors border-b border-white"
+                            className="border-b border-white bg-[#F4F4F2] px-5 py-3 font-montserrat text-[11px] font-bold uppercase tracking-[0.08em] text-[#006039] transition-colors hover:bg-[#ECE9E1]"
                           >
                             Admin Dashboard
                           </Link>
@@ -601,7 +560,7 @@ const Navbar = () => {
                         <Link
                           to="/profile"
                           onClick={() => setProfileOpen(false)}
-                          className="px-5 py-3 font-montserrat text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-[#F9F9F9] transition-colors"
+                          className="px-5 py-3 font-montserrat text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors hover:bg-[#F9F9F9]"
                         >
                           View Account
                         </Link>
@@ -609,7 +568,7 @@ const Navbar = () => {
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="px-5 py-3 font-montserrat text-[11px] font-semibold text-red-500 uppercase tracking-[0.08em] hover:bg-[#F9F9F9] transition-colors text-left w-full"
+                          className="w-full px-5 py-3 text-left font-montserrat text-[11px] font-semibold uppercase tracking-[0.08em] text-red-500 transition-colors hover:bg-[#F9F9F9]"
                         >
                           Logout
                         </button>
@@ -620,36 +579,28 @@ const Navbar = () => {
               ) : (
                 <NavLink
                   to="/login"
-                  className="hover:text-[#006039] transition-colors"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#F4F4F2] hover:text-[#006039]"
                   activeClassName="text-[#006039]"
                 >
-                  <User
-                    className="w-[18px] h-[18px] text-current"
-                    strokeWidth={1.3}
-                  />
+                  <User className="h-5 w-5 text-current" strokeWidth={1.7} />
                 </NavLink>
               )}
             </div>
 
-            <NavLink
-              to="/cart"
-              className="relative hover:text-[#006039] transition-colors"
-              activeClassName="text-[#006039]"
-              aria-label={`Cart with ${cartCount} item${
-                cartCount === 1 ? "" : "s"
-              }`}
+            <button
+              type="button"
+              onClick={() => navigate("/cart")}
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#F4F4F2] hover:text-[#006039]"
+              aria-label={`Open cart with ${cartCount} item${cartCount === 1 ? "" : "s"}`}
             >
-              <ShoppingBag
-                className="w-[18px] h-[18px] text-current"
-                strokeWidth={1.3}
-              />
+              <ShoppingBag className="h-5 w-5 text-current" strokeWidth={1.7} />
 
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 min-w-[17px] h-[17px] px-[4px] rounded-full bg-[#006039] text-white text-[9px] font-bold flex items-center justify-center leading-none shadow-sm">
+                <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#006039] px-[4px] text-[9px] font-bold leading-none text-white shadow-sm">
                   {displayCartCount}
                 </span>
               )}
-            </NavLink>
+            </button>
           </div>
         </div>
       </div>
@@ -661,23 +612,20 @@ const Navbar = () => {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="border-t border-[#EBEBEB] bg-white overflow-hidden absolute w-full left-0 shadow-2xl z-40"
+            className="absolute left-0 z-40 w-full overflow-hidden border-t border-[#EBEBEB] bg-white shadow-2xl"
           >
-            <div className="container mx-auto px-6 py-10 flex items-center gap-5 max-w-4xl">
-              <Search
-                className="w-5 h-5 text-[#999] shrink-0"
-                strokeWidth={1.5}
-              />
+            <div className="mx-auto flex max-w-4xl items-center gap-5 px-6 py-10">
+              <Search className="h-5 w-5 shrink-0 text-[#999]" strokeWidth={1.5} />
 
               <input
                 type="text"
                 placeholder="Search for posters, artists, styles..."
-                className="w-full font-montserrat text-[17px] text-black outline-none placeholder:text-[#CCCCCC] bg-transparent border-b border-[#E0E0E0] pb-2 focus:border-black transition-all"
+                className="w-full border-b border-[#E0E0E0] bg-transparent pb-2 font-montserrat text-[17px] text-black outline-none transition-all placeholder:text-[#CCCCCC] focus:border-black"
                 autoFocus
               />
 
-              <button type="button" onClick={() => setIsSearchOpen(false)}>
-                <X className="w-5 h-5 text-[#999] hover:text-black transition-colors" />
+              <button type="button" onClick={() => setIsSearchOpen(false)} aria-label="Close search">
+                <X className="h-5 w-5 text-[#999] transition-colors hover:text-black" />
               </button>
             </div>
           </motion.div>
@@ -691,9 +639,9 @@ const Navbar = () => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween", duration: 0.28 }}
-            className="lg:hidden fixed inset-0 bg-white z-[60] h-screen w-full flex flex-col"
+            className="fixed inset-0 z-[60] flex h-screen w-full flex-col bg-white lg:hidden"
           >
-            <div className="flex justify-between items-center px-6 border-b border-[#EBEBEB] h-[70px] bg-[#F0EEE9]">
+            <div className="flex h-[70px] items-center justify-between border-b border-[#EBEBEB] bg-[#F4F4F2] px-6">
               <Link
                 to="/"
                 onClick={() => setMobileOpen(false)}
@@ -702,19 +650,16 @@ const Navbar = () => {
                 <img
                   src={logoImg}
                   alt="MURO Poster"
-                  className="h-11 w-auto max-w-[160px] object-contain"
-                />
+                  className="h-9 w-auto max-w-[140px] object-contain"
+style={{"height":"5.5rem"}} />
               </Link>
 
-              <button type="button" onClick={() => setMobileOpen(false)}>
-                <X
-                  className="w-6 h-6 text-black hover:opacity-60"
-                  strokeWidth={1.5}
-                />
+              <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                <X className="h-6 w-6 text-black hover:opacity-60" strokeWidth={1.5} />
               </button>
             </div>
 
-            <div className="flex flex-col py-8 px-8 font-montserrat text-[12px] font-black text-black uppercase tracking-[0.08em] gap-7 overflow-y-auto">
+            <div className="flex flex-col gap-7 overflow-y-auto px-8 py-8 font-montserrat text-[14px] font-black uppercase tracking-[0.08em] text-black">
               <Link to="/" onClick={() => setMobileOpen(false)}>
                 Home
               </Link>
@@ -723,9 +668,9 @@ const Navbar = () => {
                 <Link
                   to="/products"
                   onClick={() => setMobileOpen(false)}
-                  className="text-[10px] text-[#AAAAAA] tracking-widest border-b border-[#F0F0F0] pb-2 font-medium"
+                  className="border-b border-[#F0F0F0] pb-2 text-[14px] font-medium tracking-widest text-[#AAAAAA]"
                 >
-                  Products Categories
+                  Product Categories
                 </Link>
 
                 {categoryTree.map((cat) => (
@@ -733,7 +678,7 @@ const Navbar = () => {
                     <Link
                       to={`/products?cat=${encodeURIComponent(cat.name)}`}
                       onClick={() => setMobileOpen(false)}
-                      className="pl-2 font-semibold text-[12px]"
+                      className="pl-2 text-[14px] font-semibold"
                     >
                       {cat.name}
                     </Link>
@@ -743,11 +688,9 @@ const Navbar = () => {
                         {cat.subcategories.map((subcat) => (
                           <Link
                             key={getSubcategoryId(subcat)}
-                            to={`/products?cat=${encodeURIComponent(
-                              cat.name
-                            )}&subcat=${encodeURIComponent(subcat.name)}`}
+                            to={`/products?cat=${encodeURIComponent(cat.name)}&subcat=${encodeURIComponent(subcat.name)}`}
                             onClick={() => setMobileOpen(false)}
-                            className="text-[10px] text-[#1C1C1C]/55 font-semibold tracking-widest"
+                            className="text-[10px] font-semibold tracking-widest text-[#1C1C1C]/55"
                           >
                             {subcat.name}
                           </Link>
@@ -762,7 +705,7 @@ const Navbar = () => {
                 Bestsellers
               </Link>
 
-              <Link to="/new-arrivals" onClick={() => setMobileOpen(false)}>
+              <Link to="/cutouts" onClick={() => setMobileOpen(false)}>
                 CutOuts
               </Link>
 
@@ -778,19 +721,23 @@ const Navbar = () => {
                 Contact
               </Link>
 
-              <Link to="/cart" onClick={() => setMobileOpen(false)}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  navigate("/cart");
+                }}
+                className="text-left"
+              >
                 Cart {cartCount > 0 ? `(${cartCount})` : ""}
-              </Link>
+              </button>
 
-              <div className="border-t border-[#F0F0F0] pt-6 flex flex-col gap-6 mt-2">
+              <div className="mt-2 flex flex-col gap-6 border-t border-[#F0F0F0] pt-6">
                 {isLoggedIn ? (
                   <>
                     {userData?.name && (
-                      <p className="text-[10px] text-[#AAAAAA] tracking-widest border-b border-[#F0F0F0] pb-3">
-                        Logged in as:{" "}
-                        <span className="font-black text-black">
-                          {userData.name}
-                        </span>
+                      <p className="border-b border-[#F0F0F0] pb-3 text-[10px] tracking-widest text-[#AAAAAA]">
+                        Logged in as: <span className="font-black text-black">{userData.name}</span>
                       </p>
                     )}
 
@@ -829,8 +776,10 @@ const Navbar = () => {
           </motion.nav>
         )}
       </AnimatePresence>
+
     </header>
   );
 };
+
 
 export default Navbar;
